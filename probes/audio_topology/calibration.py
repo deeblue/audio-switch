@@ -28,8 +28,9 @@ def calibrate_port_map(interface_id: str, before: SnapshotRecord, after: Snapsho
     ports = {p["id"]: p for p in port_map.data.get("interfaces", [])}
     if interface_id not in ports: raise ValueError(f"找不到接口 ID：{interface_id}")
     diff = diff_snapshots(before, after)
-    candidates = [n for n in diff.added_devnodes if n.get("location_paths") and n.get("instance_id", "").upper().startswith("USB\\") and "&MI_" not in n.get("instance_id", "").upper()]
-    # Require exactly one newly observed PnP node; ContainerId and names are not evidence.
+    usb_nodes = diff.added_devnodes + [change["after"] for change in diff.changed_devnodes]
+    candidates = [n for n in usb_nodes if n.get("location_paths") and n.get("instance_id", "").upper().startswith("USB\\") and "&MI_" not in n.get("instance_id", "").upper()]
+    # Require exactly one newly observed or relocated USB parent; ContainerId and names are not evidence.
     if len(candidates) == 1:
         prefixes = sorted(set(candidates[0]["location_paths"]))
         current = ports[interface_id].setdefault("usb_location_path_prefixes", [])

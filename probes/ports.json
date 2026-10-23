@@ -1,13 +1,93 @@
 {
   "schema_version": 1,
-  "machine": {"manufacturer": "LENOVO", "model": "ThinkPad T14p Gen 3", "mtm": "21RU"},
+  "machine": {
+    "manufacturer": "LENOVO",
+    "model": "ThinkPad T14p Gen 3",
+    "mtm": "21RU"
+  },
   "source": "https://iknow.lenovo.com.cn/detail/428178.html",
   "interfaces": [
-    {"id":"usb-c-left-1","name":"左側 USB-C／Thunderbolt 1","type":"usb-c-tbt","position":"左側（21RU 使用指南）","source":"https://iknow.lenovo.com.cn/detail/428178.html","usb_location_path_prefixes":[],"display_connectors":[],"calibration_sources":[]},
-    {"id":"usb-c-left-2","name":"左側 USB-C／Thunderbolt 2","type":"usb-c-tbt","position":"左側（21RU 使用指南）","source":"https://iknow.lenovo.com.cn/detail/428178.html","usb_location_path_prefixes":[],"display_connectors":[],"calibration_sources":[]},
-    {"id":"usb-a-left","name":"左側 USB-A","type":"usb-a","position":"左側（21RU 使用指南）","source":"https://iknow.lenovo.com.cn/detail/428178.html","usb_location_path_prefixes":[],"display_connectors":[],"calibration_sources":[]},
-    {"id":"usb-a-right","name":"右側 USB-A","type":"usb-a","position":"右側（21RU 使用指南）","source":"https://iknow.lenovo.com.cn/detail/428178.html","usb_location_path_prefixes":[],"display_connectors":[],"calibration_sources":[]},
-    {"id":"hdmi-left","name":"左側 HDMI","type":"hdmi","position":"左側（21RU 使用指南）","source":"https://iknow.lenovo.com.cn/detail/428178.html","usb_location_path_prefixes":[],"display_connectors":[],"calibration_sources":[]},
-    {"id":"jack-combo-left","name":"左側 3.5mm 複合插孔","type":"audio-jack","position":"左側（21RU 使用指南）","source":"https://iknow.lenovo.com.cn/detail/428178.html","usb_location_path_prefixes":[],"display_connectors":[],"calibration_sources":[]}
+    {
+      "id": "usb-c-left-1",
+      "name": "左側 USB-C／Thunderbolt 1",
+      "type": "usb-c-tbt",
+      "position": "左側（21RU 使用指南）",
+      "source": "https://iknow.lenovo.com.cn/detail/428178.html",
+      "usb_location_path_prefixes": [],
+      "display_connectors": [],
+      "calibration_sources": []
+    },
+    {
+      "id": "usb-c-left-2",
+      "name": "左側 USB-C／Thunderbolt 2",
+      "type": "usb-c-tbt",
+      "position": "左側（21RU 使用指南）",
+      "source": "https://iknow.lenovo.com.cn/detail/428178.html",
+      "usb_location_path_prefixes": [],
+      "display_connectors": [],
+      "calibration_sources": []
+    },
+    {
+      "id": "usb-a-left",
+      "name": "左側 USB-A",
+      "type": "usb-a",
+      "position": "左側（21RU 使用指南）",
+      "source": "https://iknow.lenovo.com.cn/detail/428178.html",
+      "usb_location_path_prefixes": [],
+      "display_connectors": [],
+      "calibration_sources": []
+    },
+    {
+      "id": "usb-a-right",
+      "name": "右側 USB-A",
+      "type": "usb-a",
+      "position": "右側（21RU 使用指南）",
+      "source": "https://iknow.lenovo.com.cn/detail/428178.html",
+      "usb_location_path_prefixes": [],
+      "display_connectors": [],
+      "calibration_sources": []
+    },
+    {
+      "id": "usb-last",
+      "name": "最後測試的 USB 孔",
+      "type": "usb",
+      "position": "使用者標記；側別與 USB-A／USB-C 類型待確認",
+      "source": "使用者插拔驗證",
+      "usb_location_path_prefixes": [
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS05)",
+        "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)"
+      ],
+      "display_connectors": [],
+      "calibration_sources": [
+        {
+          "source": "校準",
+          "instance_id": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "location_paths": [
+            "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS05)",
+            "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hdmi-left",
+      "name": "左側 HDMI",
+      "type": "hdmi",
+      "position": "左側（21RU 使用指南）",
+      "source": "https://iknow.lenovo.com.cn/detail/428178.html",
+      "usb_location_path_prefixes": [],
+      "display_connectors": [],
+      "calibration_sources": []
+    },
+    {
+      "id": "jack-combo-left",
+      "name": "左側 3.5mm 複合插孔",
+      "type": "audio-jack",
+      "position": "左側（21RU 使用指南）",
+      "source": "https://iknow.lenovo.com.cn/detail/428178.html",
+      "usb_location_path_prefixes": [],
+      "display_connectors": [],
+      "calibration_sources": []
+    }
   ]
 }

@@ -38,3 +38,15 @@ class CalibrationTests(unittest.TestCase):
         result = calibrate_port_map("c1", self.before, after, self.pm)
         self.assertEqual(result["status"], "calibrated")
         self.assertEqual(self.pm.data["interfaces"][0]["usb_location_path_prefixes"], ["ACPI#USB(2)", "PCIROOT#USB(2)"])
+
+    def test_unique_existing_usb_parent_location_change_calibrates(self):
+        parent_before = DeviceNodeRecord("USB\\VID_1234&PID_5678", location_paths=["PCIROOT#USB(1)"])
+        parent_after = DeviceNodeRecord("USB\\VID_1234&PID_5678", location_paths=["PCIROOT#USB(5)"])
+        before = SnapshotRecord(1, "a", MachineRecord(mtm="21RU"), devnodes=[parent_before])
+        after = SnapshotRecord(1, "b", MachineRecord(mtm="21RU"), devnodes=[parent_after])
+
+        result = calibrate_port_map("c1", before, after, self.pm)
+
+        self.assertEqual(result["status"], "calibrated")
+        self.assertEqual(result["location_paths"], ["PCIROOT#USB(5)"])
+        self.assertEqual(self.pm.data["interfaces"][0]["usb_location_path_prefixes"], ["PCIROOT#USB(5)"])
