@@ -107,9 +107,12 @@ def match_sink_to_display(sink, paths):
     if not sink or not paths:
         return {"matched": False, "method": "none", "candidate_ids": [], "evidence": "缺少 sink 或 DisplayConfig 路徑"}
     target = sink.get("target_id")
-    candidates = [p.path_id for p in paths if sink.get("adapter_luid") is not None and p.adapter_luid == sink.get("adapter_luid") and (target is None or p.properties.get("target_id") == target)]
+    port_id = sink.get("port_id") or sink.get("adapter_luid")
+    # KS PortId is a LUID identifying the display adapter; the target ID is
+    # available only from DisplayConfig and may need EDID to select one target.
+    candidates = [p.path_id for p in paths if port_id is not None and p.adapter_luid == port_id and (target is None or p.properties.get("target_id") == target)]
     if len(candidates) == 1:
-        return {"matched": True, "method": "adapter_luid_target" if target is not None else "adapter_luid", "candidate_ids": candidates, "evidence": "adapter LUID／target ID 唯一相符"}
+        return {"matched": True, "method": "sink_port_id_adapter_luid_target" if target is not None else "sink_port_id_adapter_luid", "candidate_ids": candidates, "evidence": "KS PortId 與 DisplayConfig adapter LUID 相符"}
     if candidates:
         return {"matched": False, "method": "adapter_luid", "candidate_ids": candidates, "evidence": "同一 adapter 上有多條路徑，保留歧義"}
     manufacturer, product = sink.get("manufacturer_id"), sink.get("product_id")

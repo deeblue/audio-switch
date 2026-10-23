@@ -15,6 +15,13 @@ class DisplayConfigTests(unittest.TestCase):
         self.assertFalse(result["matched"])
         self.assertEqual(result["candidate_ids"], ["a", "b"])
 
+    def test_ks_port_id_matches_display_adapter_luid(self):
+        sink = {"port_id": {"high": 2, "low": 9}}
+        paths = [DisplayPathRecord("display", adapter_luid={"high": 2, "low": 9})]
+        result = match_sink_to_display(sink, paths)
+        self.assertTrue(result["matched"])
+        self.assertEqual(result["method"], "sink_port_id_adapter_luid")
+
     def test_edid_unique_match_and_duplicate_edid_ambiguity(self):
         sink = {"manufacturer_id": 123, "product_id": 456}
         one = [DisplayPathRecord("a", edid_manufacturer_id=123, edid_product_code_id=456)]

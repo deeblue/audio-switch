@@ -38,6 +38,8 @@ class _DEVPROPKEY(ctypes.Structure):
 
 _DEVICE_GUID = "A45C254E-DF1C-4EFD-8020-67D146A850E0"
 _CONTAINER_GUID = "8C7ED206-3F8A-4827-B3AB-AE9E1FAEFC6C"
+_PHYSICAL_LOCATION_GUID = "540B947E-8B40-45BC-A8A2-6A0B894CBDA2"
+_DEVICE_INTERFACE_GUID = "78C34FC8-104A-4ACA-9EA4-524D52996E57"
 _DEVPROPS = {
     "friendly_name": (_DEVICE_GUID, 14),
     "device_name": (_DEVICE_GUID, 10),
@@ -46,7 +48,44 @@ _DEVPROPS = {
     "location_info": (_DEVICE_GUID, 15),
     "location_paths": (_DEVICE_GUID, 37),
     "container_id": (_CONTAINER_GUID, 2),
+    "capabilities": (_DEVICE_GUID, 17),
+    "removal_policy": (_DEVICE_GUID, 33),
+    "physical_device_location": (_PHYSICAL_LOCATION_GUID, 9),
 }
+
+
+def decode_capabilities(value: int) -> dict[str, Any]:
+    """Decode the CM_DEVCAP_REMOVABLE flag while preserving the raw bitfield."""
+    return {"raw": int(value), "removable": bool(int(value) & 0x00000004)}
+
+
+def parse_physical_device_location(raw: bytes) -> dict[str, Any]:
+    """Parse the ACPI _PLD revision 1 four-DWORD layout."""
+    if len(raw) < 16:
+        return {"revision": None, "error": f"_PLD requires 16 bytes, received {len(raw)}"}
+    dword1, dword2, dword3, dword4 = (int.from_bytes(raw[i:i + 4], "little") for i in range(0, 16, 4))
+    return {
+        "revision": dword1 & 0x7F,
+        "ignore_color": bool((dword1 >> 7) & 1),
+        "red": (dword1 >> 8) & 0xFF,
+        "green": (dword1 >> 16) & 0xFF,
+        "blue": (dword1 >> 24) & 0xFF,
+        "width": dword2 & 0xFFFF,
+        "height": (dword2 >> 16) & 0xFFFF,
+        "user_visible": bool(dword3 & 1),
+        "dock": bool((dword3 >> 1) & 1),
+        "lid": bool((dword3 >> 2) & 1),
+        "panel": (dword3 >> 3) & 0x7,
+        "vertical_position": (dword3 >> 6) & 0x3,
+        "horizontal_position": (dword3 >> 8) & 0x3,
+        "shape": (dword3 >> 10) & 0xF,
+        "group_orientation": (dword3 >> 14) & 1,
+        "group_token": (dword3 >> 15) & 0xFF,
+        "group_position": (dword3 >> 23) & 0xFF,
+        "bay": bool((dword3 >> 31) & 1),
+        "ejectable": bool(dword4 & 1),
+        "ospm_eject_required": bool((dword4 >> 1) & 1),
+    }
 
 
 class CfgMgrApi:
@@ -58,6 +97,11 @@ class CfgMgrApi:
         self._property_fn.restype = wintypes.ULONG
         self._property_fn.argtypes = [wintypes.ULONG, ctypes.POINTER(_DEVPROPKEY), ctypes.POINTER(wintypes.ULONG),
                                       ctypes.c_void_p, ctypes.POINTER(wintypes.ULONG), wintypes.ULONG]
+        self._interface_property_fn = self.dll.CM_Get_Device_Interface_PropertyW
+        self._interface_property_fn.restype = wintypes.ULONG
+        self._interface_property_fn.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(_DEVPROPKEY),
+                                                ctypes.POINTER(wintypes.ULONG), ctypes.c_void_p,
+                                                ctypes.POINTER(wintypes.ULONG), wintypes.ULONG]
 
     def locate(self, instance_id: str) -> int:
         devinst = wintypes.ULONG()
@@ -100,11 +144,27 @@ class CfgMgrApi:
             return raw.decode("utf-16-le", errors="replace").rstrip("\0"), kind.value
         if prop_type == 0x0D and len(raw) >= 16:  # DEVPROP_TYPE_GUID
             return str(uuid.UUID(bytes_le=raw[:16])), kind.value
-        if prop_type == 0x07 and len(raw) >= 4:  # DEVPROP_TYPE_UINT32
+        if prop_type in (0x06, 0x07) and len(raw) >= 4:  # DEVPROP_TYPE_INT32 / UINT32
             return int.from_bytes(raw[:4], "little"), kind.value
         if prop_type == 0x03:  # DEVPROP_TYPE_BINARY
             return raw, kind.value
         return {"type": int(kind.value), "raw": raw}, kind.value
+
+    def device_interface_instance_id(self, interface_path: str) -> str:
+        key = _DEVPROPKEY(_GUID.parse(_DEVICE_INTERFACE_GUID), 256)
+        kind, size = wintypes.ULONG(), wintypes.ULONG(0)
+        status = self._interface_property_fn(interface_path, ctypes.byref(key), ctypes.byref(kind), None,
+                                             ctypes.byref(size), 0)
+        if status not in (0, 0x1A) or not size.value:
+            raise OSError(f"CM_Get_Device_Interface_PropertyW size query CR 0x{status:04X}")
+        buffer = ctypes.create_string_buffer(size.value)
+        status = self._interface_property_fn(interface_path, ctypes.byref(key), ctypes.byref(kind), buffer,
+                                             ctypes.byref(size), 0)
+        if status != 0:
+            raise OSError(f"CM_Get_Device_Interface_PropertyW CR 0x{status:04X}")
+        if (kind.value & 0xFFF) != 0x12:
+            raise OSError(f"CM_Get_Device_Interface_PropertyW returned DEVPROP_TYPE 0x{kind.value:04X}, expected STRING")
+        return bytes(buffer.raw[:size.value]).decode("utf-16-le", errors="replace").rstrip("\0")
 
     def properties(self, devinst: int) -> dict[str, Any]:
         props: dict[str, Any] = {}
@@ -116,8 +176,10 @@ class CfgMgrApi:
                 props.setdefault("property_types", {})[name] = prop_type
             except Exception as exc:
                 errors[name] = f"{type(exc).__name__}: {exc}"
-        for name in ("removal_policy", "capabilities", "physical_device_location"):
-            errors[name] = "此探針版本尚未映射該 DEVPKEY"
+        if "capabilities" in props:
+            props["removable"] = decode_capabilities(props["capabilities"])["removable"]
+        if isinstance(props.get("physical_device_location"), bytes):
+            props["physical_device_location_parsed"] = parse_physical_device_location(props["physical_device_location"])
         props["location_paths"] = props.get("location_paths", [])
         props["errors"] = errors
         return props

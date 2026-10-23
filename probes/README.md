@@ -1,6 +1,6 @@
 # 音訊接口拓樸探針
 
-此工具只讀取 Windows Core Audio 與 PnP 資料，不設定預設端點、不寫入裝置屬性、不改登錄。輸出可能包含端點 ID、裝置名稱及硬體識別資訊，請留在本機處理。
+此工具只讀取 Windows Core Audio、CfgMgr32、DisplayConfig 與可用的 KS topology 資料。不設定預設端點、不寫入裝置屬性、不改登錄。
 
 ## 安裝與執行
 
@@ -8,63 +8,49 @@
 py -3.12 -m venv probes/.venv
 probes/.venv/Scripts/python.exe -m pip install -r probes/requirements.txt
 probes/.venv/Scripts/python.exe probes/audio_topology.py tree
+probes/.venv/Scripts/python.exe probes/audio_topology.py tree --all
 probes/.venv/Scripts/python.exe probes/audio_topology.py raw
 probes/.venv/Scripts/python.exe probes/audio_topology.py json current
 probes/.venv/Scripts/python.exe probes/audio_topology.py snapshot before
+probes/.venv/Scripts/python.exe probes/audio_topology.py diff before after
+probes/.venv/Scripts/python.exe probes/audio_topology.py calibrate usb-a-1 before after
 ```
 
-輸出快照都在 `probes/out/`。`json` 不給檔名時輸出到主控台，給檔名時寫入 `probes/out/<檔名>.json`。
+測試使用標準庫 unittest，無需 pytest：
 
 ```powershell
-probes/.venv/Scripts/python.exe probes/audio_topology.py diff before after
-probes/.venv/Scripts/python.exe probes/audio_topology.py calibrate usb-a-left before after
+probes/.venv/Scripts/python.exe -m unittest discover -s probes/tests -t .
 ```
 
-校準在差異快照含唯一新增或移動後的 USB PnP parent LocationPaths 時，會寫入 `probes/ports.json`；候選不唯一或機型不符會拒絕。`tone` 目前未實作。
+快照與 JSON 存在 `probes/out/`。`tree` 預設隱藏沒有子項的機身接口；`--all` 顯示全部接口。`calibrate` 會把新發現的 LocationPaths 前綴加到指定接口，並記錄 USB 2／USB 3／未知路徑類型。若一個實體孔的 USB 2 與 USB 3 路徑不同，對同一接口分別校準，保留多組前綴。顯示校準只保存 adapter device path、target ID、connector instance、output technology，不用 path ID、LUID 或 `DISPLAYn` 作鍵。
 
-## 手動插拔驗證
+## 插拔校準清單
 
-不要在執行探針時變更 Windows 音效設定。每一步都先存快照、只改一條實體連線，再存另一份快照並比較。檔名可自行替換，勿覆寫有用的基準快照。
+每次只改一條實體連線。執行前記下**實際插入的外殼接口**，再把下列 `<接口 ID>` 換成 `ports.json` 裡對應 ID。現在各接口的側別和位置都標為「未知」，請按實際觀察確認，勿依 USB(1) 或 HS07 等 OS 路徑編號猜測機身位置。
 
-1. **USB-A 孔位**：拔除 USB 音訊裝置；執行 `snapshot usb-a-left-before`；把 USB speaker／耳麥插入左側 USB-A；執行 `snapshot usb-a-left-after`、`diff usb-a-left-before usb-a-left-after`。應看到新端點或 PnP 節點及其 LocationPaths。拔除後也存一份快照，確認項目消失。對右側 USB-A 重複。
-2. **USB-C／Thunderbolt 孔位**：先移除其他外接裝置；對第一個 USB-C 孔執行 `snapshot usb-c-1-before`，接上 USB speaker 或 Dock，再存 `usb-c-1-after` 並執行 `diff usb-c-1-before usb-c-1-after`。第二孔以 `usb-c-2-before/after` 重複。只有不同裝置的路徑能穩定共享前綴時才可校準：`calibrate usb-c-left-1 usb-c-1-before usb-c-1-after`。
-3. **HDMI**：每個 HDMI 孔各自做螢幕接入前後快照，執行 `diff hdmi-before hdmi-after`。DisplayConfig 會記錄 active path、connector instance、target／source 與 EDID；用差異確認是哪條顯示路徑新增，再透過 `calibrate hdmi-left hdmi-before hdmi-after` 將穩定的 connector ID 對應到機身孔位。若同一變更出現多個候選 connector，校準會拒絕，需減少同時變動的裝置後重試。
-4. **Dock**：以 Dock 接入 USB-C 前後快照比較；接著分別測 Dock 自身 3.5mm、Dock USB 孔的 USB speaker、Dock 上螢幕，每次只新增一項。記錄新端點、PnP 祖先、ContainerId 與 LocationPaths。這些資料可檢視端點拓樸，但 removal policy／capabilities、KS sink 對應與 Dock 實體連接的驗證仍缺，因此目前不能可靠地把 Dock 內建音效及下游裝置合併成一組。
-5. **機身 3.5mm**：接入耳麥前後執行 `snapshot jack-before/after` 和 `diff jack-before jack-after`；另以 Windows 錄音測試確認麥克風。探針目前尚未查詢 KS jack 描述，需人工記錄插拔現象。
-6. **本機麥克風／喇叭與 7C**：不插拔時執行 `raw`，保存對應端點 ID；將 7C 接入或移除前後分別執行快照和 diff，確認 `Speakers (speaker)` 是否隨 7C 出現／消失。不要只依名稱或 VID 判定。
+1. **四個 USB 孔**：USB 2 裝置與 USB 3 裝置分別測每一孔。每次執行 `snapshot <id>-before`，插入裝置，執行 `snapshot <id>-after`、`diff <id>-before <id>-after`、`calibrate <接口 ID> <id>-before <id>-after`。同一接口的多筆校準會累積。預期能看到 USB PnP LocationPaths 新增或改變，校準資料記錄 USB 2 或 USB 3。
+2. **HDMI 與兩個 USB-C 顯示輸出**：每個接口直接連接螢幕前後各存快照、執行 diff，再用該接口 ID 執行 calibrate。重插同一螢幕再比對。校準只比對穩定欄位；path ID、adapter LUID 與 `\.\DISPLAYn` 可能改變。不要同時經 Dock 測試，先分開建立基準。
+3. **機身 3.5mm**：插入耳麥前後執行 `snapshot`／`diff`，並檢查 `raw` 的 KS jack presence。確認播放與錄音端點是新增／消失，還是同一端點狀態改變。
+4. **Dock**：Dock 接入 USB-C 前後快照；再逐一測 Dock 3.5mm、Dock USB 孔的 USB speaker、Dock 螢幕，每次只改一項。確認 USB 音訊和 USB 顯示路徑是否落在同一裝置節點；記錄 ContainerId、removal policy、capabilities 及 LocationPaths。需要時以 USB-C 接口 ID 校準 Dock 所在孔。
 
-## 目前探針限制
+## 七項可行性結論
 
-- Core Audio 可列出作用中端點、方向、外形類型、端點 ID、預設 role 及部分屬性。
-- CfgMgr32 可讀端點對應的 MMDEVAPI devnode、parent InstanceId 鏈及部分 DEVPKEY_NAME／FriendlyName、LocationPaths、ContainerId 等屬性；removal policy、capabilities、`_PLD` 等屬性仍可能缺少或不受支援。
-- `QueryDisplayConfig` 已列舉本機 active paths、target／source 名稱、connector ID、EDID 與位置；jack 的 `IKsJackDescription`、`IKsJackDescription2`、`IKsJackSinkInformation` 尚未實作。缺少欄位會記在 errors，不會推測 jack 位置。
-- 因上述資料缺口，USB 裝置可辨認為 A 類但未校準時會留在「未辨識」；內建類比端點缺 jack 證據時也留在「未辨識」。這是保守結果，不表示 Windows 無法提供關聯資料。
-
-## 本機可行性結論
-
-| 問題 | 目前結論 | 證據／待補資料 |
+| 問題 | 結論 | 證據／待補資料 |
 |---|---|---|
-| IKsJackSinkInformation 的 PortId 能否對應 DisplayConfig | 待 KS 查詢 | DisplayConfig 已回報 2 條作用中路徑；sink PortId 尚未收集，不能下匹配結論。 |
-| 兩個 USB-C 的顯示 connector 能否區分 | Windows 路徑資料可分辨，機身孔位仍待校準 | DisplayConfig 有 adapter LUID、target ID、connector instance；尚未分別在兩個 USB-C 孔直連螢幕比對。 |
-| 同一孔的 Dock USB 與顯示輸出能否合併 | 待實體 Dock 驗證 | 尚無 Dock 插拔快照，也沒有 KS sink 對應結果。 |
-| ContainerId／removability 能否區分 Dock 內建音效與 Dock USB 裝置 | 未能判斷 | ContainerId 可讀；removal policy／capabilities 尚未映射，Dock 尚未測試。 |
-| `_PLD` 是否指出機身孔位 | 未能判斷 | PhysicalDeviceLocation 尚未映射；USB LocationPaths 已可讀但需逐孔校準。 |
-| StableId 與指定端點試音 | StableId：5 個作用中端點皆為空；tone：未實作 | Core Audio 目前未提供 StableId；工具沒有播放或切換預設端點的程式碼。 |
-| Realtek 播放／錄音端點與 jack 的關係；Speakers (speaker) 的 USB 路徑 | 拔除耳麥時兩個 Realtek 端點消失，重新插回後端點也重新出現；支持端點狀態與類比 jack 插拔有關，jack pin 對應仍待 KS 查詢。同一 USB 裝置移孔已觀察到 USB(7)／HS07、USB(6)／HS06、USB(1)／HS01、USB(5)／HS05；「最後測試的 USB 孔」已校準到 USB(5)／HS05，具體側別及 USB-A／USB-C 類型未知。 | speaker 與 S2719DGF 顯示路徑在該孔位插入時出現，拔除時同時消失。DisplayConfig adapter path 也含相同 VID/PID；VID/PID 關聯本身不能證明實體接線。 |
+| KS sink PortId 能否匹配 DisplayConfig | 待 HDMI／DisplayPort 螢幕實測 | 本機目前沒有顯示卡輸出的螢幕音訊端點；Realtek 與 7C 端點都不提供 `IKsJackSinkInformation`，符合預期。程式已實作 PortId 與 adapter LUID 比對及 EDID fallback。 |
+| 兩個 USB-C 顯示 connector 能否區分 | 待逐孔校準 | 已改用穩定欄位；尚未分別直接連接螢幕測試。 |
+| 同孔 Dock USB 與顯示能否合併 | USB 顯示裝置成立；Dock 待實測 | 7C 的 `Speakers (speaker)` 與 S2719DGF 顯示路徑在 `tree` 中併在同一個 `speaker` 裝置節點下（顯示 adapter 為 `MI_00`、音訊為 `MI_03`，共用上層 USB 裝置）。 |
+| ContainerId／removability 能否辨識 Dock 內建音效與 USB 子裝置 | 待 Dock 實測 | ContainerId、RemovalPolicy、Capabilities 已加入讀取；無 Dock 對照快照。 |
+| `_PLD` 是否給出機身孔位 | 一個孔有資料，待四孔逐一比對 | USB `VID_303A&PID_2986` devnode 的 `_PLD` 為 revision 1、panel 2、vertical 1、horizontal 1、shape 4、group token 0、position 4；其他多數 devnode 回報 CR `0x0025`（屬性不存在）。尚未將該資料與實體孔逐一驗證。 |
+| StableId 與指定端點試音 | StableId 不存在；試音未實作 | 五個作用中端點 StableId 均空。 |
+| Realtek jack 對應、7C 路徑與插拔 | 成立 | `IKsJackDescription`：`2nd output` 與 `麦克风 (Realtek)` 為 3.5mm、插孔連接、支援插入偵測；`扬声器` 為其他類比、內建裝置；`麦克风阵列` 為其他數位、內建裝置。與耳麥插拔結果一致。7C 端點與顯示路徑同時消失／恢復。 |
 
-### 本機拔除觀察（2026-10-23）
+## 目前實測與限制
 
-使用者拔除一個實體連接埠後，將新快照與先前的 `final-after` 比較。一次變更使以下作用中端點消失：
-
-- 播放：`Realtek HD Audio 2nd output (Realtek(R) Audio)`
-- 錄音：`麦克风 (Realtek(R) Audio)`
-
-兩個端點對應的 MMDEVAPI PnP 節點都指向同一個 Intel Audio codec parent（`INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D...`）。後續快照前使用者已重新插回耳麥，兩個端點也重新出現，支持它們與類比 jack 插拔有關。探針仍未讀取 KS jack／sink 的 PortId 或 presence 狀態，因此無法對應到特定 jack pin。
-
-第二次快照（`second-unplugged`，2026-10-23 06:09 UTC）與 `unplugged` 比較時，使用者說明期間發生了兩個動作：拔除另一個連接，並重新插回耳麥。快照相應顯示 `Speakers (speaker)` 與 S2719DGF 的 active DisplayConfig path 消失，而兩個 Realtek 端點重新出現。speaker PnP 節點位於 USB `VID_303A&PID_2986` 分支，LocationPaths 為 `PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(7)` 與 `ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS07)`；顯示路徑的 adapter device path 也含該 VID/PID。結果支持「speaker 與該顯示路徑經由同一個 USB 裝置分支」及「Realtek 端點隨耳麥插回而恢復」兩項關聯，但 USB(7)／HS07 尚未與筆電外殼上的實體孔位完成校準，也不能據此辨認被拔除的是 Dock、螢幕 hub 或其他中介裝置。
-
-使用者將同一 USB 裝置接到另一個 USB 孔後，`reconnected-other-usb` 快照顯示 `Speakers (speaker)` 與 S2719DGF 顯示路徑恢復；USB 裝置識別與 ContainerId 保持相同，LocationPaths 則改為 `PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)`／`HS06`。這證明探針能觀察到同一裝置跨孔移動後的拓樸位置差異。USB(6) 與 USB(7) 對應的機身孔位名稱尚未標定，因此目前不能把索引直接顯示為左側／右側或 USB-A／USB-C。
-
-再移到第三個 USB 孔後，`reconnected-third-usb` 快照中同一裝置的 LocationPaths 從 USB(6)／HS06 改為 USB(1)／HS01；speaker 端點沒有新增或移除，S2719DGF 仍在相同 USB adapter device path 下顯示。Windows 為顯示路徑重新配置了 DisplayConfig path ID、adapter LUID 與 `DISPLAY` source name，這些值會隨重新連線改變，不應當成穩定的實體孔位識別碼。這次比較也揭露原本 `diff` 只按 PnP instance ID 判斷新增／移除，會漏掉同一節點 LocationPaths 改變；探針現已新增 `changed_devnodes`，輸出同一節點的 before／after 屬性，能直接呈現跨孔位置變化。
-
-移到使用者所稱的「最後一個 USB 孔」後，`reconnected-last-usb` 顯示同一 USB 裝置位於 USB(5)／HS05，speaker endpoint 與 S2719DGF 顯示路徑均作用中。將 `usb-last` 對應寫入 `ports.json`，校準來源為同一裝置從 USB(1) 移到 USB(5) 的 before／after 快照；此使用者標籤尚未確認外殼側別或 USB-A／USB-C 類型。使用者之後拔除該裝置，`last-usb-removed` 快照確認 speaker endpoint、其 USB PnP 分支及 S2719DGF active display path 均移除。這驗證了這個標記路徑的接入與拔除偵測。
+- 本次即時讀取有 3 個播放、2 個錄音端點；`Speakers (speaker)` 的 USB `VID_303A&PID_2986` PnP 分支仍作用中，但目前沒有 S2719DGF active display path。先前拔插快照證明兩者曾共同出現／消失。同一 USB 裝置跨孔觀察到 USB(7)/HS07、USB(6)/HS06、USB(1)/HS01、USB(5)/HS05。這些索引不能直接翻成外殼接口位置。
+- 3.5mm 耳麥拔除時 `Realtek HD Audio 2nd output` 與 `麦克风 (Realtek(R) Audio)` 消失，重新插入後恢復；內建 Realtek 喇叭與麥克風陣列維持作用中。
+- 五個作用中端點 StableId 均為空。
+- KS 查詢經 `IDeviceTopology` → connector → `IPart` 讀取 `IKsJackDescription`／`IKsJackDescription2`／`IKsJackSinkInformation`，五個作用中端點皆可讀到 jack 描述。歸到機身 3.5mm 的條件是連接類型為 3.5mm／1/4 吋／複合且連接方式為插孔；內建喇叭同樣回報 IsConnected，不能只看插入狀態。Realtek 3.5mm 插孔的 GeoLocation 回報為 Rear，與機身實際位置無關，側別不採用此欄位。`test_jacks` 含一項實機測試，確認至少一個端點讀得到 jack 描述。
+- PnP 讀取已包含 RemovalPolicy、Capabilities 可移除位元與 PhysicalDeviceLocation 原始值／`_PLD` 解析。USB `VID_303A&PID_2986` devnode 回報 panel=2、vertical=1、horizontal=1、shape=4、group token=0、group position=4；這提供相對位置線索，但尚未驗證能否代表筆電機身接口。ACPI 欄位依 [ACPI 6.5 §6 Device Configuration](https://uefi.org/specs/ACPI/6.5/06_Device_Configuration.html) 解碼，Windows 屬性來源見 [DEVPKEY_Device_PhysicalDeviceLocation](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/devpkey-device-physicaldevicelocation)。接口表不保留「最後測試的 USB 孔」這種非實體接口；因缺少已核對的 Lenovo 指南頁碼／圖號，所有接口位置為「未知」。
+- USB 音訊端點按 USB PnP devnode 分組；USB 顯示路徑先以 adapter instance ID 精確比對，再取其上層 USB 裝置併組。GPU 顯示音訊仍用 sink/EDID 路徑。USB 裝置節點旁顯示 `_PLD` 的面板、形狀與群組位置。
+- `tree` 的使用者節點先顯示 USB 裝置或螢幕再顯示端點；無子項接口預設隱藏，`--all` 可展開。識別來源以 Windows、校準或未知標示。

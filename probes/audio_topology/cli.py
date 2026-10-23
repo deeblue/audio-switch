@@ -27,29 +27,55 @@ def collect_snapshot():
     snapshot.endpoints, errors = collect_audio_endpoints()
     snapshot.errors.extend(errors)
     seen: set[str] = set()
-    pnp_api = None
+    try:
+        pnp_api = CfgMgrApi()
+    except Exception as exc:
+        pnp_api = None
+        snapshot.errors.append({"scope": "pnp", "property": "configuration_manager", "error": f"{type(exc).__name__}: {exc}"})
     for endpoint in snapshot.endpoints:
-        endpoint.devnode_id, endpoint.resolution_method = resolve_endpoint_devnode(endpoint.endpoint_id)
+        mmdevapi_id, mmdevapi_method = resolve_endpoint_devnode(endpoint.endpoint_id)
+        jacks, jack_errors = collect_jacks(endpoint.endpoint_id,
+            device_interface_resolver=pnp_api.device_interface_instance_id if pnp_api else None)
+        snapshot.jacks.extend(jacks)
+        snapshot.errors.extend(jack_errors)
+        topology_ids = sorted({j.adapter_instance_id for j in jacks if j.adapter_instance_id})
+        topology_id = topology_ids[0] if len(topology_ids) == 1 else None
+        endpoint.properties["devnode_resolution_attempts"] = {
+            "device_topology": {"device_interface_id": next((j.adapter_device_id for j in jacks if j.adapter_device_id), None),
+                                "instance_id": topology_id, "status": "resolved" if topology_id else "unresolved"},
+            "mmdevapi": {"instance_id": mmdevapi_id, "status": "resolved" if mmdevapi_id else "unresolved"},
+        }
+        if len(topology_ids) > 1:
+            snapshot.errors.append({"scope": endpoint.endpoint_id, "property": "topology_instance_id", "error": "多個 adapter instance ID 不一致"})
+        endpoint.devnode_id, endpoint.resolution_method = (topology_id, "device_topology") if topology_id else (mmdevapi_id, mmdevapi_method)
         if endpoint.devnode_id:
-            if pnp_api is None:
-                try: pnp_api = CfgMgrApi()
-                except Exception: pnp_api = False
-            nodes, errs = walk_ancestors(endpoint.devnode_id, pnp_api if pnp_api is not False else None)
+            nodes, errs = walk_ancestors(endpoint.devnode_id, pnp_api)
             snapshot.devnodes.extend(n for n in nodes if n.instance_id not in seen)
             seen.update(n.instance_id for n in nodes)
             snapshot.errors.extend(errs)
-        jacks, errs = collect_jacks(endpoint.endpoint_id)
-        snapshot.jacks.extend(jacks)
-        snapshot.errors.extend(errs)
     snapshot.display_paths, errs = collect_display_paths()
     snapshot.errors.extend(errs)
+    if pnp_api:
+        for path in snapshot.display_paths:
+            if not path.adapter_name:
+                continue
+            try:
+                path.adapter_instance_id = pnp_api.device_interface_instance_id(path.adapter_name)
+                if path.adapter_instance_id:
+                    nodes, node_errors = walk_ancestors(path.adapter_instance_id, pnp_api)
+                    snapshot.devnodes.extend(n for n in nodes if n.instance_id not in seen)
+                    seen.update(n.instance_id for n in nodes)
+                    snapshot.errors.extend(node_errors)
+            except Exception as exc:
+                path.errors.append(f"adapter PnP resolution: {type(exc).__name__}: {exc}")
     return snapshot
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="唯讀音訊裝置與實體接口拓樸探針")
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("tree", help="顯示接口拓樸樹")
+    tree = commands.add_parser("tree", help="顯示接口拓樸樹")
+    tree.add_argument("--all", action="store_true", help="也顯示沒有子項的機身接口")
     commands.add_parser("raw", help="輸出端點與裝置原始資料")
     json_cmd = commands.add_parser("json", help="輸出 JSON")
     json_cmd.add_argument("filename", nargs="?")
@@ -78,7 +104,7 @@ def run_command(args: argparse.Namespace, collector=None) -> int:
     if args.command == "tree":
         pm = load_port_map(ROOT / "ports.json", to_jsonable(snapshot.machine))
         if pm.warning: print(f"警告：{pm.warning}")
-        print(render_tree(build_tree(snapshot, pm))); return 0
+        print(render_tree(build_tree(snapshot, pm, include_empty=args.all))); return 0
     data = json.dumps(to_jsonable(snapshot), ensure_ascii=False, indent=2)
     if args.command == "snapshot":
         print(f"快照已儲存：{save_snapshot(snapshot, args.name, OUT)}")

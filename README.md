@@ -92,7 +92,7 @@ PnP 的 parent／instance ID 提供裝置樹資訊；`PKEY_Device_ContainerId` �
 
 **A 類**：Dock、外接 hub 或直插只差在路徑長短，中間節點保留在詳細資訊。Thunderbolt 3 Dock 常有自己的 USB 控制器，經 PCIe 通道接入；Thunderbolt 4／USB4 Dock 可能走主機控制器的 USB 通道。兩種路徑都應落在某個已校準的機身 USB-C 前綴，須實測確認。Dock 的 hub、網卡與音效晶片通常共用 `PKEY_Device_ContainerId`，據此歸成一個 Dock 節點。Dock 內建音效晶片通常接在不可移除的內部 port，沿用 Dock 的 ContainerId；插在 Dock USB 孔的裝置接在可移除 port，有自己的 ContainerId；據此區分「Dock 3.5mm」與「Dock USB 孔上的裝置」，VID 只作輔助。這項判斷須以測試應用實測。Dock 自身 USB 孔沒有 ACPI 位置資料，不逐款校準 Dock，只顯示路徑上的 port 編號。
 
-**B 類**：顯示器音訊端點掛在 Intel Display Audio 或 GPU 音訊下，不在 USB 樹中，螢幕接在 Dock 上時也一樣。由顯示路徑找到機身接口；若該接口上已有 A 類找到的 Dock，螢幕就併入該 Dock 節點。[IKsJackSinkInformation](https://learn.microsoft.com/en-us/windows/win32/api/devicetopology/nn-devicetopology-iksjacksinkinformation)
+**B 類**：一般顯示器音訊端點掛在 Intel Display Audio 或 GPU 音訊下；由 KS sink 的 PortId 嘗試對應 DisplayConfig adapter／target，再依校準找到機身接口。USB 顯示裝置是例外：若顯示 adapter device path 與 USB 音訊端點的 PnP USB devnode 相符，兩者歸在同一 USB 裝置節點及接口下；關聯須由共同 PnP 身分證據成立，不能只憑名稱或 VID/PID。傳統 GPU 顯示路徑仍需 sink 與 connector 校準才能併入 Dock。[IKsJackSinkInformation](https://learn.microsoft.com/en-us/windows/win32/api/devicetopology/nn-devicetopology-iksjacksinkinformation)
 
 **接口校準**只對機身接口做一次；外接設備與端點每次動態掛上：
 
@@ -107,22 +107,23 @@ Windows PnP 裝置樹會隨裝置加入／移除更新；USB4 拓樸也可呈現
 
 ## 本機可行性實驗
 
-本 repo 的唯讀 Python 3.12 探針已接上 Core Audio 端點列舉與 CfgMgr32 parent chain，依賴與操作方式見 [`probes/README.md`](probes/README.md)。目前回報 **3 個作用中播放端點、2 個作用中錄音端點**。同名或同驅動端點仍以獨立 endpoint ID 保留：
+本 repo 的唯讀 Python 3.12 探針支援 Core Audio、CfgMgr32、DisplayConfig 與 KS jack/sink 查詢，操作方式見 [`probes/README.md`](probes/README.md)。最近拔除裝置後仍列出 **3 個作用中播放端點、2 個作用中錄音端點**。同名或同驅動端點仍以獨立 endpoint ID 保留：
 
 | 方向 | Windows 名稱 | 目前讀到的線索 |
 |---|---|---|
 | 播放 | `Realtek HD Audio 2nd output (Realtek(R) Audio)` | 獨立端點 ID；上層為內建 Realtek／Intel Audio。現為一般預設播放。 |
 | 播放 | `扬声器 (Realtek(R) Audio)` | 另一個端點 ID；與前者同屬 Realtek／Intel Audio 上層，尚未確認各自對應的實體插孔。 |
-| 播放 | `Speakers (speaker)` | 獨立端點 ID；PnP 上層為 `USB\VID_303A&PID_2986`，裝置名稱為 `speaker`。VID `303A` 屬 Espressif，與 7C 的 ESP32-S3 相符，但尚未透過拔插確認。 |
+| 播放 | `Speakers (speaker)` | 7C 接入時出現、拔除時消失；USB PnP 節點為 `USB\VID_303A&PID_2986`，S2719DGF 顯示 adapter path 也含此裝置識別字。 |
 | 錄音 | `麦克风 (Realtek(R) Audio)` | 上層為內建 Realtek／Intel Audio。現為一般預設錄音。 |
 | 錄音 | `麦克风阵列 (适用于数字麦克风的英特尔® 智音技术)` | 上層為 Intel Digital Microphone；與 Realtek 麥克風分別列出。 |
 
-本次探針確認列舉作用中端點、保留獨立 ID、讀取 form factor、預設 role、PnP parent chain、部分 LocationPaths／ContainerId，以及 DisplayConfig active paths 可行。PnP chain 可走到 HTREE\ROOT\0；Speakers (speaker) 的祖先包含 USB\VID_303A&PID_2986，LocationPaths 含 PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(7) 與 ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS07)，但尚未逐孔校準成機身接口。探針讀到兩條 active DisplayConfig 路徑：\\.\DISPLAY1（內部輸出，無 friendly name）與 \\.\DISPLAY5（S2719DGF，output technology 數值 5）；該顯示路徑的 adapter device path 也含 USB\VID_303A&PID_2986，這是 OS 回報的關聯線索，尚未證明實體連接方式。尚未分別直連不同 USB-C／HDMI 孔驗證路徑。
-目前可讀的作用中端點均未提供 StableId。Speakers (speaker) 可能是 7C 的 USB 音訊端點，但需拔插確認。KS jack／sink 尚未實作，因此 Realtek 的兩個播放端點各自對應哪個 jack 尚無結論。本次探針全程唯讀；README 上方所述先前預設端點可回復切換是另一項既有實驗記錄。
+拔插觀察確認 7C 的 `Speakers (speaker)`、USB PnP 分支與 S2719DGF active display path 會共同出現／消失；同一 USB 裝置移孔時 LocationPaths 依序觀察到 USB(7)/HS07、USB(6)/HS06、USB(1)/HS01、USB(5)/HS05。這些是 Windows 拓樸位置，尚未對應到機身孔位。DisplayConfig path ID、adapter LUID 與 `\\.\DISPLAYn` 會在重新連線後改變，不能作為校準鍵；校準改用 adapter device path、target ID、connector instance 與 output technology。目前即時讀取仍看到 `Speakers (speaker)` 的 USB PnP 分支，但沒有 S2719DGF active display path；因此可確認 USB 音訊裝置樹，合併結果待顯示路徑恢復後再現場重跑。
+
+機身 3.5mm 耳麥拔除時，`Realtek HD Audio 2nd output` 與 `麦克风 (Realtek(R) Audio)` 消失，重插後恢復；`扬声器 (Realtek(R) Audio)` 與 `麦克风阵列` 不受影響。五個作用中端點 StableId 均為空。`IKsJackDescription` 在五個作用中端點皆可讀取：`2nd output` 與 `麦克风 (Realtek)` 為 3.5mm 插孔且支援插入偵測，`扬声器` 與 `麦克风阵列` 為內建裝置，與插拔結果一致；探針據此把前兩者歸到機身 3.5mm、後兩者歸到內建。3.5mm 插孔的 GeoLocation 回報為 Rear，與實際側別無關，不採用。7C 的喇叭與 S2719DGF 顯示路徑在 `tree` 中併在同一個 USB 裝置節點下。7C 目前所在孔的 `_PLD` 為面板左、橫向矩形、群組位置 4；尚未比對其他三孔。探針唯讀。
 
 播放切換也做了可回復實驗：先保存 `eConsole` 與 `eMultimedia` 原本的 `Realtek HD Audio 2nd output`，短暫將兩個 role 設成 `Speakers (speaker)`，逐一讀回確認，再恢復原值並讀回確認。兩次確認皆成功；實驗沒有呼叫錄音或 `eCommunications` 的設定方法。這證明未公開的設定介面在本機目前可呼叫，**不代表聲音一定從預期的實體設備播放，也不保證未來 Windows 更新後仍有效**。
 
-**尚未驗證／目前缺口** _PLD、可移除屬性、KS 插孔描述與 sink、sink PortId 與 DisplayConfig 的匹配、兩個 USB-C 孔的顯示 connector 差異、Dock 的 USB／顯示合併與 ContainerId 分組、USB 耳麥插拔、7C 實體確認、通知事件、指定端點試音及實際收音。已讀取的 LocationPaths／ContainerId 只代表 Windows 回報的拓樸線索，尚未等同機身孔位標定。依 probes/README.md 的操作清單完成逐孔插拔後再填入接口校準結果。
+**尚未驗證**：KS sink 與 PortId 對 DisplayConfig 的匹配（本機目前沒有 HDMI／DisplayPort 螢幕音訊端點）、HDMI 與兩個 USB-C 的逐孔 connector 校準、Dock 內建音效與 Dock USB 裝置分組、USB 2／USB 3 實體接口配對、`_PLD` 相對位置與實體孔的對照、USB 耳麥、通知事件、指定端點試音及實際收音。`ports.json` 保留接口種類與數量，所有實體位置標為未知；目前沒有已核對的 Lenovo 指南具體頁碼／圖號依據，不能把 USB LocationPaths 編號當外殼方位。
 
 ## 實作計畫
 

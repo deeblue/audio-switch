@@ -41,6 +41,8 @@ class JackRecord:
     jack: dict[str, Any] = field(default_factory=dict)
     capabilities: int | None = None
     sink: dict[str, Any] | None = None
+    adapter_device_id: str | None = None
+    adapter_instance_id: str | None = None
     errors: list[dict[str, str]] = field(default_factory=list)
 
 
@@ -56,6 +58,7 @@ class DisplayPathRecord:
     edid_product_code_id: int | None = None
     adapter_luid: dict[str, int] | None = None
     adapter_name: str | None = None
+    adapter_instance_id: str | None = None
     source_position: dict[str, int] | None = None
     primary: bool | None = None
     properties: dict[str, Any] = field(default_factory=dict)
