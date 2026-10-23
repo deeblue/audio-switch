@@ -107,7 +107,7 @@ Windows PnP 裝置樹會隨裝置加入／移除更新；USB4 拓樸也可呈現
 
 ## 本機可行性實驗
 
-已用暫存目錄中的 Python 3.12／pycaw 做可丟棄的探針，沒有在此 repo 加入依賴。Windows Core Audio 目前回報 **3 個可用播放端點、2 個可用錄音端點**：
+本 repo 的唯讀 Python 3.12 探針已接上 Core Audio 端點列舉與 CfgMgr32 parent chain，依賴與操作方式見 [`probes/README.md`](probes/README.md)。目前回報 **3 個作用中播放端點、2 個作用中錄音端點**。同名或同驅動端點仍以獨立 endpoint ID 保留：
 
 | 方向 | Windows 名稱 | 目前讀到的線索 |
 |---|---|---|
@@ -117,24 +117,25 @@ Windows PnP 裝置樹會隨裝置加入／移除更新；USB4 拓樸也可呈現
 | 錄音 | `麦克风 (Realtek(R) Audio)` | 上層為內建 Realtek／Intel Audio。現為一般預設錄音。 |
 | 錄音 | `麦克风阵列 (适用于数字麦克风的英特尔® 智音技术)` | 上層為 Intel Digital Microphone；與 Realtek 麥克風分別列出。 |
 
-這已確認「列舉可用端點、取得各自 ID、讀取外形類型與部分 PnP 上層、讀取目前預設」在本機可行。`Realtek HD Audio 2nd output` 的外形類型為耳機，`Speakers (speaker)` 與 Realtek 喇叭為喇叭，兩個錄音端點為麥克風。兩個可用麥克風都能啟用 `IAudioMeterInformation` 並讀取峰值；當時音量接近零，尚未用說話確認哪支麥克風在收音。端點通知 callback 已成功註冊並解除，但未發生插拔事件，因此事件內容與即時更新尚未驗證。
+本次探針確認列舉作用中端點、保留獨立 ID、讀取 form factor、預設 role、PnP parent chain、部分 LocationPaths／ContainerId，以及 DisplayConfig active paths 可行。PnP chain 可走到 HTREE\ROOT\0；Speakers (speaker) 的祖先包含 USB\VID_303A&PID_2986，LocationPaths 含 PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(7) 與 ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS07)，但尚未逐孔校準成機身接口。探針讀到兩條 active DisplayConfig 路徑：\\.\DISPLAY1（內部輸出，無 friendly name）與 \\.\DISPLAY5（S2719DGF，output technology 數值 5）；該顯示路徑的 adapter device path 也含 USB\VID_303A&PID_2986，這是 OS 回報的關聯線索，尚未證明實體連接方式。尚未分別直連不同 USB-C／HDMI 孔驗證路徑。
+目前可讀的作用中端點均未提供 StableId。Speakers (speaker) 可能是 7C 的 USB 音訊端點，但需拔插確認。KS jack／sink 尚未實作，因此 Realtek 的兩個播放端點各自對應哪個 jack 尚無結論。本次探針全程唯讀；README 上方所述先前預設端點可回復切換是另一項既有實驗記錄。
 
 播放切換也做了可回復實驗：先保存 `eConsole` 與 `eMultimedia` 原本的 `Realtek HD Audio 2nd output`，短暫將兩個 role 設成 `Speakers (speaker)`，逐一讀回確認，再恢復原值並讀回確認。兩次確認皆成功；實驗沒有呼叫錄音或 `eCommunications` 的設定方法。這證明未公開的設定介面在本機目前可呼叫，**不代表聲音一定從預期的實體設備播放，也不保證未來 Windows 更新後仍有效**。
 
-**尚未驗證** StableId、插孔拓樸與位置、顯示器音訊與顯示路徑的對應、`_PLD`、Dock 的 ContainerId 分組、USB 耳麥、插拔通知事件、指定端點試音，以及實際收音。
+**尚未驗證／目前缺口** _PLD、可移除屬性、KS 插孔描述與 sink、sink PortId 與 DisplayConfig 的匹配、兩個 USB-C 孔的顯示 connector 差異、Dock 的 USB／顯示合併與 ContainerId 分組、USB 耳麥插拔、7C 實體確認、通知事件、指定端點試音及實際收音。已讀取的 LocationPaths／ContainerId 只代表 Windows 回報的拓樸線索，尚未等同機身孔位標定。依 probes/README.md 的操作清單完成逐孔插拔後再填入接口校準結果。
 
 ## 實作計畫
 
-**先以測試應用驗證分類與接口對應，再定產品設計。** 以下按依賴順序進行；尚未開始寫產品程式。設計前提是任意新裝置均能即時出現，不要求事先盤點或登錄。
+**先以測試應用驗證分類與接口對應，再定產品設計。** 唯讀探針已開始實作；尚未開始寫產品程式。執行計畫與驗收步驟見[實作計畫](docs/superpowers/plans/2026-10-23-audio-topology-probe.md)，使用者插拔步驟見[`probes/README.md`](probes/README.md)。設計前提是任意新裝置均能即時出現，不要求事先盤點或登錄。
 
-1. **測試應用**：Python 3.12 命令列工具，放在 `probes/`，可重複執行；完整需求見 `probes/TASK.md`。依「端點來源分類」把可用端點歸入 A～D 類，印出「呈現方式」中的樹；`--raw` 輸出每個端點的完整鏈（InstanceId、LocationPaths、ContainerId、可移除與否、`_PLD`、jack 描述、jack sink、DisplayConfig 路徑）；`--diff` 比較插拔前後，列出新增與消失的節點和端點；另輸出 JSON。須回答：
+1. **測試應用**：Python 3.12 命令列工具，放在 `probes/`，可重複執行；完整需求與 CLI 子命令見 `probes/TASK.md`。`tree` 依「端點來源分類」把可用端點歸入 A～D 類並印出「呈現方式」中的樹；`raw` 輸出每個端點的完整鏈（InstanceId、LocationPaths、ContainerId、可移除與否、`_PLD`、jack 描述、jack sink、DisplayConfig 路徑）；`json` 匯出資料；`snapshot`／`diff`／`calibrate` 支援插拔前後比較與接口校準。須回答：
    - jack sink 的 PortId 能否對應到 DisplayConfig 顯示路徑；
    - 兩個 USB-C 孔的顯示 connector 能否區分；
    - 同一孔上 Dock 的 USB 樹與顯示輸出能否正確合併；
    - ContainerId／可移除屬性能否區分 Dock 內建音效與 Dock USB 孔上的裝置；
    - `_PLD` 是否提供機身孔位；
    - StableId 是否存在，以及指定端點試音。
-2. **接口校準與代表性設備驗證**：用 `--diff` 逐孔校準機身 USB 與顯示接口，再以手邊的 3.5mm、USB 耳麥、螢幕、Dock、7C 測試新增、移除、重名和通知。紀錄用來驗證動態發現與標示能力，不作為可支援設備的固定清冊。
+2. **接口校準與代表性設備驗證**：用 `snapshot`／`diff`／`calibrate` 子命令逐孔校準機身 USB 與顯示接口，再以手邊的 3.5mm、USB 耳麥、螢幕、Dock、7C 測試端點與裝置節點的新增、移除和重名情形。紀錄用來驗證動態發現與標示能力，不作為可支援設備的固定清冊。
 3. **確定首版行為與技術選擇**：正式版建議 C#／.NET 10 LTS + Windows Forms，可直接整合 Core Audio、CfgMgr32、DisplayConfig、NotifyIcon 與 TreeView，並自包含發佈；實作前需安裝 .NET 10 SDK。另決定快捷鍵、切換哪些 role、別名、開機啟動，以及自動切換是否留到後續。
 4. **建立接口拓樸與端點資料**：啟動及通知後重建四類端點與機身接口的關聯，依「呈現方式」產生樹狀資料；別名以端點識別碼保存，識別不確定時不套用。以重名、Dock 與筆電同型號螢幕、端點消失及重新接入案例檢查。
 5. **完成辨認與手動切換**：主視窗樹狀圖、系統匣路徑清單、螢幕「識別」、播放試音、錄音峰值、選用別名與播放／錄音快捷鍵。切換後重新讀取 Windows 預設值確認結果；失敗時顯示原因，不把失敗的切換標成成功。
@@ -158,4 +159,4 @@ SoundSwitch 能以系統匣與快捷鍵切換端點，裝置選單是 Windows �
 
 ## 狀態
 
-剛開始，只有這份 README 與 `CLAUDE.md`，還沒有程式。
+已建立唯讀 Python 可行性探針；實體接口校準尚未完成。正式產品程式尚未開始。

@@ -13,3 +13,10 @@ build/
 
 # Probe output
 probes/out/
+
+# Superpowers execution scratch
+.superpowers/
+
+# Superpowers execution scratch
+.superpowers/
+.firecrawl/

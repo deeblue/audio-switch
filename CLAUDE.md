@@ -2,7 +2,7 @@
 
 目的與範圍見 `README.md`。這是一個 side project，跟 `D:\WORK\Claude\poc\AI-Vibe-Hub` 是不同的 repo，不要去改那邊的檔案。
 
-核心目標是**以本機實體接口（USB-A、USB-C／Thunderbolt、HDMI、3.5mm、內建）為根**呈現音訊端點，讓使用者立刻找到對的裝置；端點仍是切換單位。呈現原則見 README「呈現方式」，端點分類與接口對應見「端點來源分類與接口對應」，執行順序見「實作計畫」。下一步是 `probes/` 的 Python 測試應用，需求見 `probes/TASK.md`；尚未開始寫產品程式。產品必須動態列舉當下端點，不要求預先登記設備。
+核心目標是**以本機實體接口（USB-A、USB-C／Thunderbolt、HDMI、3.5mm、內建）為根**呈現音訊端點，讓使用者立刻找到對的裝置；端點仍是切換單位。呈現原則見 README「呈現方式」，端點分類與接口對應見「端點來源分類與接口對應」，執行順序見「實作計畫」。下一步是 `probes/` 的 Python 測試應用，需求見 `probes/TASK.md`，逐步執行計畫見 `docs/superpowers/plans/2026-10-23-audio-topology-probe.md`；尚未開始寫產品程式。產品必須動態列舉當下端點，不要求預先登記設備。
 
 ## 慣例
 
@@ -20,7 +20,7 @@
 - **辨認限制**：任何單一線索都不能證明「這是左螢幕／Dock 耳機孔」。3.5mm 插孔不會提供耳麥品牌；驅動可能讓耳機和內建喇叭共用一個端點；許多 USB 音效晶片不回報插入偵測。無法判定時標示未辨識，不以名稱猜測。
 - **確認方式**：播放端點用 WASAPI 試音；錄音端點用 `IAudioMeterInformation` 顯示峰值；螢幕用「識別」大字。只對 `DEVICE_STATE_ACTIVE` 端點執行；插拔通知後重讀狀態。
 - 每個應用程式各自的輸出裝置要用另一個未公開介面（`IAudioPolicyConfigFactory`），不在範圍內。
-- **這台電腦**：Lenovo ThinkPad T14p Gen 3（21RU），Windows 11 Pro x64 組建 26300；有 Python 3.12（`py -3.12`）與 .NET 8.0.11 執行環境，**沒有 .NET SDK**。.NET 8 支援至 2026-11-10。作業系統符合 StableId 的最低版本，但各端點是否提供尚未盤點。探針結果見 README「本機可行性實驗」；`Speakers (speaker)` 的上層 `USB\VID_303A`（Espressif）很可能是 7C，尚未拔插確認。
+- **這台電腦**：Lenovo ThinkPad T14p Gen 3（21RU），Windows 11 Pro x64 組建 26300；有 Python 3.12（py -3.12）與 .NET 8.0.11 執行環境，沒有 .NET SDK。唯讀探針已建立在 probes/：可列舉 Core Audio、讀取部分 PnP LocationPaths／ContainerId 祖先資料，以及列舉 DisplayConfig active paths。KS jack/sink 尚未實作，_PLD、removal policy 等屬性有缺口；結果見 README「本機可行性實驗」。Speakers (speaker) 的祖先 USB\VID_303A&PID_2986（Espressif）可能是 7C，需實體拔插確認。
 
 ## 待決事項
 
