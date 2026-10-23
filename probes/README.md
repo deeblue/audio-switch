@@ -50,7 +50,7 @@ probes/.venv/Scripts/python.exe probes/audio_topology.py calibrate usb-a-left be
 | ContainerId／removability 能否區分 Dock 內建音效與 Dock USB 裝置 | 未能判斷 | ContainerId 可讀；removal policy／capabilities 尚未映射，Dock 尚未測試。 |
 | `_PLD` 是否指出機身孔位 | 未能判斷 | PhysicalDeviceLocation 尚未映射；USB LocationPaths 已可讀但需逐孔校準。 |
 | StableId 與指定端點試音 | StableId：5 個作用中端點皆為空；tone：未實作 | Core Audio 目前未提供 StableId；工具沒有播放或切換預設端點的程式碼。 |
-| Realtek 播放／錄音端點與 jack 的關係；Speakers (speaker) 是否為 7C | 一次拔除使 Realtek 第二播放端點與麥克風端點同時消失，符合類比耳麥插孔切換；jack pin 尚待 KS 查詢。speaker：USB／Espressif 路徑成立，7C 實體確認待插拔。 | 兩個 Realtek 端點有相同 Intel Audio codec parent。speaker 祖先為 USB VID_303A／PID_2986；不得只依 VID 判定用途。S2719DGF 的 DisplayConfig adapter device path 也回報同一 VID/PID，仍不能單靠此關聯推斷實體接線。 |
+| Realtek 播放／錄音端點與 jack 的關係；Speakers (speaker) 的 USB 路徑 | 後續快照中 Realtek 端點重新出現，先前消失不是穩定證據；類比 jack 對應仍待驗證。speaker：確認位於 USB VID_303A／PID_2986 的裝置分支，LocationPaths 指向 USB(7)／HS07，機身孔位仍待校準。 | speaker 與 S2719DGF 顯示路徑在同一次拔除後都消失。DisplayConfig adapter path 也含相同 VID/PID；VID/PID 關聯本身不能證明實體接線。 |
 
 ### 本機拔除觀察（2026-10-23）
 
@@ -59,4 +59,6 @@ probes/.venv/Scripts/python.exe probes/audio_topology.py calibrate usb-a-left be
 - 播放：`Realtek HD Audio 2nd output (Realtek(R) Audio)`
 - 錄音：`麦克风 (Realtek(R) Audio)`
 
-兩個端點對應的 MMDEVAPI PnP 節點都指向同一個 Intel Audio codec parent（`INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D...`）；沒有新增端點，也沒有 DisplayConfig 路徑變化。這與同一個類比耳麥插孔同時切換耳機輸出和麥克風輸入相符，是有用的插拔關聯證據。探針仍未讀取 KS jack／sink 的 PortId 或 presence 狀態，因此尚不能把 codec 端點精確對應到 jack pin，也不能據此標定其他機身連接埠。
+兩個端點對應的 MMDEVAPI PnP 節點都指向同一個 Intel Audio codec parent（`INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D...`）。當下快照與先前 `final-after` 相比沒有顯示路徑變化。這是一次性的關聯觀察；後續第二次拔除快照裡這兩個端點重新出現，因此不能據此認定它們穩定代表該實體 jack。探針仍未讀取 KS jack／sink 的 PortId 或 presence 狀態。
+
+第二次拔除後（快照 `second-unplugged`，2026-10-23 06:09 UTC）與 `unplugged` 比較，`Speakers (speaker)` 端點及 S2719DGF 的 active DisplayConfig path 同時消失。speaker PnP 節點位於 USB `VID_303A&PID_2986` 分支，LocationPaths 為 `PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(7)` 與 `ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS07)`；顯示路徑的 adapter device path 也含該 VID/PID。相同差異中，前述兩個 Realtek 端點重新出現。結果支持「speaker 與該顯示路徑經由同一個 USB 裝置分支」的判斷，但 USB(7)／HS07 尚未與筆電外殼上的實體孔位完成校準，且未能單憑這次測試辨認被拔除的是 Dock、螢幕 hub 或其他中介裝置。
