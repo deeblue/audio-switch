@@ -142,7 +142,7 @@
 - `collect_machine_identity() -> MachineRecord` reads SMBIOS manufacturer, model, and MTM.
 - `load_port_map(path: Path) -> PortMap` checks schema and machine identity; a mismatch produces a warning and disables calibration matches.
 - `save_snapshot(snapshot: SnapshotRecord, name: str, output_dir: Path) -> Path` writes `probes/out/<name>.json`.
-- `diff_snapshots(before: SnapshotRecord, after: SnapshotRecord) -> DiffRecord` reports added/removed endpoints, devnodes, and display paths, plus new-node LocationPaths and common prefixes.
+- `diff_snapshots(before: SnapshotRecord, after: SnapshotRecord) -> DiffRecord` reports added/removed endpoints, devnodes, display paths, and changed existing devnodes (including LocationPaths), plus common prefixes.
 - `calibrate_port_map(interface_id: str, before: SnapshotRecord, after: SnapshotRecord, port_map: PortMap) -> CalibrationResult` adds only unambiguous new USB LocationPaths prefixes or display connector identifiers and records source `calibrated`.
 
 - [ ] Write tests for deterministic snapshot round-trip, repeated IDs, parent disappearance, changed IDs, common path prefixes, ambiguous candidates, and machine mismatch.

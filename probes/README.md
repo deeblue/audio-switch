@@ -50,7 +50,7 @@ probes/.venv/Scripts/python.exe probes/audio_topology.py calibrate usb-a-left be
 | ContainerId／removability 能否區分 Dock 內建音效與 Dock USB 裝置 | 未能判斷 | ContainerId 可讀；removal policy／capabilities 尚未映射，Dock 尚未測試。 |
 | `_PLD` 是否指出機身孔位 | 未能判斷 | PhysicalDeviceLocation 尚未映射；USB LocationPaths 已可讀但需逐孔校準。 |
 | StableId 與指定端點試音 | StableId：5 個作用中端點皆為空；tone：未實作 | Core Audio 目前未提供 StableId；工具沒有播放或切換預設端點的程式碼。 |
-| Realtek 播放／錄音端點與 jack 的關係；Speakers (speaker) 的 USB 路徑 | 拔除耳麥時兩個 Realtek 端點消失，使用者確認後續快照前已重新插回耳麥，端點也重新出現；這支持端點狀態與類比 jack 插拔有關。jack pin 對應仍待 KS 查詢。同一 USB 裝置移孔後，LocationPaths 從 USB(7)／HS07 變成 USB(6)／HS06；機身孔位名稱仍待校準。 | speaker 與 S2719DGF 顯示路徑隨 USB 裝置拔除而消失；移到另一 USB 孔後兩者恢復。DisplayConfig adapter path 也含相同 VID/PID；VID/PID 關聯本身不能證明實體接線。 |
+| Realtek 播放／錄音端點與 jack 的關係；Speakers (speaker) 的 USB 路徑 | 拔除耳麥時兩個 Realtek 端點消失，使用者確認後續快照前已重新插回耳麥，端點也重新出現；這支持端點狀態與類比 jack 插拔有關。jack pin 對應仍待 KS 查詢。同一 USB 裝置移孔已觀察到 USB(7)／HS07、USB(6)／HS06、USB(1)／HS01 三種路徑；機身孔位名稱仍待校準。 | speaker 與 S2719DGF 顯示路徑隨 USB 裝置拔除而消失；移到不同 USB 孔後兩者恢復。DisplayConfig adapter path 也含相同 VID/PID；VID/PID 關聯本身不能證明實體接線。 |
 
 ### 本機拔除觀察（2026-10-23）
 
@@ -64,3 +64,5 @@ probes/.venv/Scripts/python.exe probes/audio_topology.py calibrate usb-a-left be
 第二次快照（`second-unplugged`，2026-10-23 06:09 UTC）與 `unplugged` 比較時，使用者說明期間發生了兩個動作：拔除另一個連接，並重新插回耳麥。快照相應顯示 `Speakers (speaker)` 與 S2719DGF 的 active DisplayConfig path 消失，而兩個 Realtek 端點重新出現。speaker PnP 節點位於 USB `VID_303A&PID_2986` 分支，LocationPaths 為 `PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(7)` 與 `ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS07)`；顯示路徑的 adapter device path 也含該 VID/PID。結果支持「speaker 與該顯示路徑經由同一個 USB 裝置分支」及「Realtek 端點隨耳麥插回而恢復」兩項關聯，但 USB(7)／HS07 尚未與筆電外殼上的實體孔位完成校準，也不能據此辨認被拔除的是 Dock、螢幕 hub 或其他中介裝置。
 
 使用者將同一 USB 裝置接到另一個 USB 孔後，`reconnected-other-usb` 快照顯示 `Speakers (speaker)` 與 S2719DGF 顯示路徑恢復；USB 裝置識別與 ContainerId 保持相同，LocationPaths 則改為 `PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)`／`HS06`。這證明探針能觀察到同一裝置跨孔移動後的拓樸位置差異。USB(6) 與 USB(7) 對應的機身孔位名稱尚未標定，因此目前不能把索引直接顯示為左側／右側或 USB-A／USB-C。
+
+再移到第三個 USB 孔後，`reconnected-third-usb` 快照中同一裝置的 LocationPaths 從 USB(6)／HS06 改為 USB(1)／HS01；speaker 端點沒有新增或移除，S2719DGF 仍在相同 USB adapter device path 下顯示。Windows 為顯示路徑重新配置了 DisplayConfig path ID、adapter LUID 與 `DISPLAY` source name，這些值會隨重新連線改變，不應當成穩定的實體孔位識別碼。這次比較也揭露原本 `diff` 只按 PnP instance ID 判斷新增／移除，會漏掉同一節點 LocationPaths 改變；探針現已新增 `changed_devnodes`，輸出同一節點的 before／after 屬性，能直接呈現跨孔位置變化。

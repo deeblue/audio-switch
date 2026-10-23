@@ -14,6 +14,7 @@ class DiffRecord:
     removed_endpoints: list[dict[str, Any]]
     added_devnodes: list[dict[str, Any]]
     removed_devnodes: list[dict[str, Any]]
+    changed_devnodes: list[dict[str, Any]]
     added_display_paths: list[dict[str, Any]]
     removed_display_paths: list[dict[str, Any]]
     common_location_prefixes: list[str]
@@ -72,9 +73,25 @@ def _changes(before: list[Any], after: list[Any], id_field: str) -> tuple[list[d
         else: removed.append(value)
     return added, removed
 
+def _changed(before: list[Any], after: list[Any], id_field: str) -> list[dict[str, Any]]:
+    old_by_id: dict[Any, list[dict[str, Any]]] = {}
+    for value in (to_jsonable(x) for x in before):
+        old_by_id.setdefault(value.get(id_field), []).append(value)
+    seen: Counter[Any] = Counter()
+    changed = []
+    for value in (to_jsonable(x) for x in after):
+        key = value.get(id_field)
+        index = seen[key]
+        seen[key] += 1
+        matches = old_by_id.get(key, [])
+        if index < len(matches) and value != matches[index]:
+            changed.append({id_field: key, "before": matches[index], "after": value})
+    return changed
+
 def diff_snapshots(before: SnapshotRecord, after: SnapshotRecord) -> DiffRecord:
     ae, re = _changes(before.endpoints, after.endpoints, "endpoint_id")
     ad, rd = _changes(before.devnodes, after.devnodes, "instance_id")
+    cd = _changed(before.devnodes, after.devnodes, "instance_id")
     ap, rp = _changes(before.display_paths, after.display_paths, "path_id")
     old_paths = {p for n in before.devnodes for p in n.location_paths}
     new_paths = {p for n in after.devnodes for p in n.location_paths} - old_paths
@@ -87,7 +104,7 @@ def diff_snapshots(before: SnapshotRecord, after: SnapshotRecord) -> DiffRecord:
                 bits.append(x)
             if bits and len(bits) < len(new.split("#")):
                 prefixes.add("#".join(bits))
-    return DiffRecord(ae, re, ad, rd, ap, rp, sorted(prefixes))
+    return DiffRecord(ae, re, ad, rd, cd, ap, rp, sorted(prefixes))
 
 def new_snapshot() -> SnapshotRecord:
     return SnapshotRecord(1, datetime.now(timezone.utc).isoformat(), collect_machine_identity())

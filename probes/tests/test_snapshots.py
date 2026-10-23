@@ -26,3 +26,21 @@ class SnapshotTests(unittest.TestCase):
     def test_unchanged_snapshot_has_no_new_location_prefixes(self):
         snap = SnapshotRecord(1, "a", MachineRecord(), devnodes=[DeviceNodeRecord("USB\\x", location_paths=["PCIROOT#USB(1)"])])
         self.assertEqual(diff_snapshots(snap, snap).common_location_prefixes, [])
+
+    def test_diff_reports_location_path_change_for_existing_devnode(self):
+        before = SnapshotRecord(1, "a", MachineRecord(), devnodes=[
+            DeviceNodeRecord("USB\\speaker", location_paths=["PCIROOT#USB(6)"])
+        ])
+        after = SnapshotRecord(1, "b", MachineRecord(), devnodes=[
+            DeviceNodeRecord("USB\\speaker", location_paths=["PCIROOT#USB(1)"])
+        ])
+
+        diff = diff_snapshots(before, after)
+
+        self.assertEqual(diff.added_devnodes, [])
+        self.assertEqual(diff.removed_devnodes, [])
+        self.assertEqual(len(diff.changed_devnodes), 1)
+        changed = diff.changed_devnodes[0]
+        self.assertEqual(changed["instance_id"], "USB\\speaker")
+        self.assertEqual(changed["before"]["location_paths"], ["PCIROOT#USB(6)"])
+        self.assertEqual(changed["after"]["location_paths"], ["PCIROOT#USB(1)"])
