@@ -50,4 +50,13 @@ probes/.venv/Scripts/python.exe probes/audio_topology.py calibrate usb-a-left be
 | ContainerId／removability 能否區分 Dock 內建音效與 Dock USB 裝置 | 未能判斷 | ContainerId 可讀；removal policy／capabilities 尚未映射，Dock 尚未測試。 |
 | `_PLD` 是否指出機身孔位 | 未能判斷 | PhysicalDeviceLocation 尚未映射；USB LocationPaths 已可讀但需逐孔校準。 |
 | StableId 與指定端點試音 | StableId：5 個作用中端點皆為空；tone：未實作 | Core Audio 目前未提供 StableId；工具沒有播放或切換預設端點的程式碼。 |
-| 兩個 Realtek 播放端點對應哪個 jack；Speakers (speaker) 是否為 7C | Realtek jack：待 KS 查詢；speaker：USB／Espressif 路徑成立，7C 實體確認待插拔 | speaker 祖先為 USB VID_303A／PID_2986，尚未拔插；不得只依 VID 判定設備用途。S2719DGF 的 DisplayConfig adapter device path 也回報同一 VID/PID，仍不能單靠此關聯推斷實體接線。 |
+| Realtek 播放／錄音端點與 jack 的關係；Speakers (speaker) 是否為 7C | 一次拔除使 Realtek 第二播放端點與麥克風端點同時消失，符合類比耳麥插孔切換；jack pin 尚待 KS 查詢。speaker：USB／Espressif 路徑成立，7C 實體確認待插拔。 | 兩個 Realtek 端點有相同 Intel Audio codec parent。speaker 祖先為 USB VID_303A／PID_2986；不得只依 VID 判定用途。S2719DGF 的 DisplayConfig adapter device path 也回報同一 VID/PID，仍不能單靠此關聯推斷實體接線。 |
+
+### 本機拔除觀察（2026-10-23）
+
+使用者拔除一個實體連接埠後，將新快照與先前的 `final-after` 比較。一次變更使以下作用中端點消失：
+
+- 播放：`Realtek HD Audio 2nd output (Realtek(R) Audio)`
+- 錄音：`麦克风 (Realtek(R) Audio)`
+
+兩個端點對應的 MMDEVAPI PnP 節點都指向同一個 Intel Audio codec parent（`INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D...`）；沒有新增端點，也沒有 DisplayConfig 路徑變化。這與同一個類比耳麥插孔同時切換耳機輸出和麥克風輸入相符，是有用的插拔關聯證據。探針仍未讀取 KS jack／sink 的 PortId 或 presence 狀態，因此尚不能把 codec 端點精確對應到 jack pin，也不能據此標定其他機身連接埠。
