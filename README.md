@@ -15,12 +15,13 @@
 ## 要做到的
 
 1. **以機身接口為根呈現**：根節點是本機實體接口（USB-A、USB-C／Thunderbolt、HDMI、3.5mm）與「內建」，其下依序是 Dock／hub、外接設備或螢幕，最後是播放與錄音端點。端點仍是實際切換的單位。新接上的設備不需預先登記，即可出現在對應接口下；無法對應到接口的端點放在「其他／未辨識」。別名是選用的標籤，寫回 Windows 端點名稱，讓其他程式的裝置選單也看得到；不是使用前提。呈現細節見「呈現方式」。
-2. **系統匣圖示**：點一下列出所有目前可用的播放與錄音端點，各項附接口路徑，目前的預設打勾，點哪個就設成預設；同名端點仍須各自列出。
+2. **系統匣圖示**：點一下列出所有目前可用的播放與錄音端點，各項附接口路徑，目前的預設打勾，點哪個就設成預設（一般預設與通訊預設一起切換，所有跟隨系統預設的程式都會改走該端點）；同名端點仍須各自列出。
 3. **全域快捷鍵**：在目前可用的端點間輪流切換（播放、錄音各自處理），跳過不可用端點；若提供自訂循環清單，新增裝置仍須能直接從系統匣選取，不要求先加入清單。
 4. **跟著插拔更新**：端點新增、移除或狀態變更時更新清單與快捷鍵候選；辨認不明時保留各端點供選取，不憑同名猜測實體位置。
 5. （後續範圍）指定的端點一插上就自動切過去，例如 7C 的 speaker；規則尚未決定。
+6. （後續範圍，進階設定）個別程式指定播放／錄音端點，與 Windows「音量混音程式」中的應用程式裝置設定相同。被指定的程式不跟隨第 2、3 項的切換，因此系統匣須標示哪些程式有個別指定，並提供「改回跟隨預設」與「全部清除」。
 
-不做：每個應用程式各自的輸出裝置（Windows 的「應用程式音量與裝置喜好設定」）、音量混音器、音效處理。
+不做：音量混音器、音效處理。
 
 ## 呈現方式
 
@@ -134,7 +135,9 @@ LocationPaths 前綴共同為 `PCIROOT(0)#PCI(1400)#USBROOT(0)#`。本機 USB �
 
 端點改名實驗（以一般使用者權限、未提升）：以 `READWRITE` 開啟端點屬性，寫入 `PKEY_Device_DeviceDesc` 並 `Commit` 成功，`PKEY_Device_FriendlyName` 隨之變為「新值 (Realtek(R) Audio)」，`Get-PnpDevice` 另一程序讀到新名稱。Windows 設定與 Zoom 立即顯示新名稱；Teams 在 3.5mm 耳麥重新插拔後顯示新名稱，內建喇叭須完整結束並重開 Teams 才更新。測試後三個端點皆已還原原名。
 
-**尚未驗證**：沒有序號的 USB 裝置換孔是否產生新端點、裝置插入當下寫入別名時 Teams 是否直接顯示新名稱、KS sink 與 PortId 對 DisplayConfig 的匹配（本機目前沒有 HDMI／DisplayPort 螢幕音訊端點）、HDMI 與兩個 USB-C 的逐孔 connector 校準、Dock 內建音效與 Dock USB 裝置分組、USB-C 的 USB 3 與 USB4 隧道路徑（目前只校準四孔的 USB 2 路徑，待 Dock 實測）、USB 耳麥、通知事件、指定端點試音及實際收音。`ports.json` 中四個 USB 孔的位置來自使用者實測；HDMI 與 3.5mm 的位置仍標為未知。
+個別程式指定實驗（一般使用者權限）：以 `RoGetActivationFactory("Windows.Media.Internal.AudioPolicyConfig")` 取得 21H2 後的介面（IID `ab3d4648-e242-459f-b02f-541c70306324`，vtable 配置依 EarTrumpet），對 Chrome 音訊程序呼叫 `SetPersistedDefaultAudioEndpoint` 設定 `eConsole` 與 `eMultimedia` 的播放端點為內建喇叭。Chrome 立即改從喇叭出聲，Firefox 仍走系統預設（3.5mm 耳機）；切換 Windows 預設時 Chrome 維持在喇叭、Firefox 跟著切換；Windows「音量混音程式」同步顯示 Chrome 的指定。Chrome 音訊程序重啟換了 PID 後新程序仍沿用指定，表示 Windows 依應用程式保存；設定與清除都須傳入該程式目前執行中的 PID，程序已結束時回傳 `E_INVALIDARG`。傳入空字串即清除，測試後已清除。介面未公開，21H2 前後 IID 不同。[EarTrumpet 實作](https://github.com/File-New-Project/EarTrumpet/blob/master/EarTrumpet/DataModel/WindowsAudio/Internal/AudioPolicyConfigService.cs)
+
+**尚未驗證**：錄音端點的個別程式指定、沒有序號的 USB 裝置換孔是否產生新端點、裝置插入當下寫入別名時 Teams 是否直接顯示新名稱、KS sink 與 PortId 對 DisplayConfig 的匹配（本機目前沒有 HDMI／DisplayPort 螢幕音訊端點）、HDMI 與兩個 USB-C 的逐孔 connector 校準、Dock 內建音效與 Dock USB 裝置分組、USB-C 的 USB 3 與 USB4 隧道路徑（目前只校準四孔的 USB 2 路徑，待 Dock 實測）、USB 耳麥、通知事件、指定端點試音及實際收音。`ports.json` 中四個 USB 孔的位置來自使用者實測；HDMI 與 3.5mm 的位置仍標為未知。
 
 ## 實作計畫
 
@@ -148,7 +151,7 @@ LocationPaths 前綴共同為 `PCIROOT(0)#PCI(1400)#USBROOT(0)#`。本機 USB �
    - `_PLD` 是否提供機身孔位；
    - StableId 是否存在，以及指定端點試音。
 2. **接口校準與代表性設備驗證**：用 `snapshot`／`diff`／`calibrate` 子命令逐孔校準機身 USB 與顯示接口，再以手邊的 3.5mm、USB 耳麥、螢幕、Dock、7C 測試端點與裝置節點的新增、移除和重名情形。紀錄用來驗證動態發現與標示能力，不作為可支援設備的固定清冊。
-3. **確定首版行為與技術選擇**：正式版建議 C#／.NET 10 LTS + Windows Forms，可直接整合 Core Audio、CfgMgr32、DisplayConfig、NotifyIcon 與 TreeView，並自包含發佈；實作前需安裝 .NET 10 SDK。另決定快捷鍵、切換哪些 role、開機啟動，以及自動切換是否留到後續。
+3. **確定首版行為與技術選擇**：正式版建議 C#／.NET 10 LTS + Windows Forms，可直接整合 Core Audio、CfgMgr32、DisplayConfig、NotifyIcon 與 TreeView，並自包含發佈；實作前需安裝 .NET 10 SDK。另決定快捷鍵、開機啟動，以及自動切換是否留到後續。
 4. **建立接口拓樸與端點資料**：啟動及通知後重建四類端點與機身接口的關聯，依「呈現方式」產生樹狀資料；別名寫回 Windows 端點並另存原始名稱。以重名、Dock 與筆電同型號螢幕、端點消失及重新接入案例檢查。
 5. **完成辨認與手動切換**：主視窗樹狀圖、系統匣路徑清單、螢幕「識別」、播放試音、錄音峰值、選用別名與播放／錄音快捷鍵。切換後重新讀取 Windows 預設值確認結果；失敗時顯示原因，不把失敗的切換標成成功。
 6. **處理插拔並驗收**：收到端點變更通知後更新清單與快捷鍵候選，跳過不可用端點。另記錄 YouTube 等已播放程式是否跟著切換。若 Windows 只提供共用端點，記錄該限制，不把它算作程式故障。
