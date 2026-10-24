@@ -102,7 +102,8 @@
 
 - 7C（`USB\VID_303A&PID_2986`）同時提供 USB 播放端點 `Speakers (speaker)` 與一條 USB 顯示路徑（EDID 名稱 S2719DGF，adapter device path 含同一 VID/PID）；拔除或換孔時兩者一起消失或移動。
 - 拔除機身 3.5mm 耳麥時，`Realtek HD Audio 2nd output` 與 `麦克风 (Realtek(R) Audio)` 消失，插回後恢復；`扬声器 (Realtek(R) Audio)` 與 `麦克风阵列` 不受影響。
-- 同一 USB 2.0 裝置在四個孔分別得到 `USB(7)／HS07`、`USB(6)／HS06`、`USB(1)／HS01`、`USB(5)／HS05`。
+- 同一 USB 2.0 裝置（7C）在四個孔的路徑：左側 USB-A `USB(6)／HS06`、右側 USB-A `USB(7)／HS07`、左側前方 USB-C `USB(1)／HS01`、左側後方 USB-C `USB(5)／HS05`。
+- 四孔皆有 `_PLD`：USB-A 面板值與實際側別相符；兩個左側 USB-C 回報面板「上」，與實際不符，且兩孔只有群組位置不同（前 2、後 1）。`_PLD` 面板值不可作為歸類依據；四孔群組代號都是 0，HS／SS 配對能否用群組位置待 USB 3 裝置實測。
 - DisplayConfig 的 path ID、adapter LUID 與 `\.\DISPLAYn` 在重新連線後會改變。
 - 本機 5 個作用中端點的 StableId 皆為空。
 

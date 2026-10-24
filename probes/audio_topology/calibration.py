@@ -49,6 +49,36 @@ def usb_path_type(location_paths: list[str]) -> str:
         return "USB 2"
     return "USB 未知"
 
+def attachment_transport(node: dict[str, Any]) -> str:
+    if node.get("instance_id", "").upper().startswith("PCI\\"):
+        return "PCIe 隧道"
+    return usb_path_type(node.get("location_paths", []))
+
+
+def _is_attachment(node: dict[str, Any]) -> bool:
+    instance_id = node.get("instance_id", "").upper()
+    if "&MI_" in instance_id:
+        return False
+    if instance_id.startswith("USB\\"):
+        return bool(node.get("location_paths"))
+    if instance_id.startswith("PCI\\"):
+        # A tunnelled PCIe device sits behind a hot-plug root port. Devices on the
+        # root complex itself (for example the iGPU at PCI(0200)) are integrated and
+        # only appear in a diff because the probe began collecting their chain.
+        return any(p.upper().startswith("PCIROOT(") and p.upper().count("#PCI(") >= 2 for p in node.get("location_paths", []))
+    return False
+
+
+def attachment_nodes(before: SnapshotRecord, after: SnapshotRecord) -> list[dict[str, Any]]:
+    """Return the topmost devnodes that appeared or moved between two snapshots."""
+    diff = diff_snapshots(before, after)
+    # Only a LocationPaths change is relocation evidence; other property changes
+    # (for example a root hub read with a newer probe) are not.
+    moved = [c["after"] for c in diff.changed_devnodes if c["before"].get("location_paths") != c["after"].get("location_paths")]
+    new_nodes = diff.added_devnodes + moved
+    new_ids = {n.get("instance_id", "").casefold() for n in new_nodes}
+    return [n for n in new_nodes if _is_attachment(n) and (n.get("parent_id") or "").casefold() not in new_ids]
+
 def load_port_map(path: Path, machine: dict[str, Any] | None = None) -> PortMap:
     data = json.loads(path.read_text(encoding="utf-8"))
     if data.get("schema_version") != 1 or not isinstance(data.get("interfaces"), list):
@@ -65,17 +95,23 @@ def calibrate_port_map(interface_id: str, before: SnapshotRecord, after: Snapsho
     ports = {p["id"]: p for p in port_map.data.get("interfaces", [])}
     if interface_id not in ports: raise ValueError(f"找不到接口 ID：{interface_id}")
     diff = diff_snapshots(before, after)
-    usb_nodes = diff.added_devnodes + [change["after"] for change in diff.changed_devnodes]
-    candidates = [n for n in usb_nodes if n.get("location_paths") and n.get("instance_id", "").upper().startswith("USB\\") and "&MI_" not in n.get("instance_id", "").upper()]
-    # Require exactly one newly observed or relocated USB parent; ContainerId and names are not evidence.
-    if len(candidates) == 1:
-        prefixes = sorted(set(candidates[0]["location_paths"]))
-        route_type = usb_path_type(prefixes)
+    candidates = attachment_nodes(before, after)
+    # One physical connector exposes at most one USB 2, one USB 3 and one PCIe
+    # tunnel attachment (a dock brings several at once). Two attachments on the
+    # same transport mean two connections changed; ContainerId and names are not evidence.
+    transports = [attachment_transport(n) for n in candidates]
+    if candidates and len(set(transports)) == len(transports):
         current = ports[interface_id].setdefault("usb_location_path_prefixes", [])
-        for prefix in prefixes:
-            if prefix not in current: current.append(prefix)
-        ports[interface_id].setdefault("calibration_sources", []).append({"source": "校準", "transport": route_type, "instance_id": candidates[0]["instance_id"], "location_paths": prefixes})
-        return {"status": "calibrated", "interface_id": interface_id, "transport": route_type, "location_paths": prefixes}
+        attachments = []
+        for node, route_type in zip(candidates, transports):
+            prefixes = sorted(set(node["location_paths"]))
+            for prefix in prefixes:
+                if prefix not in current: current.append(prefix)
+            attachment = {"source": "校準", "transport": route_type, "instance_id": node["instance_id"], "location_paths": prefixes}
+            ports[interface_id].setdefault("calibration_sources", []).append(attachment)
+            attachments.append(attachment)
+        return {"status": "calibrated", "interface_id": interface_id, "transports": transports,
+                "location_paths": sorted({p for a in attachments for p in a["location_paths"]}), "attachments": attachments}
     if not candidates and len(diff.added_display_paths) == 1:
         row = diff.added_display_paths[0]
         connector = stable_display_connector(row)

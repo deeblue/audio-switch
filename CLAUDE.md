@@ -19,6 +19,8 @@
 - **四類端點**：A. USB 音訊（含 Dock 3.5mm）沿 parent 取 `DEVPKEY_Device_LocationPaths`，對接口校準表做最長前綴比對；B. 顯示器音訊掛在 Intel Display Audio／GPU 音訊下，**不在 USB 樹中**，經 Dock 也一樣，要用 `IKsJackSinkInformation` 對 DisplayConfig 顯示路徑；USB 顯示裝置（7C、DisplayLink）例外，其顯示 adapter 在 USB 樹下，與同一 USB 裝置的音訊併組；C. 主機板內建音效用 `IKsJackDescription`；D. 藍牙、虛擬等不判斷位置。Dock 沒有專門規則：以 `PKEY_Device_ContainerId` 歸組，以可移除與否區分 Dock 內建音效和 Dock USB 孔上的裝置；Dock 上的螢幕依同一個機身接口併入 Dock 節點。Dock 的具體輸出孔與 Dock USB 孔位置通常無法判斷，只顯示型號、螢幕編號／排列位置或 port 編號。
 - **辨認限制**：任何單一線索都不能證明「這是左螢幕／Dock 耳機孔」。3.5mm 插孔不會提供耳麥品牌；驅動可能讓耳機和內建喇叭共用一個端點；許多 USB 音效晶片不回報插入偵測。無法判定時標示未辨識，不以名稱猜測。
 - **確認方式**：播放端點用 WASAPI 試音；錄音端點用 `IAudioMeterInformation` 顯示峰值；螢幕用「識別」大字。只對 `DEVICE_STATE_ACTIVE` 端點執行；插拔通知後重讀狀態。
+- **別名**：寫入端點的 `PKEY_Device_DeviceDesc`，一般使用者權限即可（本機已驗證）；Windows 顯示為「別名 (介面卡名稱)」，Windows 設定、Teams、Zoom 都看得到。同一實體設備的播放與錄音端點共用同一別名。Windows 依端點保存名稱；程式只另存「端點 ID → 原始名稱」供還原，新端點不推測沿用別名。Teams 對可插拔裝置在重新插拔後更新名稱，內建裝置須完整重開 Teams。Microsoft 文件註明用戶端不應設定端點屬性，沒有相容性保證。
+- **其他程式跟隨預設**：Teams 通話中跟隨 Windows 預設播放與錄音端點（本機已驗證）；Zoom「與系統相同」跟隨系統預設。跟隨哪個 role 未驗證。
 - 每個應用程式各自的輸出裝置要用另一個未公開介面（`IAudioPolicyConfigFactory`），不在範圍內。
 - **這台電腦**：Lenovo ThinkPad T14p Gen 3（21RU），Windows 11 Pro x64 組建 26300；有 Python 3.12（py -3.12）與 .NET 8.0.11 執行環境，沒有 .NET SDK。唯讀探針在 `probes/`：讀取 Core Audio、PnP 祖先鏈（LocationPaths、ContainerId、RemovalPolicy、`_PLD`）、KS jack 描述與 DisplayConfig；結果見 README「本機可行性實驗」。`Speakers (speaker)`（`USB\VID_303A&PID_2986`）是 7C，同一 USB 裝置也提供 S2719DGF 顯示路徑。
 
@@ -33,7 +35,6 @@
 3. **快捷鍵**：預設組合鍵；在當下可用端點中循環，或另提供可選的自訂循環集合（所有端點仍可從系統匣直接選取）。
 4. **開機自動啟動**：要不要預設開啟。
 5. **自動切換**（README 第 5 項，後續範圍）：若納入首版，規則怎麼設定。
-6. **別名管理**：同一個實體設備的播放與錄音端點是否要共享群組名稱；別名失配時如何提示。別名不得成為新裝置可見或可切換的前置條件。
 
 ## 驗收
 

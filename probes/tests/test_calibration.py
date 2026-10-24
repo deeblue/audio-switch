@@ -68,3 +68,57 @@ class CalibrationTests(unittest.TestCase):
         self.assertEqual(usb_path_type(["ACPI#HS07"]), "USB 2")
         self.assertEqual(usb_path_type(["ACPI#SS07"]), "USB 3")
         self.assertEqual(usb_path_type(["ACPI#HS07", "ACPI#SS07"]), "USB 3")
+
+    def test_dock_attachments_on_each_transport_are_calibrated_together(self):
+        hs_hub = DeviceNodeRecord("USB\VID_2109&PID_2822\1", parent_id="USB\ROOT_HUB30\PCH",
+                                  location_paths=["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(1)", "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS01)"])
+        ss_hub = DeviceNodeRecord("USB\VID_2109&PID_0822\1", parent_id="USB\ROOT_HUB30\TCSS",
+                                  location_paths=["PCIROOT(0)#PCI(0D00)#USBROOT(0)#USB(1)", "ACPI(_SB_)#ACPI(PC00)#ACPI(TXHC)#ACPI(RHUB)#ACPI(SS01)"])
+        bridge = DeviceNodeRecord("PCI\VEN_8086&DEV_1136\1", parent_id="PCI\ROOTPORT",
+                                  location_paths=["PCIROOT(0)#PCI(0700)#PCI(0000)"])
+        speaker = DeviceNodeRecord("USB\VID_0D8C&PID_0014\1", parent_id=hs_hub.instance_id,
+                                   location_paths=["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(1)#USB(3)"])
+        speaker_mi = DeviceNodeRecord("USB\VID_0D8C&PID_0014&MI_00\1", parent_id=speaker.instance_id,
+                                      location_paths=["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(1)#USB(3)#USBMI(0)"])
+        after = SnapshotRecord(1, "b", MachineRecord(mtm="21RU"), devnodes=[hs_hub, ss_hub, bridge, speaker, speaker_mi])
+
+        result = calibrate_port_map("c1", self.before, after, self.pm)
+
+        self.assertEqual(result["status"], "calibrated")
+        self.assertEqual(sorted(result["transports"]), ["PCIe 隧道", "USB 2", "USB 3"])
+        prefixes = self.pm.data["interfaces"][0]["usb_location_path_prefixes"]
+        self.assertIn("PCIROOT(0)#PCI(0D00)#USBROOT(0)#USB(1)", prefixes)
+        self.assertIn("PCIROOT(0)#PCI(0700)#PCI(0000)", prefixes)
+        self.assertNotIn("PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(1)#USB(3)", prefixes)
+
+    def test_two_attachments_on_same_transport_are_ambiguous(self):
+        first = DeviceNodeRecord("USB\VID_1\1", parent_id="USB\ROOT", location_paths=["ACPI#HS01"])
+        second = DeviceNodeRecord("USB\VID_2\1", parent_id="USB\ROOT", location_paths=["ACPI#HS05"])
+        after = SnapshotRecord(1, "b", MachineRecord(mtm="21RU"), devnodes=[first, second])
+
+        result = calibrate_port_map("c1", self.before, after, self.pm)
+
+        self.assertEqual(result["status"], "ambiguous")
+        self.assertEqual(self.pm.data["interfaces"][0]["usb_location_path_prefixes"], [])
+
+    def test_property_only_change_is_not_relocation(self):
+        root_before = DeviceNodeRecord("USB\ROOT_HUB30\1", location_paths=["PCIROOT#USBROOT(0)"])
+        root_after = DeviceNodeRecord("USB\ROOT_HUB30\1", location_paths=["PCIROOT#USBROOT(0)"], properties={"removal_policy": 1})
+        device_before = DeviceNodeRecord("USB\VID_1234&PID_5678\1", parent_id=root_before.instance_id, location_paths=["PCIROOT#USBROOT(0)#USB(7)"])
+        device_after = DeviceNodeRecord("USB\VID_1234&PID_5678\1", parent_id=root_before.instance_id, location_paths=["PCIROOT#USBROOT(0)#USB(6)"])
+        before = SnapshotRecord(1, "a", MachineRecord(mtm="21RU"), devnodes=[root_before, device_before])
+        after = SnapshotRecord(1, "b", MachineRecord(mtm="21RU"), devnodes=[root_after, device_after])
+
+        result = calibrate_port_map("c1", before, after, self.pm)
+
+        self.assertEqual(result["status"], "calibrated")
+        self.assertEqual(result["location_paths"], ["PCIROOT#USBROOT(0)#USB(6)"])
+
+    def test_root_complex_pci_device_is_not_an_attachment(self):
+        igpu = DeviceNodeRecord("PCI\VEN_8086&DEV_7D51\1", location_paths=["PCIROOT(0)#PCI(0200)", "ACPI(_SB_)#ACPI(PC00)#ACPI(GFX0)"])
+        device = DeviceNodeRecord("USB\VID_1234&PID_5678\1", parent_id="USB\ROOT", location_paths=["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)", "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)"])
+        after = SnapshotRecord(1, "b", MachineRecord(mtm="21RU"), devnodes=[igpu, device])
+
+        result = calibrate_port_map("c1", self.before, after, self.pm)
+
+        self.assertEqual(result["transports"], ["USB 2"])

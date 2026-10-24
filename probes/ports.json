@@ -7,44 +7,100 @@
   },
   "interfaces": [
     {
-      "id": "usb-c-1",
-      "name": "USB-C／Thunderbolt 1",
+      "id": "usb-c-left-front",
+      "name": "USB-C／Thunderbolt（左前）",
       "type": "usb-c-tbt",
-      "position": "未知",
-      "source": "未知",
-      "usb_location_path_prefixes": [],
+      "position": "左側前方",
+      "source": "使用者實測",
+      "usb_location_path_prefixes": [
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS01)",
+        "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(1)"
+      ],
       "display_connectors": [],
-      "position_source": "未知"
+      "position_source": "使用者實測",
+      "calibration_sources": [
+        {
+          "source": "校準",
+          "transport": "USB 2",
+          "instance_id": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "location_paths": [
+            "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS01)",
+            "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(1)"
+          ]
+        }
+      ]
     },
     {
-      "id": "usb-c-2",
-      "name": "USB-C／Thunderbolt 2",
+      "id": "usb-c-left-rear",
+      "name": "USB-C／Thunderbolt（左後）",
       "type": "usb-c-tbt",
-      "position": "未知",
-      "source": "未知",
-      "usb_location_path_prefixes": [],
+      "position": "左側後方",
+      "source": "使用者實測",
+      "usb_location_path_prefixes": [
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS05)",
+        "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)"
+      ],
       "display_connectors": [],
-      "position_source": "未知"
+      "position_source": "使用者實測",
+      "calibration_sources": [
+        {
+          "source": "校準",
+          "transport": "USB 2",
+          "instance_id": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "location_paths": [
+            "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS05)",
+            "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)"
+          ]
+        }
+      ]
     },
     {
-      "id": "usb-a-1",
-      "name": "USB-A 1",
+      "id": "usb-a-left",
+      "name": "USB-A（左）",
       "type": "usb-a",
-      "position": "未知",
-      "source": "未知",
-      "usb_location_path_prefixes": [],
+      "position": "左側",
+      "source": "使用者實測",
+      "usb_location_path_prefixes": [
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)",
+        "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)"
+      ],
       "display_connectors": [],
-      "position_source": "未知"
+      "position_source": "使用者實測",
+      "calibration_sources": [
+        {
+          "source": "校準",
+          "transport": "USB 2",
+          "instance_id": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "location_paths": [
+            "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)",
+            "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)"
+          ]
+        }
+      ]
     },
     {
-      "id": "usb-a-2",
-      "name": "USB-A 2",
+      "id": "usb-a-right",
+      "name": "USB-A（右）",
       "type": "usb-a",
-      "position": "未知",
-      "source": "未知",
-      "usb_location_path_prefixes": [],
+      "position": "右側",
+      "source": "使用者實測",
+      "usb_location_path_prefixes": [
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS07)",
+        "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(7)"
+      ],
       "display_connectors": [],
-      "position_source": "未知"
+      "position_source": "使用者實測",
+      "calibration_sources": [
+        {
+          "source": "校準",
+          "transport": "USB 2",
+          "instance_id": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "location_paths": [
+            "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS07)",
+            "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(7)"
+          ]
+        }
+      ]
     },
     {
       "id": "hdmi",
