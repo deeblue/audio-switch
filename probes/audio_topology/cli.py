@@ -24,7 +24,7 @@ def snapshot_path(name: str) -> Path:
 
 def collect_snapshot():
     snapshot = new_snapshot()
-    snapshot.endpoints, errors = collect_audio_endpoints()
+    snapshot.endpoints, errors = collect_audio_endpoints(include_inactive=True)
     snapshot.errors.extend(errors)
     seen: set[str] = set()
     try:
@@ -33,6 +33,8 @@ def collect_snapshot():
         pnp_api = None
         snapshot.errors.append({"scope": "pnp", "property": "configuration_manager", "error": f"{type(exc).__name__}: {exc}"})
     for endpoint in snapshot.endpoints:
+        if not is_active_endpoint_state(endpoint.state):
+            continue
         mmdevapi_id, mmdevapi_method = resolve_endpoint_devnode(endpoint.endpoint_id)
         jacks, jack_errors = collect_jacks(endpoint.endpoint_id,
             device_interface_resolver=pnp_api.device_interface_instance_id if pnp_api else None)
@@ -69,6 +71,10 @@ def collect_snapshot():
             except Exception as exc:
                 path.errors.append(f"adapter PnP resolution: {type(exc).__name__}: {exc}")
     return snapshot
+
+
+def is_active_endpoint_state(state: str) -> bool:
+    return state.rsplit(".", 1)[-1].casefold() == "active" or state == "1"
 
 
 def build_parser() -> argparse.ArgumentParser:

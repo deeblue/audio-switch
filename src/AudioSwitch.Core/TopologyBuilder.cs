@@ -230,7 +230,7 @@ public static class TopologyBuilder
         return category == "A" ? "USB（未設定接口）" : "未辨識";
     }
 
-    private static bool IsPhysicalJack(JackRecord jack)
+    public static bool IsPhysicalJack(JackRecord jack)
     {
         var connection = JsonValue.Integer(jack.Jack, "connection_type");
         var portConnection = JsonValue.Integer(jack.Jack, "port_connection");

@@ -15,8 +15,8 @@ _PROPERTY_KEYS = {
 }
 
 
-def collect_audio_endpoints(enumerator: Any | None = None) -> tuple[list[EndpointRecord], list[dict[str, str]]]:
-    """Collect active endpoints; an endpoint/property error is isolated."""
+def collect_audio_endpoints(enumerator: Any | None = None, include_inactive: bool = False) -> tuple[list[EndpointRecord], list[dict[str, str]]]:
+    """Collect endpoints; topology callers can request inactive states for state comparisons."""
     errors: list[dict[str, str]] = []
     if sys.platform != "win32" and enumerator is None:
         return [], [{"scope": "audio", "property": "enumeration", "error": "Windows Core Audio is unavailable"}]
@@ -39,7 +39,9 @@ def collect_audio_endpoints(enumerator: Any | None = None) -> tuple[list[Endpoin
         endpoint_id = str(getattr(device, "id", ""))
         state = str(getattr(device, "state", "unknown"))
         # pycaw's AudioDeviceState enum exposes ACTIVE by its numeric value 1.
-        if getattr(getattr(device, "state", None), "value", getattr(device, "state", None)) not in (1, "active", "ACTIVE"):
+        raw_state = getattr(device, "state", None)
+        is_active = getattr(raw_state, "value", raw_state) in (1, "active", "ACTIVE")
+        if not include_inactive and not is_active:
             continue
         try:
             flow = "unknown"

@@ -63,11 +63,13 @@ def build_tree(snapshot: SnapshotRecord, port_map: PortMap, include_empty: bool 
     roots += [{"id": x, "name": x, "source": "未知", "children": []} for x in ("內建", "藍牙／無線", "虛擬", "未辨識")]
     by_id = {x["id"]: x for x in roots}
     index = {n.instance_id.casefold(): n for n in snapshot.devnodes}
+    active_endpoints = [endpoint for endpoint in snapshot.endpoints
+                        if endpoint.state.rsplit(".", 1)[-1].casefold() == "active" or endpoint.state == "1"]
     all_chains = {}
     classifications = {}
     endpoint_nodes = {}
     endpoint_roots = {}
-    for endpoint in snapshot.endpoints:
+    for endpoint in active_endpoints:
         chain, current, seen = [], endpoint.devnode_id.casefold() if endpoint.devnode_id else None, set()
         while current and current not in seen and current in index:
             seen.add(current); chain.append(index[current]); current = index[current].parent_id
@@ -95,7 +97,7 @@ def build_tree(snapshot: SnapshotRecord, port_map: PortMap, include_empty: bool 
     # Group USB endpoints by the nearest USB function/device devnode. This hides
     # intermediate hub/composite nodes while retaining a stable device identity.
     usb_groups = {}
-    for endpoint in snapshot.endpoints:
+    for endpoint in active_endpoints:
         match = classifications[endpoint.endpoint_id]
         chain = all_chains[endpoint.endpoint_id]
         usb = next((n for n in chain if n.instance_id.upper().startswith("USB\\VID_") and n.location_paths and "&MI_" not in n.instance_id.upper()), None)
@@ -133,7 +135,7 @@ def build_tree(snapshot: SnapshotRecord, port_map: PortMap, include_empty: bool 
         if usb_node and "&MI_" in usb_node.instance_id.upper() and usb_node.parent_id:
             usb_node = index.get(usb_node.parent_id.casefold(), usb_node)
         related = []
-        for endpoint in snapshot.endpoints:
+        for endpoint in active_endpoints:
             chain = all_chains[endpoint.endpoint_id]
             if usb_node and any(n.instance_id.casefold() == usb_node.instance_id.casefold() for n in chain):
                 related.append(endpoint)

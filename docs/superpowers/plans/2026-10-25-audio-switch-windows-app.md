@@ -171,15 +171,15 @@ tests/
 
 ## 階段 3：Windows 平台層寫入（R5、R6、R13 的音訊部分）
 
-- [ ] `IDefaultEndpointWriter`：`IPolicyConfig.SetDefaultEndpoint`，宣告依 SoundSwitch 或 AudioDeviceCmdlets 的公開原始碼，在註解中標明來源與 IID；三個 role 依序設定後逐一讀回。
-- [ ] `IEndpointNameWriter`：`IMMDevice.OpenPropertyStore(STGM_READWRITE)`，寫 `PKEY_Device_DeviceDesc`（`{a45c254e-df1c-4efd-8020-67d146a850e0}`, 2）並 `Commit`，重新開啟讀回確認。
-- [ ] `IAudioProbe`：指定端點以共用模式播放約 1 秒的提示音；錄音峰值以 `IAudioMeterInformation` 讀取。
-- [ ] Live 測試（`AUDIOSWITCH_LIVE=1`），每項都在 `finally` 還原並讀回確認：
+- [x] `IDefaultEndpointWriter`：`IPolicyConfig.SetDefaultEndpoint`，宣告依 SoundSwitch 或 AudioDeviceCmdlets 的公開原始碼，在註解中標明來源與 IID；三個 role 依序設定後逐一讀回。
+- [x] `IEndpointNameWriter`：`IMMDevice.OpenPropertyStore(STGM_READWRITE)`，寫 `PKEY_Device_DeviceDesc`（`{a45c254e-df1c-4efd-8020-67d146a850e0}`, 2）並 `Commit`，重新開啟讀回確認。
+- [x] `IAudioProbe`：指定端點以共用模式播放約 1 秒的提示音；錄音峰值以 `IAudioMeterInformation` 讀取。
+- [x] Live 測試（`AUDIOSWITCH_LIVE=1`），每項都在 `finally` 還原並讀回確認：
   - 切換：保存兩個 flow 各三個 role 的原預設 → 切到另一個作用中端點 → 讀回 → 還原 → 讀回與原狀相同。
-  - 改名：保存原 `DeviceDesc` → 寫入測試名稱 → 讀回 `FriendlyName` 已變 → 還原 → 讀回相同。只對 `IJackInfoSource` 判定為內建的播放端點做，避免影響外接裝置。
+  - 改名：保存原 `DeviceDesc` 與 `FriendlyName` → 寫入測試名稱 → 每 100 ms 輪詢，最多 3 秒，確認 `FriendlyName` 以「寫入值 + ` (`」開頭 → 還原 `DeviceDesc` → 輪詢至 `FriendlyName` 回到原值。只選作用中 render、拓樸根為「內建」且沒有 `IsPhysicalJack` KS 記錄的端點；找不到就失敗，不改用其他端點。
   - 試音與峰值：呼叫不拋例外，峰值介於 0 與 1。
-- [ ] 狀態檢查：live 測試前後各執行一次 `probes/audio_topology.py snapshot pre-live`／`post-live`，並以新增的 `probes/compare_state.py`（唯讀）比對兩份的每個端點 `defaults` 與 `friendly_name`，必須完全相同。不相同時**停止**，回報差異，不要再跑其他寫入測試。
-- [ ] 通過自我審查，commit。
+- [x] 狀態檢查：每項 live test 執行前後立即擷取快照，以 `probes/compare_state.py`（唯讀）比較端點集合、state、`defaults` 與 `friendly_name`；state 轉換標示為實體狀態改變。若不一致，停止後續 live test 並回報差異。
+- [x] 通過自我審查，commit。
 
 ## 階段 4：App 殼與快速切換面板（R7、R8、R12 的介面部分、R16、R17）
 

@@ -4,6 +4,15 @@ from probes.audio_topology.calibration import PortMap
 from probes.audio_topology.models import EndpointRecord, DeviceNodeRecord, SnapshotRecord, MachineRecord, JackRecord
 
 class ClassifyTests(unittest.TestCase):
+    def test_tree_ignores_inactive_endpoint_states(self):
+        active = EndpointRecord("active-ep", "render", "AudioDeviceState.Active", "Active speaker")
+        inactive = EndpointRecord("inactive-ep", "render", "AudioDeviceState.Unplugged", "Unplugged speaker")
+        snapshot = SnapshotRecord(1, "now", MachineRecord(), [active, inactive])
+        tree = build_tree(snapshot, PortMap({"interfaces": []}))
+        names = [node["name"] for root in tree["roots"] for node in root["children"]]
+        self.assertIn("Active speaker", names)
+        self.assertNotIn("Unplugged speaker", names)
+
     def test_endpoint_swd_node_does_not_hide_integrated_audio_classification(self):
         endpoint = EndpointRecord("ep", "render", "active")
         nodes = [DeviceNodeRecord(r"SWD\MMDEVAPI\ep"), DeviceNodeRecord(r"INTELAUDIO\FUNC_01")]

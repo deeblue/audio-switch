@@ -16,6 +16,11 @@ class CoreAudioTests(unittest.TestCase):
         records, _ = collect_audio_endpoints([SimpleNamespace(id="inactive", state=2, properties={})])
         self.assertEqual(records, [])
 
+    def test_inactive_endpoint_state_can_be_included_for_state_comparison(self):
+        records, _ = collect_audio_endpoints(
+            [SimpleNamespace(id="inactive", state=2, properties={})], include_inactive=True)
+        self.assertEqual([record.endpoint_id for record in records], ["inactive"])
+
     def test_failed_endpoint_does_not_stop_collection(self):
         bad = SimpleNamespace(id="bad", state=1, properties=object())
         good = SimpleNamespace(id="good", state=1, properties={})
