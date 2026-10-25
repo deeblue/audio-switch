@@ -11,8 +11,9 @@ public sealed class DeviceTreeLiveTests
         var expected = SnapshotJson.Read(File.ReadAllText(EndpointSourceLiveTestsPath.ProbeSnapshot));
         var source = new WindowsDeviceTreeSource();
         var expectedNodes = expected.Devnodes.ToDictionary(node => node.InstanceId, StringComparer.OrdinalIgnoreCase);
+        var activeExpected = expected.Endpoints.Where(ProbeEndpointState.IsActive);
 
-        foreach (var endpoint in expected.Endpoints)
+        foreach (var endpoint in activeExpected)
         {
             var actualChain = source.GetAncestors(endpoint.DevnodeId!);
             var expectedChain = BuildExpectedChain(endpoint.DevnodeId!, expectedNodes);

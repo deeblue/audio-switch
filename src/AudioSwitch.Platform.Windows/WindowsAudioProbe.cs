@@ -1,12 +1,17 @@
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using AudioSwitch.Core;
 
 namespace AudioSwitch.Platform.Windows;
 
 /// <summary>Plays a short shared-mode tone on one endpoint and reads endpoint capture peak.</summary>
-public sealed class WindowsAudioProbe : IDisposable
+public sealed class WindowsAudioProbe : IAudioProbe
 {
     private readonly MMDeviceEnumerator _enumerator = new();
+    private MMDevice? _captureDevice;
+    private WasapiRecorder? _capture;
+    private string? _captureEndpointId;
+    private TaskCompletionSource? _captureStopped;
     private bool _disposed;
 
     public async Task PlayTestToneAsync(string endpointId, TimeSpan duration, CancellationToken cancellationToken = default)
@@ -40,21 +45,98 @@ public sealed class WindowsAudioProbe : IDisposable
         }
     }
 
+    public void StartPeakSampling(string endpointId)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentException.ThrowIfNullOrWhiteSpace(endpointId);
+        if (_capture is not null)
+            throw new InvalidOperationException("Peak sampling is already active.");
+
+        var captureDevice = _enumerator.GetDevice(endpointId);
+        if (captureDevice.DataFlow != DataFlow.Capture || captureDevice.State != DeviceState.Active)
+        {
+            captureDevice.Dispose();
+            throw new ArgumentException("峰值只能讀取作用中的錄音端點。", nameof(endpointId));
+        }
+
+        WasapiRecorder? capture = null;
+        try
+        {
+            capture = new WasapiRecorderBuilder().WithDevice(captureDevice).WithSharedMode().WithEventSync().WithBufferLength(100).Build();
+            var stopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            capture.RecordingStopped += (_, args) =>
+            {
+                if (args.Exception is null) stopped.TrySetResult();
+                else stopped.TrySetException(args.Exception);
+            };
+            _captureDevice = captureDevice;
+            _capture = capture;
+            _captureEndpointId = endpointId;
+            _captureStopped = stopped;
+            capture.StartRecording();
+        }
+        catch
+        {
+            capture?.Dispose();
+            captureDevice.Dispose();
+            ClearCaptureState();
+            throw;
+        }
+    }
+
     public float ReadPeakLevel(string endpointId)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentException.ThrowIfNullOrWhiteSpace(endpointId);
-        using var device = _enumerator.GetDevice(endpointId);
-        if (device.DataFlow != DataFlow.Capture || device.State != DeviceState.Active)
-            throw new ArgumentException("峰值只能讀取作用中的錄音端點。", nameof(endpointId));
-        return device.AudioMeterInformation.MasterPeakValue;
+        if (_capture is null || _captureDevice is null ||
+            !_captureEndpointId!.Equals(endpointId, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Peak sampling is not active for the requested capture endpoint.");
+        if (_captureStopped?.Task.IsCompleted == true)
+            throw new InvalidOperationException("The capture stream stopped unexpectedly.", _captureStopped.Task.Exception);
+        return _captureDevice.AudioMeterInformation.MasterPeakValue;
+    }
+
+    public async Task StopPeakSamplingAsync(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var capture = _capture;
+        if (capture is null) return;
+        try
+        {
+            capture.StopRecording();
+            await _captureStopped!.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            ReleaseCapture(capture);
+        }
     }
 
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
+        if (_capture is { } capture)
+        {
+            try { capture.StopRecording(); }
+            finally { ReleaseCapture(capture); }
+        }
         _enumerator.Dispose();
+    }
+
+    private void ReleaseCapture(WasapiRecorder capture)
+    {
+        capture.Dispose();
+        _captureDevice?.Dispose();
+        ClearCaptureState();
+    }
+
+    private void ClearCaptureState()
+    {
+        _capture = null;
+        _captureDevice = null;
+        _captureEndpointId = null;
+        _captureStopped = null;
     }
 
     private sealed class SineWaveProvider(TimeSpan duration) : IWaveProvider

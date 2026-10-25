@@ -11,13 +11,14 @@ public sealed class EndpointSourceLiveTests
     {
         var probePath = FindRepoFile(Path.Combine("probes", "out", "live-compare.json"));
         var expected = SnapshotJson.Read(File.ReadAllText(probePath));
+        var activeExpected = expected.Endpoints.Where(ProbeEndpointState.IsActive).ToArray();
         using var source = new WindowsAudioEndpointSource();
 
         var actual = source.EnumerateActiveEndpoints();
 
-        Assert.Equal(expected.Endpoints.Select(endpoint => endpoint.EndpointId).Order(StringComparer.OrdinalIgnoreCase),
+        Assert.Equal(activeExpected.Select(endpoint => endpoint.EndpointId).Order(StringComparer.OrdinalIgnoreCase),
             actual.Select(endpoint => endpoint.EndpointId).Order(StringComparer.OrdinalIgnoreCase));
-        foreach (var endpoint in expected.Endpoints)
+        foreach (var endpoint in activeExpected)
         {
             var found = actual.Single(item => item.EndpointId.Equals(endpoint.EndpointId, StringComparison.OrdinalIgnoreCase));
             Assert.Equal(endpoint.Flow, found.Flow);

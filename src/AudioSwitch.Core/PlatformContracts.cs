@@ -85,5 +85,7 @@ public interface IEndpointNameWriter : IDisposable
 public interface IAudioProbe : IDisposable
 {
     Task PlayTestToneAsync(string endpointId, TimeSpan duration, CancellationToken cancellationToken = default);
+    void StartPeakSampling(string endpointId);
     float ReadPeakLevel(string endpointId);
+    Task StopPeakSamplingAsync(CancellationToken cancellationToken = default);
 }

@@ -24,6 +24,8 @@ probes/.venv/Scripts/python.exe -m unittest discover -s probes/tests -t .
 
 快照與 JSON 存在 `probes/out/`。`tree` 預設隱藏沒有子項的機身接口；`--all` 顯示全部接口。`calibrate` 會把新發現的 LocationPaths 前綴加到指定接口，並記錄 USB 2／USB 3／PCIe 隧道／未知路徑類型；一個接口可保留多組前綴。顯示校準只保存 adapter device path、target ID、connector instance、output technology，不用 path ID、LUID 或 `DISPLAYn` 作鍵。
 
+`snapshot` 與 `json` 會記錄所有 Core Audio 端點狀態，包含 Disabled、NotPresent 與 Unplugged。只有 Active 端點會讀取 PnP／KS／顯示拓樸資料，並進入 `tree` 分類。
+
 ## 插拔校準清單
 
 每次只改一條實體連線。執行前記下**實際插入的外殼接口**，再把下列 `<接口 ID>` 換成 `ports.json` 裡對應 ID。接口 ID：`usb-a-left`、`usb-a-right`、`usb-c-left-front`、`usb-c-left-rear`、`hdmi`、`jack-combo`。四個 USB 孔的位置來自使用者實測；HDMI 與 3.5mm 仍標為「未知」。勿依 USB(1) 或 HS07 等 OS 路徑編號猜測機身位置。

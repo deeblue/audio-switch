@@ -185,12 +185,12 @@ tests/
 
 在階段 4 之前完成。每項先寫或先跑出會失敗的測試，再修正。
 
-- [ ] **實機比對只看作用中端點**：`probes/audio_topology.py snapshot`／`json` 會記錄所有狀態的端點（狀態比對需要）。階段 2 的實機測試（`EndpointSourceLiveTests`、`DeviceTreeLiveTests`、`JackInfoLiveTests`、`TopologySnapshotLiveTests`）從探針快照取預期值時，只取 state 為 Active 的端點。先重新產生 `live-compare.json`，確認這四個測試在修正前失敗、修正後通過。`probes/README.md` 註明快照包含非作用中端點，只有作用中端點會讀取拓樸並進入樹狀。
-- [ ] **探針測試的匯入方式**：`probes/tests/test_compare_state.py` 與其他探針測試一致，從 `probes.audio_topology` 匯入；以自我審查第 3 步的固定指令全部通過。
-- [ ] **平台類別實作 Core 介面**：`WindowsEndpointNameWriter` 實作 `IEndpointNameWriter`、`WindowsAudioProbe` 實作 `IAudioProbe`。在 `AudioSwitch.Platform.Windows.Tests` 新增一般（非 live）測試：以反射列出 `AudioSwitch.Core` 中所有 `public interface`，扣除明列的非平台介面，每個平台介面在 `AudioSwitch.Platform.Windows` 都必須有一個實作類別；尚未到實作階段的介面（`IHotkeyService`、`IAutostartService`、`ITrayAnchor` 等）以明列的待實作清單排除，並在該階段完成時移出清單。
-- [ ] **錄音峰值**：`IAudioMeterInformation` 在沒有任何程式錄音時通常回報 0。`IAudioProbe` 提供開始／停止峰值取樣：取樣期間以共用模式開啟該錄音端點的擷取串流（只讀峰值，不保存、不傳送音訊），停止時釋放。live 測試確認開始、讀取、停止不拋例外且峰值介於 0 與 1，停止後串流已釋放；峰值會隨聲音變動列入使用者驗收。
-- [ ] `WindowsEndpointNameWriter` 改用 NAudio 的公開 API（`MMDevice.GetPropertyInformation(StorageAccessMode.ReadWrite)`、`PropertyStore.SetValue`）；只有公開 API 無法達成時才用反射，並在註解說明原因。改完後重跑改名 live 測試。
-- [ ] 通過自我審查（第 3、4 步已更新），commit。
+- [x] **實機比對只看作用中端點**：`probes/audio_topology.py snapshot`／`json` 會記錄所有狀態的端點（狀態比對需要）。階段 2 的實機測試（`EndpointSourceLiveTests`、`DeviceTreeLiveTests`、`JackInfoLiveTests`、`TopologySnapshotLiveTests`）從探針快照取預期值時，只取 state 為 Active 的端點。先重新產生 `live-compare.json`，確認這四個測試在修正前失敗、修正後通過。`probes/README.md` 註明快照包含非作用中端點，只有作用中端點會讀取拓樸並進入樹狀。
+- [x] **探針測試的匯入方式**：`probes/tests/test_compare_state.py` 與其他探針測試一致，從 `probes.audio_topology` 匯入；以自我審查第 3 步的固定指令全部通過。
+- [x] **平台類別實作 Core 介面**：`WindowsEndpointNameWriter` 實作 `IEndpointNameWriter`、`WindowsAudioProbe` 實作 `IAudioProbe`。在 `AudioSwitch.Platform.Windows.Tests` 新增一般（非 live）測試：以反射列出 `AudioSwitch.Core` 中所有 `public interface`，扣除明列的非平台介面，每個平台介面在 `AudioSwitch.Platform.Windows` 都必須有一個實作類別；尚未到實作階段的介面（`IHotkeyService`、`IAutostartService`、`ITrayAnchor` 等）以明列的待實作清單排除，並在該階段完成時移出清單。
+- [x] **錄音峰值**：`IAudioMeterInformation` 在沒有任何程式錄音時通常回報 0。`IAudioProbe` 提供開始／停止峰值取樣：取樣期間以共用模式開啟該錄音端點的擷取串流（只讀峰值，不保存、不傳送音訊），停止時釋放。live 測試確認開始、讀取、停止不拋例外且峰值介於 0 與 1，停止後串流已釋放；峰值會隨聲音變動列入使用者驗收。
+- [x] `WindowsEndpointNameWriter` 改用 NAudio 的公開 API（`MMDevice.GetPropertyInformation(StorageAccessMode.ReadWrite)`、`PropertyStore.SetValue`）；只有公開 API 無法達成時才用反射，並在註解說明原因。改完後重跑改名 live 測試。
+- [x] 通過自我審查（第 3、4 步已更新），commit。
 
 ## 階段 4：App 殼與快速切換面板（R7、R8、R12 的介面部分、R16、R17）
 

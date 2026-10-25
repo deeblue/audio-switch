@@ -52,8 +52,8 @@ public sealed class EndpointWriteLiveTests
         });
 
     [LiveFact]
-    public Task TestTonePlaysOnSpecifiedEndpointAndCapturePeakIsInRange() =>
-        LiveStateSnapshotGuard.RunAsync(nameof(TestTonePlaysOnSpecifiedEndpointAndCapturePeakIsInRange), async () =>
+    public Task TestToneAndCapturePeakSamplingCanStartReadAndStop() =>
+        LiveStateSnapshotGuard.RunAsync(nameof(TestToneAndCapturePeakSamplingCanStartReadAndStop), async () =>
         {
             using var endpoints = new WindowsAudioEndpointSource();
             using var probe = new WindowsAudioProbe();
@@ -61,9 +61,18 @@ public sealed class EndpointWriteLiveTests
             AssertAtLeastTwoPerFlow(active);
             var render = active.First(endpoint => endpoint.Flow == "render");
             var capture = active.First(endpoint => endpoint.Flow == "capture");
-            await probe.PlayTestToneAsync(render.EndpointId, TimeSpan.FromSeconds(1));
-            var peak = probe.ReadPeakLevel(capture.EndpointId);
-            Assert.InRange(peak, 0f, 1f);
+            probe.StartPeakSampling(capture.EndpointId);
+            try
+            {
+                await probe.PlayTestToneAsync(render.EndpointId, TimeSpan.FromSeconds(1));
+                var peak = probe.ReadPeakLevel(capture.EndpointId);
+                Assert.InRange(peak, 0f, 1f);
+            }
+            finally
+            {
+                await probe.StopPeakSamplingAsync();
+            }
+            Assert.Throws<InvalidOperationException>(() => probe.ReadPeakLevel(capture.EndpointId));
         });
 
     [LiveFact]

@@ -10,10 +10,13 @@ public sealed class JackInfoLiveTests
     public void JackConnectionTypesMatchProbeAndAtLeastOneEndpointHasAJackDescriptor()
     {
         var expected = SnapshotJson.Read(File.ReadAllText(EndpointSourceLiveTestsPath.ProbeSnapshot));
+        var activeExpected = expected.Endpoints.Where(ProbeEndpointState.IsActive).ToArray();
+        var activeIds = activeExpected.Select(endpoint => endpoint.EndpointId).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var source = new WindowsJackInfoSource();
-        var actual = expected.Endpoints.SelectMany(endpoint => source.GetEndpointJackInfo(endpoint.EndpointId)).ToArray();
+        var actual = activeExpected.SelectMany(endpoint => source.GetEndpointJackInfo(endpoint.EndpointId)).ToArray();
 
         var expectedRows = expected.Jacks
+            .Where(jack => activeIds.Contains(jack.EndpointId))
             .Select(jack => (jack.EndpointId, ConnectionType: GetInt(jack.Jack, "connection_type")))
             .OrderBy(row => row.EndpointId, StringComparer.OrdinalIgnoreCase)
             .ThenBy(row => row.ConnectionType)

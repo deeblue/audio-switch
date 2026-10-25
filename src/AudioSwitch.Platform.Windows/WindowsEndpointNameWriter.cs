@@ -1,12 +1,12 @@
-using System.Reflection;
 using System.Runtime.InteropServices;
+using AudioSwitch.Core;
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 
 namespace AudioSwitch.Platform.Windows;
 
 /// <summary>Writes only PKEY_Device_DeviceDesc, as required for endpoint aliases.</summary>
-public sealed class WindowsEndpointNameWriter : IDisposable
+public sealed class WindowsEndpointNameWriter : IEndpointNameWriter
 {
     private static readonly PropertyKey DeviceDescriptionKey = new(new Guid("a45c254e-df1c-4efd-8020-67d146a850e0"), 2);
     private readonly MMDeviceEnumerator _enumerator = new();
@@ -30,26 +30,13 @@ public sealed class WindowsEndpointNameWriter : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(endpointId);
         ArgumentNullException.ThrowIfNull(value);
         using var device = GetDevice(endpointId);
-        var getStore = typeof(MMDevice).GetMethod("GetPropertyInformation", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            ?? throw new MissingMethodException(typeof(MMDevice).FullName, "GetPropertyInformation");
-        var accessType = getStore.GetParameters()[0].ParameterType;
-        _ = getStore.Invoke(device, [Enum.Parse(accessType, "ReadWrite")]);
+        device.GetPropertyInformation(StorageAccessMode.ReadWrite);
         var store = device.Properties;
-
-        var variantType = typeof(PropVariant);
-        var variant = Activator.CreateInstance(variantType);
-        var typeField = variantType.GetField("vt", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.IgnoreCase)
-            ?? throw new MissingFieldException(variantType.FullName, "vt");
-        var pointerField = variantType.GetField("pointerValue", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.IgnoreCase)
-            ?? throw new MissingFieldException(variantType.FullName, "pointerValue");
         var textPointer = Marshal.StringToCoTaskMemUni(value);
-        typeField.SetValue(variant, Convert.ChangeType(31, typeField.FieldType)); // VT_LPWSTR
-        pointerField.SetValue(variant, textPointer);
-        var setValue = typeof(PropertyStore).GetMethod("SetValue", [typeof(PropertyKey), variantType])
-            ?? throw new MissingMethodException(typeof(PropertyStore).FullName, "SetValue");
+        var variant = new PropVariant { vt = 31, pointerValue = textPointer }; // VT_LPWSTR
         try
         {
-            setValue.Invoke(store, [DeviceDescriptionKey, variant]);
+            store.SetValue(DeviceDescriptionKey, variant);
             store.Commit();
         }
         finally

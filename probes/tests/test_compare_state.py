@@ -1,6 +1,6 @@
 import unittest
 
-from audio_topology.compare_state import compare_state
+from probes.audio_topology.compare_state import compare_state
 
 
 class CompareStateTests(unittest.TestCase):

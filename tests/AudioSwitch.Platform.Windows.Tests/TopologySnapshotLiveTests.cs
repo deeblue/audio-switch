@@ -9,10 +9,11 @@ public sealed class TopologySnapshotLiveTests
     public void SnapshotContainsLiveEndpointsMachineAndTopologyData()
     {
         var expected = SnapshotJson.Read(File.ReadAllText(EndpointSourceLiveTestsPath.ProbeSnapshot));
+        var activeExpected = expected.Endpoints.Where(ProbeEndpointState.IsActive).ToArray();
         using var endpointSource = new WindowsAudioEndpointSource();
         var actual = new WindowsAudioTopologySnapshotSource(endpoints: endpointSource).Capture();
 
-        Assert.Equal(expected.Endpoints.Select(item => item.EndpointId).Order(StringComparer.Ordinal),
+        Assert.Equal(activeExpected.Select(item => item.EndpointId).Order(StringComparer.Ordinal),
             actual.Endpoints.Select(item => item.EndpointId).Order(StringComparer.Ordinal));
         Assert.Equal(expected.Machine.Manufacturer, actual.Machine.Manufacturer);
         Assert.Equal(expected.Machine.Model, actual.Machine.Model);
