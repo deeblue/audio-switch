@@ -22,10 +22,10 @@
 
 ## 環境前置
 
-- [ ] 執行 `dotnet --list-sdks`。若沒有 10.x，自行執行 `winget install --id Microsoft.DotNet.SDK.10 --exact --accept-source-agreements --accept-package-agreements` 安裝（使用者已授權），完成後重開 shell 再確認 `dotnet --list-sdks` 列出 10.x。安裝失敗時停止回報。
-- [ ] 先前為本計畫安裝、但本計畫已不再使用的項目必須移除，例如 Avalonia 專案範本（`dotnet new uninstall Avalonia.Templates`）、`dotnet tool` 全域工具、其他 winget 套件。以 `dotnet new list`、`dotnet tool list -g`、`winget list` 確認，並在階段 0 的審查報告列出移除了哪些項目。.NET 10 SDK 保留；NuGet 快取不需清除。
-- [ ] 確認 `probes/.venv/Scripts/python.exe` 可執行探針：`probes/.venv/Scripts/python.exe probes/audio_topology.py tree`。
-- [ ] 以 NuGet 查詢下列允許套件的最新穩定版，寫入 `src/Directory.Packages.props` 鎖定版本。不得使用預覽版。
+- [x] 執行 `dotnet --list-sdks`。若沒有 10.x，自行執行 `winget install --id Microsoft.DotNet.SDK.10 --exact --accept-source-agreements --accept-package-agreements` 安裝（使用者已授權），完成後重開 shell 再確認 `dotnet --list-sdks` 列出 10.x。安裝失敗時停止回報。
+- [x] 先前為本計畫安裝、但本計畫已不再使用的項目必須移除，例如 Avalonia 專案範本（`dotnet new uninstall Avalonia.Templates`）、`dotnet tool` 全域工具、其他 winget 套件。以 `dotnet new list`、`dotnet tool list -g`、`winget list` 確認，並在階段 0 的審查報告列出移除了哪些項目。.NET 10 SDK 保留；NuGet 快取不需清除。
+- [x] 確認 `probes/.venv/Scripts/python.exe` 可執行探針：`probes/.venv/Scripts/python.exe probes/audio_topology.py tree`。
+- [x] 以 NuGet 查詢下列允許套件的最新穩定版，寫入 `src/Directory.Packages.props` 鎖定版本。不得使用預覽版。
 
   | 用途 | 允許的套件 | 版本規則 |
   |---|---|---|
@@ -115,11 +115,11 @@ tests/
 
 ## 階段 0：專案骨架
 
-- [ ] 建立上面的目錄、方案與專案；`Directory.Build.props` 設 `Nullable=enable`、`TreatWarningsAsErrors=true`、`ImplicitUsings=enable`。
-- [ ] App 只顯示一個系統匣圖示與「結束」選單，確認能啟動與結束。
-- [ ] 每個測試專案各有一個會通過的測試。
-- [ ] 在 `.gitignore` 確認 `bin/`、`obj/` 已忽略（現有規則已涵蓋）。
-- [ ] 通過自我審查，commit。
+- [x] 建立上面的目錄、方案與專案；`Directory.Build.props` 設 `Nullable=enable`、`TreatWarningsAsErrors=true`、`ImplicitUsings=enable`。
+- [x] App 只顯示一個系統匣圖示與「結束」選單，確認能啟動與結束。
+- [x] 每個測試專案各有一個會通過的測試。
+- [x] 在 `.gitignore` 確認 `bin/`、`obj/` 已忽略（現有規則已涵蓋）。
+- [x] 通過自我審查，commit。
 
 ## 階段 1：Core 邏輯（R2、R3、R4、R6 的資料部分、R12 的分組部分、R18）
 
