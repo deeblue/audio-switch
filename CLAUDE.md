@@ -18,7 +18,7 @@
 - **三個 role**：`eConsole`、`eMultimedia`、`eCommunications`。播放與錄音各有自己的預設端點；通訊預設可能與一般預設不同。首版選取端點時三個 role 一起切換。
 - **四類端點**：A. USB 音訊（含 Dock 3.5mm）沿 parent 取 `DEVPKEY_Device_LocationPaths`，對接口校準表做最長前綴比對；B. 顯示器音訊掛在 Intel Display Audio／GPU 音訊下，**不在 USB 樹中**，經 Dock 也一樣，要用 `IKsJackSinkInformation` 對 DisplayConfig 顯示路徑；USB 顯示裝置（7C、DisplayLink）例外，其顯示 adapter 在 USB 樹下，與同一 USB 裝置的音訊併組；C. 主機板內建音效用 `IKsJackDescription`；D. 藍牙、虛擬等不判斷位置。Dock 沒有專門規則：以 `PKEY_Device_ContainerId` 歸組，以可移除與否區分 Dock 內建音效和 Dock USB 孔上的裝置；Dock 上的螢幕依同一個機身接口併入 Dock 節點。Dock 的具體輸出孔與 Dock USB 孔位置通常無法判斷，只顯示型號、螢幕編號／排列位置或 port 編號。
 - **辨認限制**：任何單一線索都不能證明「這是左螢幕／Dock 耳機孔」。3.5mm 插孔不會提供耳麥品牌；驅動可能讓耳機和內建喇叭共用一個端點；許多 USB 音效晶片不回報插入偵測。無法判定時標示未辨識，不以名稱猜測。
-- **確認方式**：播放端點用 WASAPI 試音；錄音端點用 `IAudioMeterInformation` 顯示峰值；螢幕用「識別」大字。只對 `DEVICE_STATE_ACTIVE` 端點執行；插拔通知後重讀狀態。
+- **確認方式**：播放端點用 WASAPI 試音；錄音端點用 `IAudioMeterInformation` 顯示峰值（沒有程式錄音時通常為 0，須在取樣期間以共用模式開啟該端點的擷取串流；只在設定視窗按「聽」時取樣）；螢幕用「識別」大字。只對 `DEVICE_STATE_ACTIVE` 端點執行；插拔通知後重讀狀態。
 - **別名**：寫入端點的 `PKEY_Device_DeviceDesc`，一般使用者權限即可（本機已驗證）；Windows 顯示為「別名 (介面卡名稱)」，Windows 設定、Teams、Zoom 都看得到。同一實體設備的播放與錄音端點共用同一別名。Windows 依端點保存名稱；程式只另存「端點 ID → 原始名稱」供還原，新端點不推測沿用別名。Teams 對可插拔裝置在重新插拔後更新名稱，內建裝置須完整重開 Teams。Microsoft 文件註明用戶端不應設定端點屬性，沒有相容性保證。
 - **其他程式跟隨預設**：Teams 通話中跟隨 Windows 預設播放與錄音端點（本機已驗證）；Zoom「與系統相同」跟隨系統預設。跟隨哪個 role 未驗證。
 - **個別程式指定裝置**（後續範圍的進階設定）：未公開的 WinRT `Windows.Media.Internal.AudioPolicyConfig`，`SetPersistedDefaultAudioEndpoint(pid, flow, role, deviceId)`，21H2 後 IID `ab3d4648-e242-459f-b02f-541c70306324`，實作參考 EarTrumpet。本機以一般使用者權限驗證播放端點：立即生效、不跟隨系統預設切換、Windows 音量混音程式同步顯示；依應用程式保存，但設定與清除都須傳入執行中的 PID。錄音端點未驗證。
