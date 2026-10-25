@@ -23,6 +23,7 @@
 ## 環境前置
 
 - [ ] 執行 `dotnet --list-sdks`。若沒有 10.x，自行執行 `winget install --id Microsoft.DotNet.SDK.10 --exact --accept-source-agreements --accept-package-agreements` 安裝（使用者已授權），完成後重開 shell 再確認 `dotnet --list-sdks` 列出 10.x。安裝失敗時停止回報。
+- [ ] 先前為本計畫安裝、但本計畫已不再使用的項目必須移除，例如 Avalonia 專案範本（`dotnet new uninstall Avalonia.Templates`）、`dotnet tool` 全域工具、其他 winget 套件。以 `dotnet new list`、`dotnet tool list -g`、`winget list` 確認，並在階段 0 的審查報告列出移除了哪些項目。.NET 10 SDK 保留；NuGet 快取不需清除。
 - [ ] 確認 `probes/.venv/Scripts/python.exe` 可執行探針：`probes/.venv/Scripts/python.exe probes/audio_topology.py tree`。
 - [ ] 以 NuGet 查詢下列允許套件的最新穩定版，寫入 `src/Directory.Packages.props` 鎖定版本。不得使用預覽版。
 
