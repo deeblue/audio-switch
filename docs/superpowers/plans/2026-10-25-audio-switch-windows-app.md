@@ -125,26 +125,26 @@ tests/
 
 **Golden 測試資料**：
 
-- [ ] 新增 `probes/export_golden.py`（唯讀，只讀 snapshot 與 ports.json），對每份 snapshot 輸出：每個端點的 `category`、`interface_id`、所屬裝置分組 key（USB devnode instance ID 或無）、顯示路徑所屬分組；以及校準結果（`status`、各接點的 `transport` 與 `location_paths`）。
-- [ ] 把 `probes/out/` 中 `port-left-usba`、`port-right-usba`、`port-left-usbc-front`、`port-left-usbc-rear`、`final-after` 五份 snapshot 與 `probes/ports.json` 複製到 `tests/AudioSwitch.Core.Tests/Fixtures/`，並用上面的腳本產生 golden JSON。校準 golden 至少涵蓋：四組相鄰孔位移動、`final-after → port-left-usba`（舊快照，必須成功且不含 iGPU）。
+- [x] 新增 `probes/export_golden.py`（唯讀，只讀 snapshot 與 ports.json），對每份 snapshot 輸出：每個端點的 `category`、`interface_id`、所屬裝置分組 key（USB devnode instance ID 或無）、顯示路徑所屬分組；以及校準結果（`status`、各接點的 `transport` 與 `location_paths`）。
+- [x] 把 `probes/out/` 中 `port-left-usba`、`port-right-usba`、`port-left-usbc-front`、`port-left-usbc-rear`、`final-after` 五份 snapshot 與 `probes/ports.json` 複製到 `tests/AudioSwitch.Core.Tests/Fixtures/`，並用上面的腳本產生 golden JSON。校準 golden 至少涵蓋：四組相鄰孔位移動、`final-after → port-left-usba`（舊快照，必須成功且不含 iGPU）。
 - [ ] 若 `probes/out/` 缺少上述檔案，**停止**回報，不要自行偽造 snapshot。
 
 **實作**：
 
-- [ ] `Snapshot` 等模型可讀取探針的 snapshot JSON。
-- [ ] `TopologyBuilder`：移植 `classify.py` 的 `classify_endpoint`、`is_physical_jack`、`build_tree`。產品的根節點命名依 README「介面」：未校準的 USB 根為「USB（未設定接口）」；接口根使用使用者名稱。
-- [ ] `AttachmentDetector` 與 `PortTable`：移植 `attachment_nodes`、`attachment_transport`、`calibrate_port_map`、`usb_path_type`、顯示 connector 校準。另外新增「以目前路徑校準」：取該端點祖先鏈中，父節點為 USB root hub 或 PCIe root port 的那一個節點作為接點。
-- [ ] 設定檔讀寫：三個 JSON、`schema_version`、原子寫入、機器身分比對。
-- [ ] 別名資料邏輯：同一實體設備（同一 USB 裝置分組或同一 3.5mm 插孔）的播放與錄音端點視為一組；保存原始名稱；第一次設別名才保存原始名稱，之後改名不覆蓋。
+- [x] `Snapshot` 等模型可讀取探針的 snapshot JSON。
+- [x] `TopologyBuilder`：移植 `classify.py` 的 `classify_endpoint`、`is_physical_jack`、`build_tree`。產品的根節點命名依 README「介面」：未校準的 USB 根為「USB（未設定接口）」；接口根使用使用者名稱。
+- [x] `AttachmentDetector` 與 `PortTable`：移植 `attachment_nodes`、`attachment_transport`、`calibrate_port_map`、`usb_path_type`、顯示 connector 校準。另外新增「以目前路徑校準」：取該端點祖先鏈中，父節點為 USB root hub 或 PCIe root port 的那一個節點作為接點。
+- [x] 設定檔讀寫：三個 JSON、`schema_version`、原子寫入、機器身分比對。
+- [x] 別名資料邏輯：同一實體設備（同一 USB 裝置分組或同一 3.5mm 插孔）的播放與錄音端點視為一組；保存原始名稱；第一次設別名才保存原始名稱，之後改名不覆蓋。
 
 **測試**（全部在 Core.Tests，不需實機）：
 
-- [ ] Golden 比對：C# 對每份 fixture 產生的類別、接口 ID、分組 key 與 golden 完全相同。
-- [ ] 校準 golden 比對，含 ambiguous、PCIe root complex 排除、只有屬性變化不算移動。
-- [ ] 同名端點不合併；未校準時 USB 裝置落在「USB（未設定接口）」且不輸出 `USB(n)`。
-- [ ] 機器身分不符時接口表停用。
-- [ ] 設定檔損毀或 `schema_version` 不符時不當掉，回報錯誤並以空設定運作。
-- [ ] 通過自我審查，commit。
+- [x] Golden 比對：C# 對每份 fixture 產生的類別、接口 ID、分組 key 與 golden 完全相同。
+- [x] 校準 golden 比對，含 ambiguous、PCIe root complex 排除、只有屬性變化不算移動。
+- [x] 同名端點不合併；未校準時 USB 裝置落在「USB（未設定接口）」且不輸出 `USB(n)`。
+- [x] 機器身分不符時接口表停用。
+- [x] 設定檔損毀或 `schema_version` 不符時不當掉，回報錯誤並以空設定運作。
+- [x] 通過自我審查，commit。
 
 ## 階段 2：Windows 平台層唯讀（R1、R7 的事件部分、R13 的螢幕範圍）
 

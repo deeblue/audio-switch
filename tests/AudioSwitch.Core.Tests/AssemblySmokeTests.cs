@@ -5,6 +5,6 @@ public class AssemblySmokeTests
     [Fact]
     public void CoreAssemblyCanBeLoaded()
     {
-        Assert.Equal("AudioSwitch.Core", typeof(AudioSwitch.Core.Class1).Assembly.GetName().Name);
+        Assert.Equal("AudioSwitch.Core", typeof(AudioSwitch.Core.Snapshot).Assembly.GetName().Name);
     }
 }

@@ -1,0 +1,2176 @@
+{
+  "captured_at": "2026-10-23T10:59:26.291126+00:00",
+  "devnodes": [
+    {
+      "container_id": "aaae6756-b21e-5a52-8465-7fa958ca5682",
+      "errors": [],
+      "instance_id": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{70C04F4D-CF1C-43AC-98A9-2C1843DE06AA}",
+      "location_paths": [],
+      "name": "Realtek HD Audio 2nd output (Realtek(R) Audio)",
+      "parent_id": "INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D&REV_1000\\5&4F14816&0&0001DIF_000B&UIF_0000",
+      "properties": {
+        "bus_reported_description": [
+          "GenericAudioEndpoint",
+          "SWD\\GenericRaw",
+          "SWD\\Generic"
+        ],
+        "capabilities": 212,
+        "class": "AudioEndpoint",
+        "container_id": "aaae6756-b21e-5a52-8465-7fa958ca5682",
+        "device_name": "c166523c-fe0c-4a94-a586-f1a80cfbbf3e",
+        "errors": {
+          "location_info": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_paths": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "friendly_name": "Realtek HD Audio 2nd output (Realtek(R) Audio)",
+        "location_paths": [],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "friendly_name": 18,
+          "removal_policy": 7
+        },
+        "removable": true,
+        "removal_policy": 2
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D&REV_1000\\5&4F14816&0&0001DIF_000B&UIF_0000",
+      "location_paths": [],
+      "name": "Realtek(R) Audio",
+      "parent_id": "INTELAUDIO\\DSP_CTLR_DEV_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA&REV_0000\\4&250632E&0&0800DIF_000B&UIF_0000",
+      "properties": {
+        "bus_reported_description": [
+          "INTELAUDIO\\DIF_0001&UIF_0000&FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D&REV_1000",
+          "INTELAUDIO\\DIF_0001&UIF_0000&FUNC_01"
+        ],
+        "capabilities": 0,
+        "class": "MEDIA",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "4d36e96c-e325-11ce-bfc1-08002be10318",
+        "errors": {
+          "location_paths": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "friendly_name": "Realtek(R) Audio",
+        "location_info": "HD Audio Bus Driver",
+        "location_paths": [],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "friendly_name": 18,
+          "location_info": 18,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "INTELAUDIO\\DSP_CTLR_DEV_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA&REV_0000\\4&250632E&0&0800DIF_000B&UIF_0000",
+      "location_paths": [
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(HDAS)#ACPI(IDA_)"
+      ],
+      "name": "4d36e97d-e325-11ce-bfc1-08002be10318",
+      "parent_id": "PCI\\VEN_8086&DEV_7728&SUBSYS_512D17AA&REV_00\\3&11583659&1&FB",
+      "properties": {
+        "bus_reported_description": [
+          "INTELAUDIO\\DIF_000B&UIF_0000&DSP_CTLR_DEV_7728&VEN_8086&DEV_0222",
+          "INTELAUDIO\\DSP_CTLR_DEV_EXT_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA",
+          "INTELAUDIO\\DSP_CTLR_DEV_EXT_7728&VEN_8086&DEV_0222"
+        ],
+        "capabilities": 0,
+        "class": "System",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "4d36e97d-e325-11ce-bfc1-08002be10318",
+        "errors": {
+          "friendly_name": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "location_info": "HD Audio Bus Driver",
+        "location_paths": [
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(HDAS)#ACPI(IDA_)"
+        ],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "location_info": 18,
+          "location_paths": 8210,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "PCI\\VEN_8086&DEV_7728&SUBSYS_512D17AA&REV_00\\3&11583659&1&FB",
+      "location_paths": [
+        "PCIROOT(0)#PCI(1F03)",
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(HDAS)"
+      ],
+      "name": "4d36e97d-e325-11ce-bfc1-08002be10318",
+      "parent_id": "ACPI\\PNP0A08\\0",
+      "properties": {
+        "bus_reported_description": [
+          "PCI\\VEN_8086&DEV_7728&REV_00",
+          "PCI\\VEN_8086&DEV_7728",
+          "PCI\\VEN_8086&CC_040380",
+          "PCI\\VEN_8086&CC_0403",
+          "PCI\\VEN_8086",
+          "PCI\\CC_040380",
+          "PCI\\CC_0403"
+        ],
+        "capabilities": 0,
+        "class": "System",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "4d36e97d-e325-11ce-bfc1-08002be10318",
+        "errors": {
+          "friendly_name": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "location_info": "PCI bus 0, device 31, function 3",
+        "location_paths": [
+          "PCIROOT(0)#PCI(1F03)",
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(HDAS)"
+        ],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "location_info": 18,
+          "location_paths": 8210,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "ACPI\\PNP0A08\\0",
+      "location_paths": [
+        "ACPI(_SB_)#ACPI(PC00)"
+      ],
+      "name": "4d36e97d-e325-11ce-bfc1-08002be10318",
+      "parent_id": "ACPI_HAL\\PNP0C08\\0",
+      "properties": {
+        "bus_reported_description": [
+          "*PNP0A03"
+        ],
+        "capabilities": 48,
+        "class": "System",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "4d36e97d-e325-11ce-bfc1-08002be10318",
+        "errors": {
+          "friendly_name": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_info": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "location_paths": [
+          "ACPI(_SB_)#ACPI(PC00)"
+        ],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "location_paths": 8210,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "ACPI_HAL\\PNP0C08\\0",
+      "location_paths": [],
+      "name": "4d36e97d-e325-11ce-bfc1-08002be10318",
+      "parent_id": "ROOT\\ACPI_HAL\\0000",
+      "properties": {
+        "capabilities": 48,
+        "class": "System",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "4d36e97d-e325-11ce-bfc1-08002be10318",
+        "errors": {
+          "bus_reported_description": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "friendly_name": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_info": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_paths": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "location_paths": [],
+        "property_types": {
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "ROOT\\ACPI_HAL\\0000",
+      "location_paths": [],
+      "name": "4d36e966-e325-11ce-bfc1-08002be10318",
+      "parent_id": "HTREE\\ROOT\\0",
+      "properties": {
+        "bus_reported_description": [
+          "DETECTEDInternal\\ACPI_HAL",
+          "DETECTED\\ACPI_HAL"
+        ],
+        "capabilities": 0,
+        "class": "Computer",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "4d36e966-e325-11ce-bfc1-08002be10318",
+        "errors": {
+          "friendly_name": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_info": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_paths": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "location_paths": [],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "HTREE\\ROOT\\0",
+      "location_paths": [],
+      "name": null,
+      "parent_id": null,
+      "properties": {
+        "capabilities": 112,
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "errors": {
+          "bus_reported_description": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "class": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "device_name": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "friendly_name": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_info": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_paths": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "location_paths": [],
+        "property_types": {
+          "capabilities": 7,
+          "container_id": 13,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "d4ad7e0d-a6f4-5689-ac8f-f4f58467c64e",
+      "errors": [],
+      "instance_id": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{8F543F63-43D2-48ED-9AB3-4AA3684B254B}",
+      "location_paths": [],
+      "name": "Speakers (speaker)",
+      "parent_id": "USB\\VID_303A&PID_2986&MI_03\\8&104C998A&0&0003",
+      "properties": {
+        "bus_reported_description": [
+          "GenericAudioEndpoint",
+          "SWD\\GenericRaw",
+          "SWD\\Generic"
+        ],
+        "capabilities": 208,
+        "class": "AudioEndpoint",
+        "container_id": "d4ad7e0d-a6f4-5689-ac8f-f4f58467c64e",
+        "device_name": "c166523c-fe0c-4a94-a586-f1a80cfbbf3e",
+        "errors": {
+          "location_info": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_paths": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "friendly_name": "Speakers (speaker)",
+        "location_paths": [],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "friendly_name": 18,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 3
+      }
+    },
+    {
+      "container_id": "d4ad7e0d-a6f4-5689-ac8f-f4f58467c64e",
+      "errors": [],
+      "instance_id": "USB\\VID_303A&PID_2986&MI_03\\8&104C998A&0&0003",
+      "location_paths": [
+        "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)#USBMI(3)",
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)#USBMI(3)"
+      ],
+      "name": "speaker",
+      "parent_id": "USB\\VID_303A&PID_2986\\80456B6259CC",
+      "properties": {
+        "bus_reported_description": [
+          "USB\\COMPAT_VID_303a&Class_01&SubClass_00&Prot_20",
+          "USB\\COMPAT_VID_303a&Class_01&SubClass_00",
+          "USB\\COMPAT_VID_303a&Class_01",
+          "USB\\Class_01&SubClass_00&Prot_20",
+          "USB\\Class_01&SubClass_00",
+          "USB\\Class_01"
+        ],
+        "capabilities": 128,
+        "class": "MEDIA",
+        "container_id": "d4ad7e0d-a6f4-5689-ac8f-f4f58467c64e",
+        "device_name": "4d36e96c-e325-11ce-bfc1-08002be10318",
+        "errors": {
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "friendly_name": "speaker",
+        "location_info": "0000.0014.0000.006.000.000.000.000.000",
+        "location_paths": [
+          "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)#USBMI(3)",
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)#USBMI(3)"
+        ],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "friendly_name": 18,
+          "location_info": 18,
+          "location_paths": 8210,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 3
+      }
+    },
+    {
+      "container_id": "d4ad7e0d-a6f4-5689-ac8f-f4f58467c64e",
+      "errors": [],
+      "instance_id": "USB\\VID_303A&PID_2986\\80456B6259CC",
+      "location_paths": [
+        "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)",
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)"
+      ],
+      "name": "36fc9e60-c465-11cf-8056-444553540000",
+      "parent_id": "USB\\ROOT_HUB30\\4&186A30EE&0&0",
+      "properties": {
+        "bus_reported_description": [
+          "USB\\COMPAT_VID_303A&DevClass_00&SubClass_00&Prot00",
+          "USB\\COMPAT_VID_303A&DevClass_00&SubClass_00",
+          "USB\\COMPAT_VID_303A&DevClass_00",
+          "USB\\DevClass_00&SubClass_00&Prot_00",
+          "USB\\DevClass_00&SubClass_00",
+          "USB\\DevClass_00",
+          "USB\\COMPOSITE"
+        ],
+        "capabilities": 148,
+        "class": "USB",
+        "container_id": "d4ad7e0d-a6f4-5689-ac8f-f4f58467c64e",
+        "device_name": "36fc9e60-c465-11cf-8056-444553540000",
+        "errors": {
+          "friendly_name": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "location_info": "Port_#0006.Hub_#0002",
+        "location_paths": [
+          "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)",
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)"
+        ],
+        "physical_device_location": "gQAAAAAAAABREQACAwAAAP////8=",
+        "physical_device_location_parsed": {
+          "bay": false,
+          "blue": 0,
+          "dock": false,
+          "ejectable": true,
+          "green": 0,
+          "group_orientation": 0,
+          "group_position": 4,
+          "group_token": 0,
+          "height": 0,
+          "horizontal_position": 1,
+          "ignore_color": true,
+          "lid": false,
+          "ospm_eject_required": true,
+          "panel": 2,
+          "red": 0,
+          "revision": 1,
+          "shape": 4,
+          "user_visible": true,
+          "vertical_position": 1,
+          "width": 0
+        },
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "location_info": 18,
+          "location_paths": 8210,
+          "physical_device_location": 4099,
+          "removal_policy": 7
+        },
+        "removable": true,
+        "removal_policy": 3
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "USB\\ROOT_HUB30\\4&186A30EE&0&0",
+      "location_paths": [
+        "PCIROOT(0)#PCI(1400)#USBROOT(0)",
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)"
+      ],
+      "name": "36fc9e60-c465-11cf-8056-444553540000",
+      "parent_id": "PCI\\VEN_8086&DEV_777D&SUBSYS_512D17AA&REV_00\\3&11583659&1&A0",
+      "properties": {
+        "bus_reported_description": [],
+        "capabilities": 128,
+        "class": "USB",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "36fc9e60-c465-11cf-8056-444553540000",
+        "errors": {
+          "friendly_name": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_info": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "location_paths": [
+          "PCIROOT(0)#PCI(1400)#USBROOT(0)",
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)"
+        ],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "location_paths": 8210,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "PCI\\VEN_8086&DEV_777D&SUBSYS_512D17AA&REV_00\\3&11583659&1&A0",
+      "location_paths": [
+        "PCIROOT(0)#PCI(1400)",
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)"
+      ],
+      "name": "Intel(R) USB 3.20 eXtensible Host Controller - 1.20 (Microsoft)",
+      "parent_id": "ACPI\\PNP0A08\\0",
+      "properties": {
+        "bus_reported_description": [
+          "PCI\\VEN_8086&DEV_777D&REV_00",
+          "PCI\\VEN_8086&DEV_777D",
+          "PCI\\VEN_8086&CC_0C0330",
+          "PCI\\VEN_8086&CC_0C03",
+          "PCI\\VEN_8086",
+          "PCI\\CC_0C0330",
+          "PCI\\CC_0C03"
+        ],
+        "capabilities": 1152,
+        "class": "USB",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "36fc9e60-c465-11cf-8056-444553540000",
+        "errors": {
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "friendly_name": "Intel(R) USB 3.20 eXtensible Host Controller - 1.20 (Microsoft)",
+        "location_info": "PCI bus 0, device 20, function 0",
+        "location_paths": [
+          "PCIROOT(0)#PCI(1400)",
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)"
+        ],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "friendly_name": 18,
+          "location_info": 18,
+          "location_paths": 8210,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{EDCA8FA3-113E-43A3-BBD0-33D61822FFA2}",
+      "location_paths": [],
+      "name": "扬声器 (Realtek(R) Audio)",
+      "parent_id": "INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D&REV_1000\\5&4F14816&0&0001DIF_000B&UIF_0000",
+      "properties": {
+        "bus_reported_description": [
+          "GenericAudioEndpoint",
+          "SWD\\GenericRaw",
+          "SWD\\Generic"
+        ],
+        "capabilities": 208,
+        "class": "AudioEndpoint",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "c166523c-fe0c-4a94-a586-f1a80cfbbf3e",
+        "errors": {
+          "location_info": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_paths": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "friendly_name": "扬声器 (Realtek(R) Audio)",
+        "location_paths": [],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "friendly_name": 18,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "2087ceb6-95f6-5d1d-abf2-c63acb538c1e",
+      "errors": [],
+      "instance_id": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{8DB40E5E-ACE4-41E1-BA5B-84A751C803A2}",
+      "location_paths": [],
+      "name": "麦克风 (Realtek(R) Audio)",
+      "parent_id": "INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D&REV_1000\\5&4F14816&0&0001DIF_000B&UIF_0000",
+      "properties": {
+        "bus_reported_description": [
+          "GenericAudioEndpoint",
+          "SWD\\GenericRaw",
+          "SWD\\Generic"
+        ],
+        "capabilities": 212,
+        "class": "AudioEndpoint",
+        "container_id": "2087ceb6-95f6-5d1d-abf2-c63acb538c1e",
+        "device_name": "c166523c-fe0c-4a94-a586-f1a80cfbbf3e",
+        "errors": {
+          "location_info": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_paths": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "friendly_name": "麦克风 (Realtek(R) Audio)",
+        "location_paths": [],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "friendly_name": 18,
+          "removal_policy": 7
+        },
+        "removable": true,
+        "removal_policy": 2
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{AD7B76DC-FB20-44E5-965E-5FA1F91BB870}",
+      "location_paths": [],
+      "name": "麦克风阵列 (适用于数字麦克风的英特尔® 智音技术)",
+      "parent_id": "INTELAUDIO\\CTLR_DEV_7728&LINKTYPE_02&DEVTYPE_00&VEN_8086&DEV_AE20&SUBSYS_512D17AA&REV_0001\\5&4F14816&0&0000DIF_000B&UIF_0000",
+      "properties": {
+        "bus_reported_description": [
+          "GenericAudioEndpoint",
+          "SWD\\GenericRaw",
+          "SWD\\Generic"
+        ],
+        "capabilities": 208,
+        "class": "AudioEndpoint",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "c166523c-fe0c-4a94-a586-f1a80cfbbf3e",
+        "errors": {
+          "location_info": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_paths": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "friendly_name": "麦克风阵列 (适用于数字麦克风的英特尔® 智音技术)",
+        "location_paths": [],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "friendly_name": 18,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "INTELAUDIO\\CTLR_DEV_7728&LINKTYPE_02&DEVTYPE_00&VEN_8086&DEV_AE20&SUBSYS_512D17AA&REV_0001\\5&4F14816&0&0000DIF_000B&UIF_0000",
+      "location_paths": [],
+      "name": "4d36e96c-e325-11ce-bfc1-08002be10318",
+      "parent_id": "INTELAUDIO\\DSP_CTLR_DEV_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA&REV_0000\\4&250632E&0&0800DIF_000B&UIF_0000",
+      "properties": {
+        "bus_reported_description": [
+          "INTELAUDIO\\DIF_0001&UIF_0000&CTLR_DEV_7728&LINKTYPE_02&DEVTYPE_00&VEN_8086&DEV_AE20",
+          "INTELAUDIO\\CTLR_DEV_EXT_7728&LINKTYPE_02&DEVTYPE_00&VEN_8086&DEV_AE20&SUBSYS_512D17AA",
+          "INTELAUDIO\\CTLR_DEV_EXT_7728&LINKTYPE_02&DEVTYPE_00&VEN_8086&DEV_AE20",
+          "INTELAUDIO\\CTLR_DEV_EXT_7728&VEN_8086&DEV_AE20&SUBSYS_512D17AA",
+          "INTELAUDIO\\CTLR_DEV_EXT_7728&VEN_8086&DEV_AE20"
+        ],
+        "capabilities": 0,
+        "class": "MEDIA",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "4d36e96c-e325-11ce-bfc1-08002be10318",
+        "errors": {
+          "friendly_name": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "location_paths": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "location_info": "Offload Engine Driver",
+        "location_paths": [],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "location_info": 18,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+      "errors": [],
+      "instance_id": "PCI\\VEN_8086&DEV_7D51&SUBSYS_513617AA&REV_03\\3&11583659&1&10",
+      "location_paths": [
+        "PCIROOT(0)#PCI(0200)",
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(GFX0)"
+      ],
+      "name": "Intel(R) Arc(TM) 130T GPU (16GB)",
+      "parent_id": "ACPI\\PNP0A08\\0",
+      "properties": {
+        "bus_reported_description": [
+          "PCI\\VEN_8086&DEV_7D51&REV_03",
+          "PCI\\VEN_8086&DEV_7D51",
+          "PCI\\VEN_8086&CC_030000",
+          "PCI\\VEN_8086&CC_0300",
+          "PCI\\VEN_8086",
+          "PCI\\CC_030000&DT_9",
+          "PCI\\CC_030000",
+          "PCI\\CC_0300&DT_9",
+          "PCI\\CC_0300"
+        ],
+        "capabilities": 0,
+        "class": "Display",
+        "container_id": "00000000-0000-0000-ffff-ffffffffffff",
+        "device_name": "4d36e968-e325-11ce-bfc1-08002be10318",
+        "errors": {
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "friendly_name": "Intel(R) Arc(TM) 130T GPU (16GB)",
+        "location_info": "PCI bus 0, device 2, function 0",
+        "location_paths": [
+          "PCIROOT(0)#PCI(0200)",
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(GFX0)"
+        ],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "friendly_name": 18,
+          "location_info": 18,
+          "location_paths": 8210,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 1
+      }
+    },
+    {
+      "container_id": "d4ad7e0d-a6f4-5689-ac8f-f4f58467c64e",
+      "errors": [],
+      "instance_id": "USB\\VID_303A&PID_2986&MI_00\\8&104C998A&0&0000",
+      "location_paths": [
+        "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)#USBMI(0)",
+        "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)#USB(6)",
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)#USBMI(0)",
+        "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)#USB(6)"
+      ],
+      "name": "4d36e968-e325-11ce-bfc1-08002be10318",
+      "parent_id": "USB\\VID_303A&PID_2986\\80456B6259CC",
+      "properties": {
+        "bus_reported_description": [
+          "USB\\COMPAT_VID_303a&Class_ff&SubClass_00&Prot_00",
+          "USB\\COMPAT_VID_303a&Class_ff&SubClass_00",
+          "USB\\COMPAT_VID_303a&Class_ff",
+          "USB\\Class_ff&SubClass_00&Prot_00",
+          "USB\\Class_ff&SubClass_00",
+          "USB\\Class_ff"
+        ],
+        "capabilities": 0,
+        "class": "Display",
+        "container_id": "d4ad7e0d-a6f4-5689-ac8f-f4f58467c64e",
+        "device_name": "4d36e968-e325-11ce-bfc1-08002be10318",
+        "errors": {
+          "friendly_name": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+          "physical_device_location": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025"
+        },
+        "location_info": "0000.0014.0000.006.000.000.000.000.000",
+        "location_paths": [
+          "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)#USBMI(0)",
+          "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)#USB(6)",
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)#USBMI(0)",
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)#USB(6)"
+        ],
+        "property_types": {
+          "bus_reported_description": 8210,
+          "capabilities": 7,
+          "class": 18,
+          "container_id": 13,
+          "device_name": 13,
+          "location_info": 18,
+          "location_paths": 8210,
+          "removal_policy": 7
+        },
+        "removable": false,
+        "removal_policy": 3
+      }
+    }
+  ],
+  "display_paths": [
+    {
+      "adapter_instance_id": "PCI\\VEN_8086&DEV_7D51&SUBSYS_513617AA&REV_03\\3&11583659&1&10",
+      "adapter_luid": {
+        "high": 0,
+        "low": 83608
+      },
+      "adapter_name": "\\\\?\\PCI#VEN_8086&DEV_7D51&SUBSYS_513617AA&REV_03#3&11583659&1&10#{5b45201d-f2f2-4f3b-85bb-30ff1f953599}",
+      "connector_instance": 0,
+      "edid_manufacturer_id": 44592,
+      "edid_product_code_id": 16866,
+      "errors": [],
+      "monitor_device_path": "\\\\?\\DISPLAY#LEN41E2#4&ae62aa0&0&UID8388688#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+      "output_technology": 2147483648,
+      "path_id": "0:83608:8388688",
+      "primary": true,
+      "properties": {
+        "source_id": 0,
+        "target_id": 8388688
+      },
+      "source_name": "\\\\.\\DISPLAY1",
+      "source_position": {
+        "x": 0,
+        "y": 0
+      },
+      "target_name": null
+    },
+    {
+      "adapter_instance_id": "USB\\VID_303A&PID_2986&MI_00\\8&104c998a&0&0000",
+      "adapter_luid": {
+        "high": 0,
+        "low": 113150371
+      },
+      "adapter_name": "\\\\?\\USB#VID_303A&PID_2986&MI_00#8&104c998a&0&0000#{5b45201d-f2f2-4f3b-85bb-30ff1f953599}",
+      "connector_instance": 0,
+      "edid_manufacturer_id": 44048,
+      "edid_product_code_id": 53478,
+      "errors": [],
+      "monitor_device_path": "\\\\?\\DISPLAY#DELD0E6#9&27623d63&0&UID256#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+      "output_technology": 5,
+      "path_id": "0:113150371:256",
+      "primary": false,
+      "properties": {
+        "source_id": 0,
+        "target_id": 256
+      },
+      "source_name": "\\\\.\\DISPLAY10",
+      "source_position": {
+        "x": 3072,
+        "y": 0
+      },
+      "target_name": "S2719DGF"
+    }
+  ],
+  "endpoints": [
+    {
+      "container_id": null,
+      "defaults": {
+        "communications": false,
+        "console": true,
+        "multimedia": true
+      },
+      "devnode_id": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
+      "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
+      "errors": [
+        {
+          "error": "屬性不存在或未由 Core Audio property store 提供",
+          "property": "container_id"
+        },
+        {
+          "error": "屬性不存在或未由 Core Audio property store 提供",
+          "property": "stable_id"
+        }
+      ],
+      "flow": "render",
+      "form_factor": 3,
+      "friendly_name": "Realtek HD Audio 2nd output (Realtek(R) Audio)",
+      "properties": {
+        "devnode_resolution_attempts": {
+          "device_topology": {
+            "device_interface_id": "{2}.\\\\?\\intelaudio#func_01&ven_10ec&dev_0257&subsys_17aa512d&rev_1000#5&4f14816&0&0001dif_000b&uif_0000#{6994ad04-93ef-11d0-a3cc-00a0c9223196}\\rearlineouttoposst3",
+            "instance_id": null,
+            "status": "unresolved"
+          },
+          "mmdevapi": {
+            "instance_id": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
+            "status": "resolved"
+          }
+        },
+        "form_factor": 3,
+        "friendly_name": "Realtek HD Audio 2nd output (Realtek(R) Audio)"
+      },
+      "raw": null,
+      "resolution_method": "mmdevapi_devnode",
+      "stable_id": null,
+      "state": "AudioDeviceState.Active"
+    },
+    {
+      "container_id": null,
+      "defaults": {
+        "communications": true,
+        "console": false,
+        "multimedia": false
+      },
+      "devnode_id": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
+      "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
+      "errors": [
+        {
+          "error": "屬性不存在或未由 Core Audio property store 提供",
+          "property": "container_id"
+        },
+        {
+          "error": "屬性不存在或未由 Core Audio property store 提供",
+          "property": "stable_id"
+        }
+      ],
+      "flow": "render",
+      "form_factor": 1,
+      "friendly_name": "Speakers (speaker)",
+      "properties": {
+        "devnode_resolution_attempts": {
+          "device_topology": {
+            "device_interface_id": "{2}.\\\\?\\usb#vid_303a&pid_2986&mi_03#8&104c998a&0&0003#{6994ad04-93ef-11d0-a3cc-00a0c9223196}\\msft_topo",
+            "instance_id": null,
+            "status": "unresolved"
+          },
+          "mmdevapi": {
+            "instance_id": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
+            "status": "resolved"
+          }
+        },
+        "form_factor": 1,
+        "friendly_name": "Speakers (speaker)"
+      },
+      "raw": null,
+      "resolution_method": "mmdevapi_devnode",
+      "stable_id": null,
+      "state": "AudioDeviceState.Active"
+    },
+    {
+      "container_id": null,
+      "defaults": {
+        "communications": false,
+        "console": false,
+        "multimedia": false
+      },
+      "devnode_id": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
+      "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
+      "errors": [
+        {
+          "error": "屬性不存在或未由 Core Audio property store 提供",
+          "property": "container_id"
+        },
+        {
+          "error": "屬性不存在或未由 Core Audio property store 提供",
+          "property": "stable_id"
+        }
+      ],
+      "flow": "render",
+      "form_factor": 1,
+      "friendly_name": "扬声器 (Realtek(R) Audio)",
+      "properties": {
+        "devnode_resolution_attempts": {
+          "device_topology": {
+            "device_interface_id": "{2}.\\\\?\\intelaudio#func_01&ven_10ec&dev_0257&subsys_17aa512d&rev_1000#5&4f14816&0&0001dif_000b&uif_0000#{6994ad04-93ef-11d0-a3cc-00a0c9223196}\\rearlineouttoposst",
+            "instance_id": null,
+            "status": "unresolved"
+          },
+          "mmdevapi": {
+            "instance_id": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
+            "status": "resolved"
+          }
+        },
+        "form_factor": 1,
+        "friendly_name": "扬声器 (Realtek(R) Audio)"
+      },
+      "raw": null,
+      "resolution_method": "mmdevapi_devnode",
+      "stable_id": null,
+      "state": "AudioDeviceState.Active"
+    },
+    {
+      "container_id": null,
+      "defaults": {
+        "communications": true,
+        "console": true,
+        "multimedia": true
+      },
+      "devnode_id": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
+      "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
+      "errors": [
+        {
+          "error": "屬性不存在或未由 Core Audio property store 提供",
+          "property": "container_id"
+        },
+        {
+          "error": "屬性不存在或未由 Core Audio property store 提供",
+          "property": "stable_id"
+        }
+      ],
+      "flow": "capture",
+      "form_factor": 4,
+      "friendly_name": "麦克风 (Realtek(R) Audio)",
+      "properties": {
+        "devnode_resolution_attempts": {
+          "device_topology": {
+            "device_interface_id": "{2}.\\\\?\\intelaudio#func_01&ven_10ec&dev_0257&subsys_17aa512d&rev_1000#5&4f14816&0&0001dif_000b&uif_0000#{6994ad04-93ef-11d0-a3cc-00a0c9223196}\\rtmicintopo",
+            "instance_id": null,
+            "status": "unresolved"
+          },
+          "mmdevapi": {
+            "instance_id": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
+            "status": "resolved"
+          }
+        },
+        "form_factor": 4,
+        "friendly_name": "麦克风 (Realtek(R) Audio)"
+      },
+      "raw": null,
+      "resolution_method": "mmdevapi_devnode",
+      "stable_id": null,
+      "state": "AudioDeviceState.Active"
+    },
+    {
+      "container_id": null,
+      "defaults": {
+        "communications": false,
+        "console": false,
+        "multimedia": false
+      },
+      "devnode_id": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
+      "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
+      "errors": [
+        {
+          "error": "屬性不存在或未由 Core Audio property store 提供",
+          "property": "container_id"
+        },
+        {
+          "error": "屬性不存在或未由 Core Audio property store 提供",
+          "property": "stable_id"
+        }
+      ],
+      "flow": "capture",
+      "form_factor": 4,
+      "friendly_name": "麦克风阵列 (适用于数字麦克风的英特尔® 智音技术)",
+      "properties": {
+        "devnode_resolution_attempts": {
+          "device_topology": {
+            "device_interface_id": "{2}.\\\\?\\intelaudio#ctlr_dev_7728&linktype_02&devtype_00&ven_8086&dev_ae20&subsys_512d17aa&rev_0001#5&4f14816&0&0000dif_000b&uif_0000#{6994ad04-93ef-11d0-a3cc-00a0c9223196}\\intcdmictopo_2 _48_24_0",
+            "instance_id": null,
+            "status": "unresolved"
+          },
+          "mmdevapi": {
+            "instance_id": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
+            "status": "resolved"
+          }
+        },
+        "form_factor": 4,
+        "friendly_name": "麦克风阵列 (适用于数字麦克风的英特尔® 智音技术)"
+      },
+      "raw": null,
+      "resolution_method": "mmdevapi_devnode",
+      "stable_id": null,
+      "state": "AudioDeviceState.Active"
+    }
+  ],
+  "errors": [
+    {
+      "error": "COMError attempting to get property 160 from device <POINTER(IMMDevice) ptr=0x1f9ff2f7350 at 1f9ff767950>: COMError(-536870389, None, (None, None, None, 0, None))",
+      "property": "property_store",
+      "scope": "audio"
+    },
+    {
+      "error": "COMError attempting to get property 161 from device <POINTER(IMMDevice) ptr=0x1f9ff2f7350 at 1f9ff767950>: COMError(-536870389, None, (None, None, None, 0, None))",
+      "property": "property_store",
+      "scope": "audio"
+    },
+    {
+      "error": "COMError attempting to get property 160 from device <POINTER(IMMDevice) ptr=0x1f9ff2f74e0 at 1f9ff767650>: COMError(-536870389, None, (None, None, None, 0, None))",
+      "property": "property_store",
+      "scope": "audio"
+    },
+    {
+      "error": "COMError attempting to get property 161 from device <POINTER(IMMDevice) ptr=0x1f9ff2f74e0 at 1f9ff767650>: COMError(-536870389, None, (None, None, None, 0, None))",
+      "property": "property_store",
+      "scope": "audio"
+    },
+    {
+      "error": "COMError attempting to get property 160 from device <POINTER(IMMDevice) ptr=0x1f9ff2f7620 at 1f9ff7678d0>: COMError(-536870389, None, (None, None, None, 0, None))",
+      "property": "property_store",
+      "scope": "audio"
+    },
+    {
+      "error": "COMError attempting to get property 161 from device <POINTER(IMMDevice) ptr=0x1f9ff2f7620 at 1f9ff7678d0>: COMError(-536870389, None, (None, None, None, 0, None))",
+      "property": "property_store",
+      "scope": "audio"
+    },
+    {
+      "error": "OSError: CM_Get_Device_Interface_PropertyW size query CR 0x0037",
+      "property": "topology_instance_id",
+      "scope": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}"
+    },
+    {
+      "error": "COMError: (-2147467262, 'No such interface supported', (None, None, None, 0, None))",
+      "property": "IKsJackSinkInformation",
+      "scope": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{70C04F4D-CF1C-43AC-98A9-2C1843DE06AA}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{70C04F4D-CF1C-43AC-98A9-2C1843DE06AA}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{70C04F4D-CF1C-43AC-98A9-2C1843DE06AA}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D&REV_1000\\5&4F14816&0&0001DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D&REV_1000\\5&4F14816&0&0001DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "INTELAUDIO\\DSP_CTLR_DEV_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA&REV_0000\\4&250632E&0&0800DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "INTELAUDIO\\DSP_CTLR_DEV_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA&REV_0000\\4&250632E&0&0800DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "PCI\\VEN_8086&DEV_7728&SUBSYS_512D17AA&REV_00\\3&11583659&1&FB"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "PCI\\VEN_8086&DEV_7728&SUBSYS_512D17AA&REV_00\\3&11583659&1&FB"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "device_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "class",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_Device_Interface_PropertyW size query CR 0x0037",
+      "property": "topology_instance_id",
+      "scope": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}"
+    },
+    {
+      "error": "COMError: (-2147467262, 'No such interface supported', (None, None, None, 0, None))",
+      "property": "IKsJackDescription2",
+      "scope": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}"
+    },
+    {
+      "error": "COMError: (-2147467262, 'No such interface supported', (None, None, None, 0, None))",
+      "property": "IKsJackSinkInformation",
+      "scope": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{8F543F63-43D2-48ED-9AB3-4AA3684B254B}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{8F543F63-43D2-48ED-9AB3-4AA3684B254B}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{8F543F63-43D2-48ED-9AB3-4AA3684B254B}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "USB\\VID_303A&PID_2986&MI_03\\8&104C998A&0&0003"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "USB\\VID_303A&PID_2986\\80456B6259CC"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "USB\\ROOT_HUB30\\4&186A30EE&0&0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "USB\\ROOT_HUB30\\4&186A30EE&0&0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "USB\\ROOT_HUB30\\4&186A30EE&0&0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "PCI\\VEN_8086&DEV_777D&SUBSYS_512D17AA&REV_00\\3&11583659&1&A0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "device_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "class",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_Device_Interface_PropertyW size query CR 0x0037",
+      "property": "topology_instance_id",
+      "scope": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}"
+    },
+    {
+      "error": "COMError: (-2147467262, 'No such interface supported', (None, None, None, 0, None))",
+      "property": "IKsJackSinkInformation",
+      "scope": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{EDCA8FA3-113E-43A3-BBD0-33D61822FFA2}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{EDCA8FA3-113E-43A3-BBD0-33D61822FFA2}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{EDCA8FA3-113E-43A3-BBD0-33D61822FFA2}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D&REV_1000\\5&4F14816&0&0001DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D&REV_1000\\5&4F14816&0&0001DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "INTELAUDIO\\DSP_CTLR_DEV_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA&REV_0000\\4&250632E&0&0800DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "INTELAUDIO\\DSP_CTLR_DEV_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA&REV_0000\\4&250632E&0&0800DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "PCI\\VEN_8086&DEV_7728&SUBSYS_512D17AA&REV_00\\3&11583659&1&FB"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "PCI\\VEN_8086&DEV_7728&SUBSYS_512D17AA&REV_00\\3&11583659&1&FB"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "device_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "class",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_Device_Interface_PropertyW size query CR 0x0037",
+      "property": "topology_instance_id",
+      "scope": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}"
+    },
+    {
+      "error": "COMError: (-2147467262, 'No such interface supported', (None, None, None, 0, None))",
+      "property": "IKsJackSinkInformation",
+      "scope": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{8DB40E5E-ACE4-41E1-BA5B-84A751C803A2}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{8DB40E5E-ACE4-41E1-BA5B-84A751C803A2}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{8DB40E5E-ACE4-41E1-BA5B-84A751C803A2}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D&REV_1000\\5&4F14816&0&0001DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "INTELAUDIO\\FUNC_01&VEN_10EC&DEV_0257&SUBSYS_17AA512D&REV_1000\\5&4F14816&0&0001DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "INTELAUDIO\\DSP_CTLR_DEV_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA&REV_0000\\4&250632E&0&0800DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "INTELAUDIO\\DSP_CTLR_DEV_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA&REV_0000\\4&250632E&0&0800DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "PCI\\VEN_8086&DEV_7728&SUBSYS_512D17AA&REV_00\\3&11583659&1&FB"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "PCI\\VEN_8086&DEV_7728&SUBSYS_512D17AA&REV_00\\3&11583659&1&FB"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "device_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "class",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_Device_Interface_PropertyW size query CR 0x0037",
+      "property": "topology_instance_id",
+      "scope": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}"
+    },
+    {
+      "error": "COMError: (-2147467262, 'No such interface supported', (None, None, None, 0, None))",
+      "property": "IKsJackSinkInformation",
+      "scope": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{AD7B76DC-FB20-44E5-965E-5FA1F91BB870}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{AD7B76DC-FB20-44E5-965E-5FA1F91BB870}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{AD7B76DC-FB20-44E5-965E-5FA1F91BB870}"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "INTELAUDIO\\CTLR_DEV_7728&LINKTYPE_02&DEVTYPE_00&VEN_8086&DEV_AE20&SUBSYS_512D17AA&REV_0001\\5&4F14816&0&0000DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "INTELAUDIO\\CTLR_DEV_7728&LINKTYPE_02&DEVTYPE_00&VEN_8086&DEV_AE20&SUBSYS_512D17AA&REV_0001\\5&4F14816&0&0000DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "INTELAUDIO\\CTLR_DEV_7728&LINKTYPE_02&DEVTYPE_00&VEN_8086&DEV_AE20&SUBSYS_512D17AA&REV_0001\\5&4F14816&0&0000DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "INTELAUDIO\\DSP_CTLR_DEV_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA&REV_0000\\4&250632E&0&0800DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "INTELAUDIO\\DSP_CTLR_DEV_7728&VEN_8086&DEV_0222&SUBSYS_512D17AA&REV_0000\\4&250632E&0&0800DIF_000B&UIF_0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "PCI\\VEN_8086&DEV_7728&SUBSYS_512D17AA&REV_00\\3&11583659&1&FB"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "PCI\\VEN_8086&DEV_7728&SUBSYS_512D17AA&REV_00\\3&11583659&1&FB"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "device_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "class",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "PCI\\VEN_8086&DEV_7D51&SUBSYS_513617AA&REV_03\\3&11583659&1&10"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "device_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "class",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "USB\\VID_303A&PID_2986&MI_00\\8&104C998A&0&0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "USB\\VID_303A&PID_2986&MI_00\\8&104C998A&0&0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "USB\\VID_303A&PID_2986\\80456B6259CC"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "USB\\ROOT_HUB30\\4&186A30EE&0&0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "USB\\ROOT_HUB30\\4&186A30EE&0&0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "USB\\ROOT_HUB30\\4&186A30EE&0&0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "PCI\\VEN_8086&DEV_777D&SUBSYS_512D17AA&REV_00\\3&11583659&1&A0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI\\PNP0A08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ACPI_HAL\\PNP0C08\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "ROOT\\ACPI_HAL\\0000"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "friendly_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "device_name",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "bus_reported_description",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "class",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_info",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "location_paths",
+      "scope": "HTREE\\ROOT\\0"
+    },
+    {
+      "error": "OSError: CM_Get_DevNode_PropertyW size query CR 0x0025",
+      "property": "physical_device_location",
+      "scope": "HTREE\\ROOT\\0"
+    }
+  ],
+  "jacks": [
+    {
+      "adapter_device_id": "{2}.\\\\?\\intelaudio#func_01&ven_10ec&dev_0257&subsys_17aa512d&rev_1000#5&4f14816&0&0001dif_000b&uif_0000#{6994ad04-93ef-11d0-a3cc-00a0c9223196}\\rearlineouttoposst3",
+      "adapter_instance_id": null,
+      "capabilities": 1,
+      "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
+      "errors": [],
+      "jack": {
+        "channel_mapping": 3,
+        "color": 0,
+        "connection_type": 1,
+        "general_location": 0,
+        "geo_location": 1,
+        "index": 0,
+        "is_connected": true,
+        "port_connection": 0
+      },
+      "sink": null
+    },
+    {
+      "adapter_device_id": "{2}.\\\\?\\usb#vid_303a&pid_2986&mi_03#8&104c998a&0&0003#{6994ad04-93ef-11d0-a3cc-00a0c9223196}\\msft_topo",
+      "adapter_instance_id": null,
+      "capabilities": null,
+      "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
+      "errors": [],
+      "jack": {
+        "channel_mapping": 0,
+        "color": 0,
+        "connection_type": 0,
+        "general_location": 3,
+        "geo_location": 14,
+        "index": 0,
+        "is_connected": true,
+        "port_connection": 3
+      },
+      "sink": null
+    },
+    {
+      "adapter_device_id": "{2}.\\\\?\\intelaudio#func_01&ven_10ec&dev_0257&subsys_17aa512d&rev_1000#5&4f14816&0&0001dif_000b&uif_0000#{6994ad04-93ef-11d0-a3cc-00a0c9223196}\\rearlineouttoposst",
+      "adapter_instance_id": null,
+      "capabilities": 0,
+      "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
+      "errors": [],
+      "jack": {
+        "channel_mapping": 3,
+        "color": 0,
+        "connection_type": 7,
+        "general_location": 0,
+        "geo_location": 14,
+        "index": 0,
+        "is_connected": true,
+        "port_connection": 1
+      },
+      "sink": null
+    },
+    {
+      "adapter_device_id": "{2}.\\\\?\\intelaudio#func_01&ven_10ec&dev_0257&subsys_17aa512d&rev_1000#5&4f14816&0&0001dif_000b&uif_0000#{6994ad04-93ef-11d0-a3cc-00a0c9223196}\\rtmicintopo",
+      "adapter_instance_id": null,
+      "capabilities": 1,
+      "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
+      "errors": [],
+      "jack": {
+        "channel_mapping": 0,
+        "color": 0,
+        "connection_type": 1,
+        "general_location": 0,
+        "geo_location": 1,
+        "index": 0,
+        "is_connected": true,
+        "port_connection": 0
+      },
+      "sink": null
+    },
+    {
+      "adapter_device_id": "{2}.\\\\?\\intelaudio#ctlr_dev_7728&linktype_02&devtype_00&ven_8086&dev_ae20&subsys_512d17aa&rev_0001#5&4f14816&0&0000dif_000b&uif_0000#{6994ad04-93ef-11d0-a3cc-00a0c9223196}\\intcdmictopo_2 _48_24_0",
+      "adapter_instance_id": null,
+      "capabilities": 2,
+      "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
+      "errors": [],
+      "jack": {
+        "channel_mapping": 0,
+        "color": 16777215,
+        "connection_type": 6,
+        "general_location": 1,
+        "geo_location": 2,
+        "index": 0,
+        "is_connected": true,
+        "port_connection": 1
+      },
+      "sink": null
+    }
+  ],
+  "machine": {
+    "manufacturer": "LENOVO",
+    "model": "ThinkPad T14p Gen 3",
+    "mtm": "21RUZCQXCN"
+  },
+  "schema_version": 1
+}

@@ -1,0 +1,306 @@
+{
+  "calibrations": [
+    {
+      "after": "port-left-usba",
+      "before": "final-after",
+      "interface_id": "usb-a-left",
+      "result": {
+        "interface_id": "usb-a-left",
+        "location_paths": [
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)",
+          "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)"
+        ],
+        "status": "calibrated",
+        "transports": [
+          "USB 2"
+        ]
+      }
+    },
+    {
+      "after": "port-right-usba",
+      "before": "port-left-usba",
+      "interface_id": "usb-a-right",
+      "result": {
+        "interface_id": "usb-a-right",
+        "location_paths": [
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS07)",
+          "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(7)"
+        ],
+        "status": "calibrated",
+        "transports": [
+          "USB 2"
+        ]
+      }
+    },
+    {
+      "after": "port-left-usbc-front",
+      "before": "port-right-usba",
+      "interface_id": "usb-c-left-front",
+      "result": {
+        "interface_id": "usb-c-left-front",
+        "location_paths": [
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS01)",
+          "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(1)"
+        ],
+        "status": "calibrated",
+        "transports": [
+          "USB 2"
+        ]
+      }
+    },
+    {
+      "after": "port-left-usbc-rear",
+      "before": "port-left-usbc-front",
+      "interface_id": "usb-c-left-rear",
+      "result": {
+        "interface_id": "usb-c-left-rear",
+        "location_paths": [
+          "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS05)",
+          "PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)"
+        ],
+        "status": "calibrated",
+        "transports": [
+          "USB 2"
+        ]
+      }
+    }
+  ],
+  "schema_version": 1,
+  "snapshots": [
+    {
+      "display_groups": [
+        {
+          "group_key": null,
+          "interface_id": null,
+          "path_id": "0:83608:8388688"
+        },
+        {
+          "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "interface_id": "usb-a-left",
+          "path_id": "0:113150371:256"
+        }
+      ],
+      "endpoints": [
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
+          "group_key": null,
+          "interface_id": "jack-combo"
+        },
+        {
+          "category": "A",
+          "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
+          "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "interface_id": "usb-a-left"
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
+          "group_key": null,
+          "interface_id": null
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
+          "group_key": null,
+          "interface_id": "jack-combo"
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
+          "group_key": null,
+          "interface_id": null
+        }
+      ],
+      "snapshot": "port-left-usba"
+    },
+    {
+      "display_groups": [
+        {
+          "group_key": null,
+          "interface_id": null,
+          "path_id": "0:83608:8388688"
+        },
+        {
+          "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "interface_id": "usb-a-right",
+          "path_id": "0:136202566:256"
+        }
+      ],
+      "endpoints": [
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
+          "group_key": null,
+          "interface_id": "jack-combo"
+        },
+        {
+          "category": "A",
+          "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
+          "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "interface_id": "usb-a-right"
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
+          "group_key": null,
+          "interface_id": null
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
+          "group_key": null,
+          "interface_id": "jack-combo"
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
+          "group_key": null,
+          "interface_id": null
+        }
+      ],
+      "snapshot": "port-right-usba"
+    },
+    {
+      "display_groups": [
+        {
+          "group_key": null,
+          "interface_id": null,
+          "path_id": "0:83608:8388688"
+        },
+        {
+          "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "interface_id": "usb-c-left-front",
+          "path_id": "0:136950327:256"
+        }
+      ],
+      "endpoints": [
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
+          "group_key": null,
+          "interface_id": "jack-combo"
+        },
+        {
+          "category": "A",
+          "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
+          "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "interface_id": "usb-c-left-front"
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
+          "group_key": null,
+          "interface_id": null
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
+          "group_key": null,
+          "interface_id": "jack-combo"
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
+          "group_key": null,
+          "interface_id": null
+        }
+      ],
+      "snapshot": "port-left-usbc-front"
+    },
+    {
+      "display_groups": [
+        {
+          "group_key": null,
+          "interface_id": null,
+          "path_id": "0:83608:8388688"
+        },
+        {
+          "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "interface_id": "usb-c-left-rear",
+          "path_id": "0:137811216:256"
+        }
+      ],
+      "endpoints": [
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
+          "group_key": null,
+          "interface_id": "jack-combo"
+        },
+        {
+          "category": "A",
+          "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
+          "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "interface_id": "usb-c-left-rear"
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
+          "group_key": null,
+          "interface_id": null
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
+          "group_key": null,
+          "interface_id": "jack-combo"
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
+          "group_key": null,
+          "interface_id": null
+        }
+      ],
+      "snapshot": "port-left-usbc-rear"
+    },
+    {
+      "display_groups": [
+        {
+          "group_key": null,
+          "interface_id": null,
+          "path_id": "0:83608:8388688"
+        },
+        {
+          "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "interface_id": "usb-a-right",
+          "path_id": "0:1042119:256"
+        }
+      ],
+      "endpoints": [
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
+          "group_key": null,
+          "interface_id": null
+        },
+        {
+          "category": "A",
+          "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
+          "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
+          "interface_id": "usb-a-right"
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
+          "group_key": null,
+          "interface_id": null
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
+          "group_key": null,
+          "interface_id": null
+        },
+        {
+          "category": "C",
+          "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
+          "group_key": null,
+          "interface_id": null
+        }
+      ],
+      "snapshot": "final-after"
+    }
+  ]
+}

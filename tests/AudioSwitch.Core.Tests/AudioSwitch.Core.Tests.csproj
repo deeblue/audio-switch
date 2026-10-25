@@ -11,4 +11,7 @@
     <Using Include="Xunit" />
     <ProjectReference Include="..\..\src\AudioSwitch.Core\AudioSwitch.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
