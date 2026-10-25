@@ -12,6 +12,7 @@ public sealed class Snapshot
     [JsonPropertyName("devnodes")] public List<DeviceNode> Devnodes { get; set; } = [];
     [JsonPropertyName("display_paths")] public List<DisplayPath> DisplayPaths { get; set; } = [];
     [JsonPropertyName("jacks")] public List<JackRecord> Jacks { get; set; } = [];
+    [JsonPropertyName("errors")] public List<Dictionary<string, string>> Errors { get; set; } = [];
 }
 
 public sealed class MachineIdentity
@@ -34,6 +35,7 @@ public sealed class AudioEndpoint
     [JsonPropertyName("devnode_id")] public string? DevnodeId { get; set; }
     [JsonPropertyName("resolution_method")] public string ResolutionMethod { get; set; } = "unresolved";
     [JsonPropertyName("properties")] public Dictionary<string, JsonElement> Properties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [JsonPropertyName("errors")] public List<Dictionary<string, string>> Errors { get; set; } = [];
 }
 
 public sealed class DeviceNode
@@ -44,13 +46,19 @@ public sealed class DeviceNode
     [JsonPropertyName("properties")] public Dictionary<string, JsonElement> Properties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [JsonPropertyName("location_paths")] public List<string> LocationPaths { get; set; } = [];
     [JsonPropertyName("container_id")] public string? ContainerId { get; set; }
+    [JsonIgnore] public byte[]? PhysicalDeviceLocationRaw { get; set; }
+    [JsonPropertyName("errors")] public List<Dictionary<string, string>> Errors { get; set; } = [];
 }
 
 public sealed class JackRecord
 {
     [JsonPropertyName("endpoint_id")] public string EndpointId { get; set; } = string.Empty;
     [JsonPropertyName("jack")] public Dictionary<string, JsonElement> Jack { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [JsonPropertyName("capabilities")] public int? Capabilities { get; set; }
     [JsonPropertyName("sink")] public Dictionary<string, JsonElement>? Sink { get; set; }
+    [JsonPropertyName("adapter_device_id")] public string? AdapterDeviceId { get; set; }
+    [JsonPropertyName("adapter_instance_id")] public string? AdapterInstanceId { get; set; }
+    [JsonPropertyName("errors")] public List<Dictionary<string, string>> Errors { get; set; } = [];
 }
 
 public sealed class DisplayPath
@@ -61,10 +69,15 @@ public sealed class DisplayPath
     [JsonPropertyName("target_name")] public string? TargetName { get; set; }
     [JsonPropertyName("adapter_name")] public string? AdapterName { get; set; }
     [JsonPropertyName("adapter_instance_id")] public string? AdapterInstanceId { get; set; }
+    [JsonPropertyName("source_name")] public string? SourceName { get; set; }
+    [JsonPropertyName("monitor_device_path")] public string? MonitorDevicePath { get; set; }
+    [JsonPropertyName("source_position")] public Dictionary<string, JsonElement>? SourcePosition { get; set; }
+    [JsonPropertyName("primary")] public bool? Primary { get; set; }
     [JsonPropertyName("edid_manufacturer_id")] public int? EdidManufacturerId { get; set; }
     [JsonPropertyName("edid_product_code_id")] public int? EdidProductCodeId { get; set; }
     [JsonPropertyName("adapter_luid")] public Dictionary<string, JsonElement>? AdapterLuid { get; set; }
     [JsonPropertyName("properties")] public Dictionary<string, JsonElement> Properties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [JsonPropertyName("errors")] public List<string> Errors { get; set; } = [];
 }
 
 public static class SnapshotJson

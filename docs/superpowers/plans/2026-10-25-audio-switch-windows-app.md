@@ -148,13 +148,13 @@ tests/
 
 ## 階段 2：Windows 平台層唯讀（R1、R7 的事件部分、R13 的螢幕範圍）
 
-- [ ] 實作 `IAudioEndpointSource`（含三個 role 的預設狀態與 `IMMNotificationClient` 事件）、`IDeviceTreeSource`、`IJackInfoSource`、`IDisplayPathSource`、`IMachineIdentity`。IID、結構與呼叫順序以探針 `native/` 為準；KS jack 須經 `IDeviceTopology` → connector → `IPart`，`Activate` 後要 `QueryInterface`。
-- [ ] 單一屬性或單一端點讀取失敗時記錄錯誤並繼續，不中斷整體列舉。
-- [ ] Live 測試（`AUDIOSWITCH_LIVE=1`）：
-  - 和探針比對：`probes/.venv/Scripts/python.exe probes/audio_topology.py json live-compare` 產生 `probes/out/live-compare.json`，C# 讀到的作用中端點 ID 集合、各端點 devnode 祖先鏈的 LocationPaths、jack 描述的連接類型，必須和探針相同。
-  - 至少一個端點讀得到 jack 描述。
-  - 事件測試：訂閱後取消訂閱不拋例外（插拔事件由使用者驗收）。
-- [ ] 通過自我審查，commit。
+- [x] 實作 `IAudioEndpointSource`（含三個 role 的預設狀態與 `IMMNotificationClient` 事件）、`IDeviceTreeSource`、`IJackInfoSource`、`IDisplayPathSource`、`IMachineIdentity`。IID、結構與呼叫順序以探針 `native/` 為準；KS jack 須經 `IDeviceTopology` → connector → `IPart`，`Activate` 後要 `QueryInterface`。
+- [x] 單一屬性或單一端點讀取失敗時記錄錯誤並繼續，不中斷整體列舉。
+- [x] Live 測試（`AUDIOSWITCH_LIVE=1`）：
+  - [x] 和探針比對：`probes/.venv/Scripts/python.exe probes/audio_topology.py json live-compare` 產生 `probes/out/live-compare.json`，C# 讀到的作用中端點 ID 集合、各端點 devnode 祖先鏈的 LocationPaths、jack 描述的連接類型，必須和探針相同。
+  - [x] 至少一個端點讀得到 jack 描述。
+  - [x] 事件測試：訂閱後取消訂閱不拋例外（插拔事件由使用者驗收）。
+- [x] 通過自我審查，commit。
 
 ## 階段 3：Windows 平台層寫入（R5、R6、R13 的音訊部分）
 
