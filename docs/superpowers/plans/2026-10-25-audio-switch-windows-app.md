@@ -209,12 +209,12 @@ tests/
 
 在階段 5 之前完成。能自動測試的項目先寫會失敗的測試，再修正。
 
-- [ ] **座標單位**：這台電腦為 200% 縮放。WinForms 的 `Cursor.Position`、`Screen.WorkingArea`、`Screen.Bounds` 是實體像素，WPF 的 `Left`／`Top`／`Width`／`Height` 是裝置無關單位（DIP），不可直接混用。`ITrayAnchor` 的實作改為以游標所在螢幕的 DPI 換算（例如 `VisualTreeHelper.GetDpi`、`PresentationSource.CompositionTarget.TransformFromDevice`，或 Win32 `GetDpiForMonitor`），回傳 DIP。把換算抽成純函式（輸入實體像素矩形、游標位置、縮放比例、面板 DIP 大小，輸出 DIP 位置）放在 Presentation，並以單元測試涵蓋 100%、150%、200% 與工作列在下／右／上／左的情況，確認面板完整落在工作區內。
-- [ ] **識別螢幕**：每個螢幕依該螢幕的 DPI 換算位置與大小；視窗設 `AllowsTransparency="True"` 讓背景真正透明，只在螢幕中央顯示編號大字約 3 秒，其餘畫面不被遮住、不攔截滑鼠。位置計算同樣以單元測試涵蓋不同縮放比例。
-- [ ] **快速面板移除峰值**：刪除面板的峰值文字、取樣計時器與 App 中的峰值取樣流程；開啟面板、切換分頁都不得呼叫 `IAudioProbe.StartPeakSampling`。`IAudioProbe` 的峰值方法保留給階段 5 的裝置頁使用。
-- [ ] **系統匣圖示開關面板**：面板失焦關閉與點系統匣圖示的切換互不干擾——面板開啟時點圖示要關閉面板，不可因「先失焦關閉、再被點擊打開」而重新出現（例如記錄失焦關閉的時間，在極短時間內收到的圖示點擊視為關閉）。判斷邏輯放在 Presentation 並寫單元測試。
-- [ ] **邏輯移出 App**：面板開啟時的重新整理、分頁切換與錯誤顯示的流程移到 Presentation 的 view model（透過 Core／Presentation 定義的介面取得快照、寫入預設端點、試音），`App.xaml.cs` 只負責建立物件、接線、系統匣與視窗。補上對應的 view model 單元測試（以假介面驗證）。
-- [ ] 通過自我審查，commit。手動驗收項目（面板位置、開關、識別螢幕外觀）列入審查報告的使用者驗收清單。
+- [x] **座標單位**：這台電腦為 200% 縮放。WinForms 的 `Cursor.Position`、`Screen.WorkingArea`、`Screen.Bounds` 是實體像素，WPF 的 `Left`／`Top`／`Width`／`Height` 是裝置無關單位（DIP），不可直接混用。`ITrayAnchor` 的實作改為以游標所在螢幕的 DPI 換算（例如 `VisualTreeHelper.GetDpi`、`PresentationSource.CompositionTarget.TransformFromDevice`，或 Win32 `GetDpiForMonitor`），回傳 DIP。把換算抽成純函式（輸入實體像素矩形、游標位置、縮放比例、面板 DIP 大小，輸出 DIP 位置）放在 Presentation，並以單元測試涵蓋 100%、150%、200% 與工作列在下／右／上／左的情況，確認面板完整落在工作區內。
+- [x] **識別螢幕**：每個螢幕依該螢幕的 DPI 換算位置與大小；視窗設 `AllowsTransparency="True"` 讓背景真正透明，只在螢幕中央顯示編號大字約 3 秒，其餘畫面不被遮住、不攔截滑鼠。位置計算同樣以單元測試涵蓋不同縮放比例。
+- [x] **快速面板移除峰值**：刪除面板的峰值文字、取樣計時器與 App 中的峰值取樣流程；開啟面板、切換分頁都不得呼叫 `IAudioProbe.StartPeakSampling`。`IAudioProbe` 的峰值方法保留給階段 5 的裝置頁使用。
+- [x] **系統匣圖示開關面板**：面板失焦關閉與點系統匣圖示的切換互不干擾——面板開啟時點圖示要關閉面板，不可因「先失焦關閉、再被點擊打開」而重新出現（例如記錄失焦關閉的時間，在極短時間內收到的圖示點擊視為關閉）。判斷邏輯放在 Presentation 並寫單元測試。
+- [x] **邏輯移出 App**：面板開啟時的重新整理、分頁切換與錯誤顯示的流程移到 Presentation 的 view model（透過 Core／Presentation 定義的介面取得快照、寫入預設端點、試音），`App.xaml.cs` 只負責建立物件、接線、系統匣與視窗。補上對應的 view model 單元測試（以假介面驗證）。
+- [x] 通過自我審查，commit。手動驗收項目（面板位置、開關、識別螢幕外觀）列入審查報告的使用者驗收清單。
 
 ## 階段 5：設定視窗（R9、R10、R11、R13、R14、R15）
 

@@ -8,7 +8,7 @@ public sealed class QuickSwitchPanelViewModelTests
     public void RefreshGroupsEndpointsByInterfaceAndShowsCurrentDefault()
     {
         var writer = new FakeWriter { DefaultRender = "one" };
-        var model = new QuickSwitchPanelViewModel(writer);
+        var model = CreateViewModel(writer);
         model.Refresh(Tree(("one", "耳機", "A"), ("two", "耳機", "B")), AudioEndpointFlow.Render);
 
         Assert.Equal(new[] { "A", "B" }, model.Groups.Select(group => group.Name));
@@ -20,7 +20,7 @@ public sealed class QuickSwitchPanelViewModelTests
     public void FailedSwitchShowsReasonAndDoesNotMoveDefaultMark()
     {
         var writer = new FakeWriter { DefaultRender = "one", Fail = true };
-        var model = new QuickSwitchPanelViewModel(writer);
+        var model = CreateViewModel(writer);
         model.Refresh(Tree(("one", "耳機", "A"), ("two", "喇叭", "B")), AudioEndpointFlow.Render);
 
         model.SelectEndpoint("two");
@@ -33,7 +33,7 @@ public sealed class QuickSwitchPanelViewModelTests
     [Fact]
     public void RefreshRemovesDisappearedEndpoint()
     {
-        var model = new QuickSwitchPanelViewModel(new FakeWriter());
+        var model = CreateViewModel(new FakeWriter());
         model.Refresh(Tree(("one", "耳機", "A"), ("two", "喇叭", "B")), AudioEndpointFlow.Render);
         model.Refresh(Tree(("one", "耳機", "A")), AudioEndpointFlow.Render);
         Assert.Equal(new[] { "one" }, model.Groups.SelectMany(group => group.Endpoints).Select(endpoint => endpoint.EndpointId));
@@ -51,7 +51,7 @@ public sealed class QuickSwitchPanelViewModelTests
             DisplayGroups = [],
             Endpoints = [new("render", "播放", "render", "A", "A", null), new("capture", "錄音", "capture", "A", "A", null)]
         };
-        var model = new QuickSwitchPanelViewModel(new FakeWriter());
+        var model = CreateViewModel(new FakeWriter());
         model.Refresh(tree, AudioEndpointFlow.Capture);
         Assert.Equal("capture", Assert.Single(Assert.Single(model.Groups).Endpoints).EndpointId);
     }
@@ -60,10 +60,48 @@ public sealed class QuickSwitchPanelViewModelTests
     public void FirstRunNoticeIsReturnedOnceAndPersisted()
     {
         var settings = new AudioSwitchSettings();
-        var model = new QuickSwitchPanelViewModel(new FakeWriter());
+        var model = CreateViewModel(new FakeWriter());
         Assert.True(model.TryMarkFirstRunNotice(settings));
         Assert.False(model.TryMarkFirstRunNotice(settings));
         Assert.True(settings.FirstRunNotificationShown);
+    }
+
+    [Fact]
+    public void RefreshAndFlowChangeUseSnapshotInterfaceWithoutStartingPeakSampling()
+    {
+        var source = new FakeSnapshotSource();
+        var probe = new FakeProbe();
+        var model = CreateViewModel(new FakeWriter(), source, probe);
+
+        model.Refresh();
+        model.SelectFlow(AudioEndpointFlow.Capture);
+
+        Assert.Equal(2, source.CaptureCalls);
+        Assert.Equal(AudioEndpointFlow.Capture, model.Flow);
+        Assert.Equal(0, probe.StartPeakSamplingCalls);
+    }
+
+    [Fact]
+    public async Task PlayToneUsesProbeAndShowsFailureInViewModel()
+    {
+        var probe = new FakeProbe { ToneError = new InvalidOperationException("試音失敗") };
+        var model = CreateViewModel(new FakeWriter(), probe: probe);
+
+        Assert.False(await model.PlayToneAsync("endpoint"));
+
+        Assert.Equal("endpoint", probe.LastToneEndpoint);
+        Assert.Equal("試音失敗", model.ErrorMessage);
+    }
+
+    [Fact]
+    public void SnapshotFailureIsExposedAsViewModelError()
+    {
+        var source = new FakeSnapshotSource { CaptureError = new InvalidOperationException("快照失敗") };
+        var model = CreateViewModel(new FakeWriter(), source);
+
+        model.Refresh();
+
+        Assert.Equal("快照失敗", model.ErrorMessage);
     }
 
     private static TopologyTree Tree(params (string Id, string Name, string Root)[] values)
@@ -73,6 +111,37 @@ public sealed class QuickSwitchPanelViewModelTests
         foreach (var value in values)
             roots.Single(root => root.Id == value.Root).Children.Add(new TopologyNode { Name = value.Name, EndpointId = value.Id, Kind = "endpoint" });
         return new TopologyTree { Roots = roots, Endpoints = endpoints, DisplayGroups = [] };
+    }
+
+    private static QuickSwitchPanelViewModel CreateViewModel(FakeWriter writer, FakeSnapshotSource? source = null, FakeProbe? probe = null) =>
+        new(source ?? new FakeSnapshotSource(), PortTable.Empty(), writer, probe ?? new FakeProbe());
+
+    private sealed class FakeSnapshotSource : IAudioTopologySnapshotSource
+    {
+        public int CaptureCalls { get; private set; }
+        public Exception? CaptureError { get; set; }
+        public Snapshot Capture()
+        {
+            CaptureCalls++;
+            if (CaptureError is not null) throw CaptureError;
+            return new Snapshot();
+        }
+    }
+
+    private sealed class FakeProbe : IAudioProbe
+    {
+        public Exception? ToneError { get; set; }
+        public string? LastToneEndpoint { get; private set; }
+        public int StartPeakSamplingCalls { get; private set; }
+        public Task PlayTestToneAsync(string endpointId, TimeSpan duration, CancellationToken cancellationToken = default)
+        {
+            LastToneEndpoint = endpointId;
+            return ToneError is null ? Task.CompletedTask : Task.FromException(ToneError);
+        }
+        public void StartPeakSampling(string endpointId) => StartPeakSamplingCalls++;
+        public float ReadPeakLevel(string endpointId) => 0;
+        public Task StopPeakSamplingAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public void Dispose() { }
     }
 
     private sealed class FakeWriter : IDefaultEndpointWriter

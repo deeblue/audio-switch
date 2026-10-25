@@ -8,20 +8,55 @@ namespace AudioSwitch.Presentation;
 public sealed class QuickSwitchPanelViewModel : INotifyPropertyChanged
 {
     private readonly IDefaultEndpointWriter _writer;
+    private readonly IAudioTopologySnapshotSource _snapshotSource;
+    private readonly IAudioProbe _probe;
+    private readonly PortTable _portTable;
     private AudioEndpointFlow _flow;
     private string? _errorMessage;
+    private bool _hasUnconfiguredUsbEndpoints;
 
     public ObservableCollection<EndpointGroupViewModel> Groups { get; } = [];
+    public AudioEndpointFlow Flow => _flow;
+    public bool HasUnconfiguredUsbEndpoints { get => _hasUnconfiguredUsbEndpoints; private set => Set(ref _hasUnconfiguredUsbEndpoints, value); }
     public string? ErrorMessage { get => _errorMessage; private set => Set(ref _errorMessage, value); }
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public QuickSwitchPanelViewModel(IDefaultEndpointWriter writer) => _writer = writer;
+    public QuickSwitchPanelViewModel(IAudioTopologySnapshotSource snapshotSource, PortTable portTable,
+        IDefaultEndpointWriter writer, IAudioProbe probe)
+    {
+        _snapshotSource = snapshotSource;
+        _portTable = portTable;
+        _writer = writer;
+        _probe = probe;
+    }
+
+    public void SelectFlow(AudioEndpointFlow flow)
+    {
+        _flow = flow;
+        Refresh();
+    }
+
+    public void Refresh()
+    {
+        try
+        {
+            var snapshot = _snapshotSource.Capture();
+            Refresh(TopologyBuilder.Build(snapshot, _portTable), _flow);
+            if (snapshot.Errors.Count > 0)
+                ReportError(new InvalidOperationException(string.Join("；", snapshot.Errors.SelectMany(error => error.Values))));
+        }
+        catch (Exception exception)
+        {
+            ReportError(exception);
+        }
+    }
 
     public void Refresh(TopologyTree tree, AudioEndpointFlow flow)
     {
         _flow = flow;
         ErrorMessage = null;
         Groups.Clear();
+        HasUnconfiguredUsbEndpoints = false;
         var defaultId = _writer.GetDefaultEndpointId(flow, AudioEndpointRole.Multimedia);
         var endpointFlows = tree.Endpoints.ToDictionary(endpoint => endpoint.EndpointId, endpoint => endpoint.Flow, StringComparer.OrdinalIgnoreCase);
         foreach (var root in tree.Roots)
@@ -29,7 +64,10 @@ public sealed class QuickSwitchPanelViewModel : INotifyPropertyChanged
             var rows = new List<EndpointViewModel>();
             Visit(root.Children, rows, defaultId, flow, endpointFlows);
             if (rows.Count > 0)
+            {
                 Groups.Add(new EndpointGroupViewModel(root.Name, rows));
+                if (root.Id == "USB（未設定接口）") HasUnconfiguredUsbEndpoints = true;
+            }
         }
     }
 
@@ -53,6 +91,23 @@ public sealed class QuickSwitchPanelViewModel : INotifyPropertyChanged
             ErrorMessage = exception.Message;
         }
     }
+
+    public async Task<bool> PlayToneAsync(string endpointId, CancellationToken cancellationToken = default)
+    {
+        ErrorMessage = null;
+        try
+        {
+            await _probe.PlayTestToneAsync(endpointId, TimeSpan.FromSeconds(2), cancellationToken);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            ReportError(exception);
+            return false;
+        }
+    }
+
+    public void ReportError(Exception exception) => ErrorMessage = exception.Message;
 
     public bool TryMarkFirstRunNotice(AudioSwitchSettings settings)
     {

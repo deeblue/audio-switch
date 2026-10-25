@@ -23,7 +23,6 @@
       </DockPanel>
       <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
         <StackPanel>
-        <TextBlock x:Name="PeakText" Margin="2,0,2,8" Visibility="Collapsed"/>
         <ItemsControl x:Name="GroupsList">
           <ItemsControl.ItemTemplate>
             <DataTemplate>

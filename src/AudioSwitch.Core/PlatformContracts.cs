@@ -42,6 +42,13 @@ public interface IAudioTopologySnapshotSource
     Snapshot Capture();
 }
 
+public sealed record MonitorDpi(int X, int Y);
+
+public interface IMonitorDpiSource
+{
+    MonitorDpi GetDpiForPoint(int x, int y);
+}
+
 public enum AudioEndpointFlow
 {
     Render,
