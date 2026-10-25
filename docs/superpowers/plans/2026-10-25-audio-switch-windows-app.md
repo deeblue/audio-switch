@@ -181,12 +181,23 @@ tests/
 - [x] 狀態檢查：每項 live test 執行前後立即擷取快照，以 `probes/compare_state.py`（唯讀）比較端點集合、state、`defaults` 與 `friendly_name`；state 轉換標示為實體狀態改變。若不一致，停止後續 live test 並回報差異。
 - [x] 通過自我審查，commit。
 
+## 階段 3a：測試與介面修正（R1、R6、R13）
+
+在階段 4 之前完成。每項先寫或先跑出會失敗的測試，再修正。
+
+- [ ] **實機比對只看作用中端點**：`probes/audio_topology.py snapshot`／`json` 會記錄所有狀態的端點（狀態比對需要）。階段 2 的實機測試（`EndpointSourceLiveTests`、`DeviceTreeLiveTests`、`JackInfoLiveTests`、`TopologySnapshotLiveTests`）從探針快照取預期值時，只取 state 為 Active 的端點。先重新產生 `live-compare.json`，確認這四個測試在修正前失敗、修正後通過。`probes/README.md` 註明快照包含非作用中端點，只有作用中端點會讀取拓樸並進入樹狀。
+- [ ] **探針測試的匯入方式**：`probes/tests/test_compare_state.py` 與其他探針測試一致，從 `probes.audio_topology` 匯入；以自我審查第 3 步的固定指令全部通過。
+- [ ] **平台類別實作 Core 介面**：`WindowsEndpointNameWriter` 實作 `IEndpointNameWriter`、`WindowsAudioProbe` 實作 `IAudioProbe`。在 `AudioSwitch.Platform.Windows.Tests` 新增一般（非 live）測試：以反射列出 `AudioSwitch.Core` 中所有 `public interface`，扣除明列的非平台介面，每個平台介面在 `AudioSwitch.Platform.Windows` 都必須有一個實作類別；尚未到實作階段的介面（`IHotkeyService`、`IAutostartService`、`ITrayAnchor` 等）以明列的待實作清單排除，並在該階段完成時移出清單。
+- [ ] **錄音峰值**：`IAudioMeterInformation` 在沒有任何程式錄音時通常回報 0。`IAudioProbe` 提供開始／停止峰值取樣：取樣期間以共用模式開啟該錄音端點的擷取串流（只讀峰值，不保存、不傳送音訊），停止時釋放。live 測試確認開始、讀取、停止不拋例外且峰值介於 0 與 1，停止後串流已釋放；峰值會隨聲音變動列入使用者驗收。
+- [ ] `WindowsEndpointNameWriter` 改用 NAudio 的公開 API（`MMDevice.GetPropertyInformation(StorageAccessMode.ReadWrite)`、`PropertyStore.SetValue`）；只有公開 API 無法達成時才用反射，並在註解說明原因。改完後重跑改名 live 測試。
+- [ ] 通過自我審查（第 3、4 步已更新），commit。
+
 ## 階段 4：App 殼與快速切換面板（R7、R8、R12 的介面部分、R16、R17）
 
 - [ ] 單一執行個體（具名 mutex）；第二個執行個體啟動時喚起既有執行個體的面板後結束。
 - [ ] 系統匣圖示（`NotifyIcon`）：左鍵開關面板；右鍵選單「設定」「識別螢幕」「結束」。
 - [ ] 面板為無邊框視窗，依 `ITrayAnchor`（工作列位置、游標位置）貼齊系統匣；失焦關閉；跟隨系統淺色／深色主題。
-- [ ] 面板內容依 README「介面／快速切換面板」與「未設定時」：播放／錄音兩頁、接口分組、別名或 Windows 名稱、目前預設打勾、試音按鈕、錄音峰值（面板開啟時才取樣）、角落齒輪。
+- [ ] 面板內容依 README「介面／快速切換面板」與「未設定時」：播放／錄音兩頁、接口分組、別名或 Windows 名稱、目前預設打勾、試音按鈕、錄音峰值（只在錄音頁顯示時經 `IAudioProbe` 取樣，切換分頁或面板關閉即停止並釋放擷取串流）、角落齒輪。
 - [ ] 點選端點呼叫 `IDefaultEndpointWriter`，依讀回結果更新打勾；失敗時在面板內顯示原因。
 - [ ] 插拔事件合併後重建；面板開啟中裝置消失時，該項目移除且不當掉。
 - [ ] 首次啟動通知一次；「USB（未設定接口）」旁的「設定接口…」開啟設定視窗的接口定義頁。
@@ -219,6 +230,7 @@ tests/
   6. 快捷鍵綁定後循環切換，拔除裝置後循環清單更新。
   7. 開機自動啟動開啟後重新登入會啟動；關閉後不再啟動。
   8. 識別螢幕在每個螢幕顯示正確編號。
+  9. 面板錄音頁對麥克風說話時峰值會動；切到播放頁或關閉面板後，Windows 的麥克風使用中圖示消失。
 - [ ] 通過自我審查，commit。
 
 ## 自我審查（每個階段結束時執行）
@@ -227,8 +239,12 @@ tests/
 
 1. **建置**：`dotnet build src/AudioSwitch.sln -c Release`，0 個警告（警告視為錯誤）。
 2. **格式**：`dotnet format src/AudioSwitch.sln --verify-no-changes`。
-3. **測試**：`dotnet test src/AudioSwitch.sln -c Release`，全部通過；階段 2 起另以 `AUDIOSWITCH_LIVE=1` 執行 live 測試。記錄通過數與略過數；略過的測試要說明原因。
-4. **需求追蹤**：對本階段涉及的每個 R 項目，列出實作位置（`檔案:行號`）、對應測試名稱與證據。沒有測試的項目要說明為何只能人工驗收。
+3. **測試**：本步驟的指令一律在新開的 shell 執行，不沿用執行過程中設定的環境變數（`AUDIOSWITCH_LIVE` 除外），也不得另設 `PYTHONPATH`。記錄每組的通過數與略過數；略過的測試要說明原因。
+   - `dotnet test src/AudioSwitch.sln -c Release`，全部通過。
+   - `probes/.venv/Scripts/python.exe -m unittest discover -s probes/tests -t .`，全部通過。
+   - 階段 2 起：先執行 `probes/.venv/Scripts/python.exe probes/audio_topology.py json live-compare` 重新產生比對檔，再以 `AUDIOSWITCH_LIVE=1` 執行 `dotnet test`。不得使用先前留下的 `live-compare.json`。
+   - 本階段若改動探針的輸出格式或欄位（`snapshot`、`json`、`tree` 等），所有讀取這些輸出的地方都要重跑並列入報告：`probes/export_golden.py`（比對 golden SHA-256）、Core golden 測試、實機比對測試、`probes/compare_state.py`。
+4. **需求追蹤**：對本階段涉及的每個 R 項目，列出實作位置（`檔案:行號`）、對應測試名稱與證據。沒有測試的項目要說明為何只能人工驗收。本階段新增或修改的平台類別，確認都實作了 Core 對應的介面（由階段 3a 新增的介面對應測試把關）；改動待實作清單時在報告說明。
 5. **禁止事項掃描**（每項逐筆檢視結果，不是只看筆數）：
    - `rg -n "DllImport|LibraryImport|ComImport|Microsoft\.Win32|NAudio|System\.Windows|UseWPF|UseWindowsForms" src/AudioSwitch.Core src/AudioSwitch.Presentation` → 應為零筆。
    - `rg -n "DllImport|LibraryImport|ComImport|NAudio" src/AudioSwitch.App` → 應為零筆（平台呼叫一律經 Platform.Windows）。
