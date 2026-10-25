@@ -4,7 +4,7 @@
 
 **目標**：在這台 ThinkPad T14p Gen 3（21RU）上完成 Windows 版常駐工具：系統匣快速切換面板依機身接口分組列出播放／錄音端點，點選即切換；設定視窗提供裝置樹、別名、筆電示意圖的接口定義與校準、快捷鍵、開機啟動。
 
-**技術**：C#／.NET 10 LTS、Avalonia（Fluent 主題）、xUnit、Avalonia.Headless.XUnit、CommunityToolkit.Mvvm；Windows 平台層可用 NAudio 包裝 Core Audio。
+**技術**：C#／.NET 10 LTS、WPF（Fluent 主題）、系統匣圖示用 WinForms `NotifyIcon`、CommunityToolkit.Mvvm、xUnit；Windows 平台層可用 NAudio 包裝 Core Audio。
 
 **規格來源（以這些為準，計畫與規格衝突時停下詢問）**：
 
@@ -28,19 +28,18 @@
 
   | 用途 | 允許的套件 | 版本規則 |
   |---|---|---|
-  | UI | `Avalonia`、`Avalonia.Desktop`、`Avalonia.Themes.Fluent`、`Avalonia.Fonts.Inter`、`Avalonia.Headless`、`Avalonia.Headless.XUnit` | 所有 `Avalonia*` 用同一個版本，需支援 net10.0 |
   | MVVM | `CommunityToolkit.Mvvm` | 最新穩定版 |
   | Windows Core Audio | `NAudio.Core`、`NAudio.Wasapi`（或合併套件 `NAudio`） | 最新穩定版；只在 `AudioSwitch.Platform.Windows` 引用 |
-  | 測試 | `Microsoft.NET.Test.Sdk`、`xunit` 或 `xunit.v3`、`xunit.runner.visualstudio` | xUnit 的主版本必須和 `Avalonia.Headless.XUnit` 相容（以該套件的相依性為準，三個測試專案用同一個主版本） |
+  | 測試 | `Microsoft.NET.Test.Sdk`、`xunit` 或 `xunit.v3`、`xunit.runner.visualstudio` | 所有測試專案用同一個 xUnit 主版本 |
 
-  這些套件自動帶入的相依套件不需另外列出，也不算清單外套件。
+  WPF 與 WinForms 是 .NET SDK 內建框架（`UseWPF`、`UseWindowsForms`），不需 NuGet 套件。這些套件自動帶入的相依套件不需另外列出，也不算清單外套件。
 
 ## 全域限制
 
 1. 介面文字用繁體中文；程式碼、識別字、commit 訊息用英文。
 2. 文件只寫現狀，不寫經過。審查報告寫在 `.superpowers/reviews/`（已在 `.gitignore`），不寫進 README。
 3. 直接引用的 NuGet 套件只限「環境前置」表格中的套件（相依套件不在此限）；需要其他套件時**停止**詢問。
-4. `AudioSwitch.Core` 與 `AudioSwitch.App` 不得引用 Windows 專屬 API（P/Invoke、COM、`Microsoft.Win32`、NAudio）；這些只能在 `AudioSwitch.Platform.Windows`。
+4. `AudioSwitch.Core` 與 `AudioSwitch.Presentation` 目標為 `net10.0`，不得引用 Windows 專屬 API（P/Invoke、COM、`Microsoft.Win32`、NAudio）或 UI 框架（WPF、WinForms）；平台 API 只能在 `AudioSwitch.Platform.Windows`，UI 框架只能在 `AudioSwitch.App`。這是為了讓日後的 macOS 版（Avalonia、.NET for macOS 或其他）可以直接重用 Core 與 view model。
 5. 不以裝置名稱、VID/PID、ContainerId 或匯流排標籤單獨推斷機身接口；不以 `_PLD` 判斷孔位或類型（`_PLD` 只在詳細資訊顯示）；程式碼中不得寫死本機裝置名稱或 VID/PID。
 6. 只對 `DEVICE_STATE_ACTIVE` 端點做分類、切換、試音與峰值。
 7. 系統狀態寫入只有四種，且各自集中在一個類別：設定預設端點（`IPolicyConfig`）、寫入端點 `PKEY_Device_DeviceDesc`、`HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 的開機啟動值、`%APPDATA%\AudioSwitch\` 下的設定檔。其他登錄、裝置屬性或系統設定一律不寫。不得呼叫 `AudioPolicyConfig`（個別程式指定不在本計畫）。
@@ -58,14 +57,17 @@ src/
   Directory.Packages.props       # 集中鎖定套件版本
   AudioSwitch.Core/              # net10.0，純邏輯，無平台 API
   AudioSwitch.Platform.Windows/  # net10.0-windows，實作 Core 定義的介面
-  AudioSwitch.App/               # Avalonia，net10.0-windows（之後 macOS 再加目標）
+  AudioSwitch.Presentation/      # net10.0，view model（CommunityToolkit.Mvvm），不引用 WPF
+  AudioSwitch.App/               # WPF，net10.0-windows；只有畫面、平台接線與系統匣
 tests/
   AudioSwitch.Core.Tests/        # 純單元測試與 golden 測試
   AudioSwitch.Platform.Windows.Tests/  # live 測試，需 AUDIOSWITCH_LIVE=1
-  AudioSwitch.App.Tests/         # view model 與 Avalonia.Headless 測試
+  AudioSwitch.Presentation.Tests/ # view model 單元測試（以假的平台介面）
 ```
 
-**Core 定義的平台介面**（名稱可調整，職責不可合併到 App）：
+**Core 定義的平台介面**（名稱可調整，職責不可合併到 App 或 Presentation）：
+
+**WPF 注意事項**：主題用 WPF 的 Fluent 主題並跟隨系統淺色／深色（`ThemeMode`）。若該 API 在 .NET 10 仍標為實驗性而產生診斷（例如 `WPF0001`），只在 `AudioSwitch.App` 以 `NoWarn` 抑制該代碼並在專案檔註明原因，不得全域關閉警告。系統匣圖示用 `System.Windows.Forms.NotifyIcon`（App 專案同時設 `UseWPF` 與 `UseWindowsForms`），注意兩者同名型別的命名空間衝突。Presentation 需要回到 UI 執行緒、開關視窗或顯示對話框時，透過 Presentation 定義的介面（例如 `IUiDispatcher`、`IWindowService`），由 App 實作。
 
 | 介面 | 職責 |
 |---|---|
@@ -108,7 +110,7 @@ tests/
 | R15 | 開機自動啟動可設定，預設關閉，只寫 HKCU Run | CLAUDE.md 待決 2 |
 | R16 | 單一執行個體；常駐系統匣；結束時釋放快捷鍵與 COM 物件 | — |
 | R17 | 錯誤寫入本機記錄檔（`%LOCALAPPDATA%\AudioSwitch\logs\`），不傳送任何資料 | — |
-| R18 | Core 與 App 不含平台 API（全域限制 4） | CLAUDE.md「正式版技術」 |
+| R18 | Core 與 Presentation 不含平台 API 與 UI 框架（全域限制 4） | CLAUDE.md「正式版技術」 |
 
 ## 階段 0：專案骨架
 
@@ -168,14 +170,14 @@ tests/
 ## 階段 4：App 殼與快速切換面板（R7、R8、R12 的介面部分、R16、R17）
 
 - [ ] 單一執行個體（具名 mutex）；第二個執行個體啟動時喚起既有執行個體的面板後結束。
-- [ ] Avalonia `TrayIcon`：左鍵開關面板；右鍵選單「設定」「識別螢幕」「結束」。
+- [ ] 系統匣圖示（`NotifyIcon`）：左鍵開關面板；右鍵選單「設定」「識別螢幕」「結束」。
 - [ ] 面板為無邊框視窗，依 `ITrayAnchor`（工作列位置、游標位置）貼齊系統匣；失焦關閉；跟隨系統淺色／深色主題。
 - [ ] 面板內容依 README「介面／快速切換面板」與「未設定時」：播放／錄音兩頁、接口分組、別名或 Windows 名稱、目前預設打勾、試音按鈕、錄音峰值（面板開啟時才取樣）、角落齒輪。
 - [ ] 點選端點呼叫 `IDefaultEndpointWriter`，依讀回結果更新打勾；失敗時在面板內顯示原因。
 - [ ] 插拔事件合併後重建；面板開啟中裝置消失時，該項目移除且不當掉。
 - [ ] 首次啟動通知一次；「USB（未設定接口）」旁的「設定接口…」開啟設定視窗的接口定義頁。
 - [ ] 記錄檔與未處理例外處理：例外寫入記錄檔並在面板顯示簡短訊息，程式不結束。
-- [ ] 測試：view model 單元測試（分組、打勾、切換失敗顯示、項目消失）；Avalonia.Headless 測試面板能建立並顯示兩頁。
+- [ ] 測試：Presentation.Tests 的 view model 單元測試（分組、打勾、切換失敗顯示、項目消失、首次通知只出現一次）。面板外觀、貼齊位置與失焦關閉列入使用者驗收清單。
 - [ ] 通過自我審查，commit。
 
 ## 階段 5：設定視窗（R9、R10、R11、R13、R14、R15）
@@ -214,7 +216,8 @@ tests/
 3. **測試**：`dotnet test src/AudioSwitch.sln -c Release`，全部通過；階段 2 起另以 `AUDIOSWITCH_LIVE=1` 執行 live 測試。記錄通過數與略過數；略過的測試要說明原因。
 4. **需求追蹤**：對本階段涉及的每個 R 項目，列出實作位置（`檔案:行號`）、對應測試名稱與證據。沒有測試的項目要說明為何只能人工驗收。
 5. **禁止事項掃描**（每項逐筆檢視結果，不是只看筆數）：
-   - `rg -n "DllImport|LibraryImport|ComImport|Microsoft\.Win32|NAudio" src/AudioSwitch.Core src/AudioSwitch.App` → 應為零筆。
+   - `rg -n "DllImport|LibraryImport|ComImport|Microsoft\.Win32|NAudio|System\.Windows|UseWPF|UseWindowsForms" src/AudioSwitch.Core src/AudioSwitch.Presentation` → 應為零筆。
+   - `rg -n "DllImport|LibraryImport|ComImport|NAudio" src/AudioSwitch.App` → 應為零筆（平台呼叫一律經 Platform.Windows）。
    - `rg -n -i "303A|realtek|speakers \(|扬声器|S2719" src` → 應為零筆（fixture 與測試不在 `src/`）。
    - `rg -n -i "PhysicalDeviceLocation|pld" src/AudioSwitch.Core` → 只允許出現在模型與詳細資訊格式化，不得出現在分類或樹狀邏輯。
    - `rg -n "Registry\.|RegSetValue|CreateSubKey|OpenPropertyStore|SetDefaultEndpoint|AudioPolicyConfig" src` → 每筆都必須落在全域限制 7 允許的類別中。

@@ -26,7 +26,7 @@
 
 ## 待決事項
 
-**正式版技術**：C#／.NET 10 LTS + Avalonia（Fluent 主題、內建系統匣圖示）。先做 Windows；macOS 列為後續，平台相依程式碼集中在平台層，資料模型、分類、校準與 UI 共用。需先安裝 .NET 10 SDK；.NET 10 支援至 2028-11-14。介面分快速切換面板與設定視窗，見 README「介面」。[官方支援期限](https://dotnet.microsoft.com/en-us/platform/support/policy)
+**正式版技術**：C#／.NET 10 LTS + WPF（Fluent 主題；系統匣圖示用 WinForms `NotifyIcon`）。先做 Windows；macOS 列為後續。`AudioSwitch.Core`（資料模型、分類、校準、設定）與 `AudioSwitch.Presentation`（view model）以 `net10.0` 撰寫，不引用平台 API 與 UI 框架；macOS 版另選 UI（Avalonia、.NET for macOS 或 SwiftUI），並新增平台層。需先安裝 .NET 10 SDK；.NET 10 支援至 2028-11-14。介面分快速切換面板與設定視窗，見 README「介面」。[官方支援期限](https://dotnet.microsoft.com/en-us/platform/support/policy)
 
 以下首版行為仍待使用者決定：
 

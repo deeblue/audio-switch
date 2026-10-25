@@ -218,7 +218,7 @@ LocationPaths 前綴共同為 `PCIROOT(0)#PCI(1400)#USBROOT(0)#`。本機 USB �
    - `_PLD` 是否提供機身孔位；
    - StableId 是否存在，以及指定端點試音。
 2. **接口校準與代表性設備驗證**：用 `snapshot`／`diff`／`calibrate` 子命令逐孔校準機身 USB 與顯示接口，再以手邊的 3.5mm、USB 耳麥、螢幕、Dock、7C 測試端點與裝置節點的新增、移除和重名情形。紀錄用來驗證動態發現與標示能力，不作為可支援設備的固定清冊。
-3. **技術選擇**：正式版用 C#／.NET 10 LTS + Avalonia（Fluent 主題、內建系統匣圖示），先做 Windows。專案分為共用核心（資料模型、分類、樹狀、校準、設定）、平台層（Windows：Core Audio、CfgMgr32、KS、DisplayConfig、切換、別名）與 Avalonia 介面；macOS 之後只需新增平台層。快速切換面板為貼齊系統匣的自訂視窗。實作前需安裝 .NET 10 SDK。執行計畫見 [`docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md`](docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md)。快捷鍵預設組合與開機啟動預設值仍待決定。
+3. **技術選擇**：正式版用 C#／.NET 10 LTS + WPF（Fluent 主題；系統匣圖示用 WinForms `NotifyIcon`），先做 Windows。專案分為共用核心（資料模型、分類、樹狀、校準、設定）、view model、平台層（Windows：Core Audio、CfgMgr32、KS、DisplayConfig、切換、別名）與 WPF 介面；核心與 view model 不引用平台 API 與 UI 框架，macOS 版可重用並另選 UI。快速切換面板為貼齊系統匣的自訂視窗。實作前需安裝 .NET 10 SDK。執行計畫見 [`docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md`](docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md)。快捷鍵預設組合與開機啟動預設值仍待決定。
 4. **建立接口拓樸與端點資料**：啟動及通知後重建四類端點與機身接口的關聯，依「呈現方式」產生樹狀資料；別名寫回 Windows 端點並另存原始名稱。以重名、Dock 與筆電同型號螢幕、端點消失及重新接入案例檢查。
 5. **完成辨認與手動切換**：快速切換面板、設定視窗（裝置樹、接口定義示意圖與校準）、螢幕「識別」、播放試音、錄音峰值、選用別名與播放／錄音快捷鍵。切換後重新讀取 Windows 預設值確認結果；失敗時顯示原因，不把失敗的切換標成成功。
 6. **處理插拔並驗收**：收到端點變更通知後更新清單與快捷鍵候選，跳過不可用端點。另記錄 YouTube 等已播放程式是否跟著切換。若 Windows 只提供共用端點，記錄該限制，不把它算作程式故障。
