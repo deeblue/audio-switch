@@ -208,22 +208,14 @@ LocationPaths 前綴共同為 `PCIROOT(0)#PCI(1400)#USBROOT(0)#`。本機 USB �
 
 ## 實作計畫
 
-**先以測試應用驗證分類與接口對應，再定產品設計。** 唯讀探針已實作（計畫見 [`2026-10-23-audio-topology-probe.md`](docs/superpowers/plans/2026-10-23-audio-topology-probe.md)），是正式版的參考實作；Windows 正式版計畫見 [`2026-10-25-audio-switch-windows-app.md`](docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md)，使用者插拔步驟見[`probes/README.md`](probes/README.md)。設計前提是任意新裝置均能即時出現，不要求事先盤點或登錄。
+唯讀 Python 探針與 Windows 桌面程式已完成主要實作。探針的插拔及校準流程見 [`probes/README.md`](probes/README.md)，產品計畫與階段紀錄見 [`docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md`](docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md)。
 
-1. **測試應用**：Python 3.12 命令列工具，放在 `probes/`，可重複執行；完整需求與 CLI 子命令見 `probes/TASK.md`。`tree` 依「端點來源分類」把可用端點歸入 A～D 類並印出「呈現方式」中的樹；`raw` 輸出每個端點的完整鏈（InstanceId、LocationPaths、ContainerId、可移除與否、`_PLD`、jack 描述、jack sink、DisplayConfig 路徑）；`json` 匯出資料；`snapshot`／`diff`／`calibrate` 支援插拔前後比較與接口校準。須回答：
-   - jack sink 的 PortId 能否對應到 DisplayConfig 顯示路徑；
-   - 兩個 USB-C 孔的顯示 connector 能否區分；
-   - 同一孔上 Dock 的 USB 樹與顯示輸出能否正確合併；
-   - ContainerId／可移除屬性能否區分 Dock 內建音效與 Dock USB 孔上的裝置；
-   - `_PLD` 是否提供機身孔位；
-   - StableId 是否存在，以及指定端點試音。
-2. **接口校準與代表性設備驗證**：用 `snapshot`／`diff`／`calibrate` 子命令逐孔校準機身 USB 與顯示接口，再以手邊的 3.5mm、USB 耳麥、螢幕、Dock、7C 測試端點與裝置節點的新增、移除和重名情形。紀錄用來驗證動態發現與標示能力，不作為可支援設備的固定清冊。
-3. **技術選擇**：正式版用 C#／.NET 10 LTS + WPF（Fluent 主題；系統匣圖示用 WinForms `NotifyIcon`），先做 Windows。專案分為共用核心（資料模型、分類、樹狀、校準、設定）、view model、平台層（Windows：Core Audio、CfgMgr32、KS、DisplayConfig、切換、別名）與 WPF 介面；核心與 view model 不引用平台 API 與 UI 框架，macOS 版可重用並另選 UI。快速切換面板為貼齊系統匣的自訂視窗。實作前需安裝 .NET 10 SDK。執行計畫見 [`docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md`](docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md)。快捷鍵預設組合與開機啟動預設值仍待決定。
-4. **建立接口拓樸與端點資料**：啟動及通知後重建四類端點與機身接口的關聯，依「呈現方式」產生樹狀資料；別名寫回 Windows 端點並另存原始名稱。以重名、Dock 與筆電同型號螢幕、端點消失及重新接入案例檢查。
-5. **完成辨認與手動切換**：快速切換面板、設定視窗（裝置樹、接口定義示意圖與校準）、螢幕「識別」、播放試音、錄音峰值、選用別名與播放／錄音快捷鍵。切換後重新讀取 Windows 預設值確認結果；失敗時顯示原因，不把失敗的切換標成成功。
-6. **處理插拔並驗收**：收到端點變更通知後更新清單與快捷鍵候選，跳過不可用端點。另記錄 YouTube 等已播放程式是否跟著切換。若 Windows 只提供共用端點，記錄該限制，不把它算作程式故障。
+1. **探針與可行性驗證**：Python 工具列舉端點、PnP 祖先鏈、KS jack 與 DisplayConfig，並提供快照、比較、校準與 JSON 匯出。結果是正式版分類與拓樸的參考；設備清單不作為預先登錄限制。
+2. **產品架構**：C#／.NET 10、WPF 與 WinForms `NotifyIcon`。Core 負責模型、分類、拓樸與設定；Presentation 負責 view model；Platform.Windows 封裝 Windows API；App 組成視窗與系統匣。
+3. **使用介面與切換**：快速面板依接口呈現播放／錄音端點；設定視窗提供裝置樹、接口示意圖與校準、別名、試音、峰值監看、全域快捷鍵、開機啟動及螢幕識別。未知裝置仍可直接選取，不依名稱猜測位置。
+4. **驗證與發佈**：Release 自包含發佈已產生。自動測試、實機狀態保護與尚需實際操作的驗收項目列在 `.superpowers/reviews/phase-6.md`。
 
-指定裝置插入後自動切換屬後續階段；若決定納入，須另外定義優先順序、拔除後回復及使用者手動改選時的行為。
+插入特定裝置後自動切換與個別程式指定音訊仍屬後續範圍；新增前須定義優先順序、拔除後回復及使用者手動改選行為。
 
 ## 現成工具評估
 
@@ -241,6 +233,6 @@ SoundSwitch 能以系統匣與快捷鍵切換端點，裝置選單是 Windows �
 
 ## 狀態
 
-唯讀 Python 探針已完成機身四個 USB 孔的 USB 2 路徑校準；Dock、HDMI 與 USB-C 顯示輸出待實測。Windows 正式版尚未開始，執行計畫已建立。
+Windows 桌面版已完成主要功能與 Release 自包含發佈，產物位於 `src/AudioSwitch.App/bin/Release/net10.0-windows/win-x64/publish/`，大小約 172.86 MiB。自動測試與實機 live 測試通過；自動測試不能取代實際 Dock、顯示器、會議軟體與縮放情境的使用者驗收，清單見 `.superpowers/reviews/phase-6.md`。目前已確認 3.5mm 耳麥插孔狀態及各 flow 至少兩個作用中端點；其餘硬體情境須依清單逐項確認。
 
 **macOS（後續範圍）**：切換預設輸出／輸入有公開 API，但沒有通訊預設；USB 孔位可能以 IOKit `locationID` 校準；別名寫回系統與個別程式指定沒有已知的系統層級做法；內建喇叭與 3.5mm 是否為獨立裝置依機種而定。以上皆待 macOS 探針實測。

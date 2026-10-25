@@ -241,10 +241,10 @@ tests/
 
 ## 階段 6：整體驗收與文件
 
-- [ ] 執行全部測試（含 `AUDIOSWITCH_LIVE=1`）與狀態檢查。
-- [ ] 以 Release 自包含發佈：`dotnet publish src/AudioSwitch.App -c Release -r win-x64 --self-contained`，記錄輸出大小。
-- [ ] 更新 README「狀態」「實作計畫」與 CLAUDE.md 開頭段落為現狀；新增 `src/README.md` 說明建置、測試、發佈與設定檔位置。
-- [ ] 產生「使用者驗收清單」（寫在審查報告，不寫進 README），逐項列出需要使用者操作的檢查：
+- [x] 執行全部測試（含 `AUDIOSWITCH_LIVE=1`）與狀態檢查。
+- [x] 以 Release 自包含發佈：`dotnet publish src/AudioSwitch.App -c Release -r win-x64 --self-contained`，記錄輸出大小。
+- [x] 更新 README「狀態」「實作計畫」與 CLAUDE.md 開頭段落為現狀；新增 `src/README.md` 說明建置、測試、發佈與設定檔位置。
+- [x] 產生「使用者驗收清單」（寫在審查報告，不寫進 README），逐項列出需要使用者操作的檢查：
   1. 7C 插在已校準的孔時出現在該接口下；換孔後跟著移動。
   2. 3.5mm 耳麥插拔時面板即時更新；耳機與麥克風落在 3.5mm 插孔下。
   3. 點選切換後 YouTube 與 Teams 是否跟著改走新端點。
@@ -255,7 +255,7 @@ tests/
   8. 識別螢幕在每個螢幕顯示正確編號。
   9. 設定視窗裝置頁按麥克風的「聽」後說話，峰值會動；停止、選取其他端點或關閉視窗後，Windows 的麥克風使用中圖示消失。開啟快速切換面板時麥克風使用中圖示不出現。
   10. 在 200% 縮放下（以及外接不同縮放的螢幕時），面板出現在系統匣附近且完整在螢幕內；點系統匣圖示可開也可關。
-- [ ] 通過自我審查，commit。
+- [x] 通過自我審查，commit。
 
 ## 自我審查（每個階段結束時執行）
 

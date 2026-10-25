@@ -2,7 +2,7 @@
 
 目的與範圍見 `README.md`。這是一個 side project，跟 `D:\WORK\Claude\poc\AI-Vibe-Hub` 是不同的 repo，不要去改那邊的檔案。
 
-核心目標是**以本機實體接口（USB-A、USB-C／Thunderbolt、HDMI、3.5mm、內建）為根**呈現音訊端點，讓使用者立刻找到對的裝置；端點仍是切換單位。呈現原則見 README「呈現方式」，端點分類與接口對應見「端點來源分類與接口對應」，執行順序見「實作計畫」。唯讀 Python 探針在 `probes/`（需求見 `probes/TASK.md`），是正式版分類、樹狀與校準邏輯的參考實作。下一步是 Windows 正式版，執行計畫見 `docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md`。產品必須動態列舉當下端點，不要求預先登記設備。
+核心目標是**以本機實體接口（USB-A、USB-C／Thunderbolt、HDMI、3.5mm、內建）為根**呈現音訊端點，讓使用者立刻找到對的裝置；端點仍是切換單位。呈現原則見 README「呈現方式」，端點分類與接口對應見「端點來源分類與接口對應」。唯讀 Python 探針在 `probes/`，是 Windows 桌面版分類、拓樸與校準邏輯的參考實作；桌面版採 C#／.NET 10、WPF 與 WinForms `NotifyIcon`，主要功能及 Release 自包含發佈已完成。產品必須動態列舉當下端點，不要求預先登記設備。建置、測試、發佈與設定檔位置見 `src/README.md`；完整計畫見 `docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md`。硬體拓樸、會議軟體與多螢幕縮放仍須依 `.superpowers/reviews/phase-6.md` 使用者驗收清單操作確認。
 
 ## 慣例
 
