@@ -9,8 +9,6 @@ public sealed class PlatformInterfaceMappingTests
     private static readonly HashSet<string> NonPlatformInterfaces = new(StringComparer.Ordinal);
     private static readonly HashSet<string> NotYetImplementedInterfaces = new(StringComparer.Ordinal)
     {
-        "IHotkeyService",
-        "IAutostartService",
         "ITrayAnchor"
     };
 

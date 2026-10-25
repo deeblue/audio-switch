@@ -101,7 +101,7 @@ public static class ConfigurationStore
         var settingsPath = Path.Combine(directory, "settings.json");
         var protectedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        var ports = LoadPart(portsPath, () => PortTable.Empty(), json => PortTable.Read(json, machine), errors, protectedFiles);
+        var ports = LoadPart(portsPath, () => PortTable.Empty(machine), json => PortTable.Read(json, machine), errors, protectedFiles);
         var aliases = LoadPart(aliasesPath, () => new AliasStore(), json => ReadAliases(json), errors, protectedFiles);
         var settings = LoadPart(settingsPath, () => new AudioSwitchSettings(), json => ReadSettings(json), errors, protectedFiles);
         return new AudioSwitchConfiguration

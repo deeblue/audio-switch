@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using System.Windows.Interop;
 using AudioSwitch.Core;
 using AudioSwitch.Platform.Windows;
 using AudioSwitch.Presentation;
@@ -19,6 +20,12 @@ public partial class App : System.Windows.Application
     private WindowsAudioTopologySnapshotSource? _snapshotSource;
     private WindowsDefaultEndpointWriter? _defaultWriter;
     private WindowsAudioProbe? _probe;
+    private WindowsEndpointNameWriter? _nameWriter;
+    private MachineIdentity? _machine;
+    private SettingsWindow? _settingsWindow;
+    private WindowsHotkeyService? _hotkeyService;
+    private HwndSource? _hotkeyWindow;
+    private HotkeySettingsViewModel? _hotkeyViewModel;
     private AudioSwitchConfiguration? _configuration;
     private QuickSwitchPanelViewModel? _viewModel;
     private QuickSwitchPanelWindow? _panel;
@@ -41,12 +48,19 @@ public partial class App : System.Windows.Application
         try
         {
             Directory.CreateDirectory(_dataDirectory);
-            var machine = new WindowsMachineIdentitySource().ReadIdentity();
-            _configuration = ConfigurationStore.Load(_dataDirectory, machine);
+            _machine = new WindowsMachineIdentitySource().ReadIdentity();
+            _configuration = ConfigurationStore.Load(_dataDirectory, _machine);
             _endpointSource = new WindowsAudioEndpointSource();
             _snapshotSource = new WindowsAudioTopologySnapshotSource(endpoints: _endpointSource);
             _defaultWriter = new WindowsDefaultEndpointWriter();
             _probe = new WindowsAudioProbe();
+            _nameWriter = new WindowsEndpointNameWriter();
+            _hotkeyService = new WindowsHotkeyService();
+            _hotkeyWindow = new HwndSource(new HwndSourceParameters("AudioSwitch.Hotkeys") { Width = 0, Height = 0, WindowStyle = 0 });
+            _hotkeyWindow.AddHook(OnHotkeyMessage);
+            _hotkeyViewModel = new HotkeySettingsViewModel(_hotkeyService, _endpointSource, _defaultWriter, _configuration.Settings);
+            var hotkeyResult = _hotkeyService.Register(_hotkeyWindow.Handle, _configuration.Settings.PlaybackHotkey, _configuration.Settings.RecordingHotkey);
+            if (!hotkeyResult.Success) Log(hotkeyResult.Error ?? "快捷鍵註冊失敗");
             _viewModel = new QuickSwitchPanelViewModel(_snapshotSource, _configuration.Ports, _defaultWriter, _probe);
             _viewModel.PropertyChanged += (_, args) =>
             {
@@ -95,8 +109,12 @@ public partial class App : System.Windows.Application
         _refreshDebounce?.Stop();
         _signalPoll?.Stop();
         _panel?.Close();
+        _settingsWindow?.Close();
         _trayIconHost?.Dispose();
         _probe?.Dispose();
+        _nameWriter?.Dispose();
+        _hotkeyService?.Dispose();
+        _hotkeyWindow?.Dispose();
         _defaultWriter?.Dispose();
         _snapshotSource = null;
         _endpointSource?.Dispose();
@@ -147,23 +165,14 @@ public partial class App : System.Windows.Application
 
     private void ShowSettings()
     {
-        var settings = new Window
+        if (_settingsWindow?.IsVisible == true) { _settingsWindow.Activate(); return; }
+        try
         {
-            Title = "AudioSwitch 設定",
-            Width = 480,
-            Height = 260,
-            WindowStartupLocation = WindowStartupLocation.CenterScreen,
-            Content = new System.Windows.Controls.TabControl
-            {
-                Margin = new Thickness(12),
-                SelectedIndex = 0,
-                Items =
-                {
-                    new TabItem { Header = "接口定義", Content = new TextBlock { Text = "接口校準與示意圖將於設定階段提供。", Margin = new Thickness(16), FontSize = 15 } }
-                }
-            }
-        };
-        settings.Show();
+            _settingsWindow = new SettingsWindow(_snapshotSource!, _endpointSource!, _probe!, _defaultWriter!, _nameWriter!, _hotkeyService!, _hotkeyWindow!.Handle, _configuration!, _machine!, _dataDirectory, IdentifyScreens);
+            _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+            _settingsWindow.Show();
+        }
+        catch (Exception exception) { ReportError(exception); }
     }
 
     private void IdentifyScreens()
@@ -197,6 +206,19 @@ public partial class App : System.Windows.Application
             timer.Tick += (_, _) => { timer.Stop(); overlay.Close(); };
             timer.Start();
         }
+    }
+
+    private IntPtr OnHotkeyMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (message != 0x0312 || _hotkeyViewModel is null) return IntPtr.Zero;
+        var id = wParam.ToInt32();
+        var flow = id == 0x4151 ? AudioEndpointFlow.Render : id == 0x4152 ? AudioEndpointFlow.Capture : (AudioEndpointFlow?)null;
+        if (flow is null) return IntPtr.Zero;
+        _hotkeyViewModel.Cycle(flow.Value);
+        if (_hotkeyViewModel.ErrorMessage is { Length: > 0 } error) Log(error);
+        if (_panel?.IsVisible == true) _viewModel?.Refresh();
+        handled = true;
+        return IntPtr.Zero;
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

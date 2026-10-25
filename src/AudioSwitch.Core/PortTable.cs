@@ -25,7 +25,64 @@ public sealed class PortTable
     public bool IsEnabled => Warning is null;
     public string? Warning { get; }
 
-    public static PortTable Empty() => new(new PortTableDocument());
+    public static PortTable Empty(MachineIdentity? machine = null) => new(new PortTableDocument { Machine = machine });
+
+    public void AddInterface(PortDefinition port)
+    {
+        EnsureEnabled();
+        ArgumentNullException.ThrowIfNull(port);
+        if (string.IsNullOrWhiteSpace(port.Id) || string.IsNullOrWhiteSpace(port.Name) || string.IsNullOrWhiteSpace(port.Type))
+            throw new ArgumentException("接口 ID、名稱與類型不可為空。", nameof(port));
+        if (FindInterface(port.Id) is not null)
+            throw new ArgumentException($"接口 ID 已存在：{port.Id}", nameof(port));
+        _document.Interfaces.Add(port);
+        MoveInterface(port.Id, port.Edge ?? "left", port.Order ?? int.MaxValue);
+    }
+
+    public void RenameInterface(string interfaceId, string name)
+    {
+        EnsureEnabled();
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        var port = FindInterface(interfaceId) ?? throw new ArgumentException($"找不到接口 ID：{interfaceId}", nameof(interfaceId));
+        port.Name = name.Trim();
+    }
+
+    public void MoveInterface(string interfaceId, string edge, int order)
+    {
+        EnsureEnabled();
+        ArgumentException.ThrowIfNullOrWhiteSpace(edge);
+        if (edge is not ("left" or "right" or "rear" or "front"))
+            throw new ArgumentOutOfRangeException(nameof(edge), "接口邊必須是 left、right、rear 或 front。");
+        var port = FindInterface(interfaceId) ?? throw new ArgumentException($"找不到接口 ID：{interfaceId}", nameof(interfaceId));
+        var oldEdge = port.Edge;
+        var oldEdgePorts = _document.Interfaces.Where(item => item.Edge == oldEdge && item.Id != interfaceId).OrderBy(item => item.Order).ToList();
+        for (var index = 0; index < oldEdgePorts.Count; index++) oldEdgePorts[index].Order = index;
+        var targetEdgePorts = _document.Interfaces.Where(item => item.Edge == edge && item.Id != interfaceId).OrderBy(item => item.Order).ToList();
+        var targetIndex = Math.Clamp(order, 0, targetEdgePorts.Count);
+        port.Edge = edge;
+        targetEdgePorts.Insert(targetIndex, port);
+        for (var index = 0; index < targetEdgePorts.Count; index++) targetEdgePorts[index].Order = index;
+        _document.Interfaces = _document.Interfaces.OrderBy(item => item.Edge, StringComparer.Ordinal)
+            .ThenBy(item => item.Order).ToList();
+    }
+
+    public bool RemoveInterface(string interfaceId)
+    {
+        EnsureEnabled();
+        var port = FindInterface(interfaceId);
+        if (port is null) return false;
+        _document.Interfaces.Remove(port);
+        var siblings = _document.Interfaces.Where(item => item.Edge == port.Edge).OrderBy(item => item.Order).ToList();
+        for (var index = 0; index < siblings.Count; index++) siblings[index].Order = index;
+        return true;
+    }
+
+    public void BindMachine(MachineIdentity machine)
+    {
+        EnsureEnabled();
+        ArgumentNullException.ThrowIfNull(machine);
+        _document.Machine ??= machine;
+    }
 
     public static PortTable Read(string json, MachineIdentity? currentMachine = null)
     {
@@ -141,6 +198,27 @@ public sealed class PortTable
         return new CalibrationResult(diff.Count > 0 ? "ambiguous" : "no_candidate", null, [], [], [], diff.Select(node => node.InstanceId).ToArray());
     }
 
+    public CalibrationResult CalibrateExistingEndpoint(string interfaceId, Snapshot snapshot, string endpointId)
+    {
+        EnsureEnabled();
+        ArgumentNullException.ThrowIfNull(snapshot);
+        var port = FindInterface(interfaceId) ?? throw new ArgumentException($"找不到接口 ID：{interfaceId}", nameof(interfaceId));
+        var attachment = AttachmentDetector.FindCurrentPathAttachment(snapshot, endpointId);
+        if (attachment is null || attachment.LocationPaths.Count == 0)
+            return new CalibrationResult("no_candidate", null, [], [], [], [endpointId]);
+        var transport = AttachmentDetector.Transport(attachment);
+        var existing = port.CalibrationSources.Where(source => string.Equals(source.Transport, transport, StringComparison.OrdinalIgnoreCase)).ToArray();
+        var paths = attachment.LocationPaths.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+        if (existing.Length > 0)
+            return existing.Any(source => source.LocationPaths.Order(StringComparer.Ordinal).SequenceEqual(paths, StringComparer.Ordinal))
+                ? new CalibrationResult("calibrated", interfaceId, [transport], paths, [new CalibratedAttachment("現有裝置", transport, attachment.InstanceId, paths)], [])
+                : new CalibrationResult("ambiguous", null, [], [], [], [attachment.InstanceId]);
+        foreach (var path in paths)
+            if (!port.UsbLocationPathPrefixes.Contains(path, StringComparer.Ordinal)) port.UsbLocationPathPrefixes.Add(path);
+        port.CalibrationSources.Add(new PortCalibrationSource { Source = "現有裝置", Transport = transport, InstanceId = attachment.InstanceId, LocationPaths = paths.ToList() });
+        return new CalibrationResult("calibrated", interfaceId, [transport], paths, [new CalibratedAttachment("現有裝置", transport, attachment.InstanceId, paths)], []);
+    }
+
     private static string? GetMachineMismatch(MachineIdentity? expected, MachineIdentity? actual)
     {
         if (expected is null || actual is null)
@@ -165,6 +243,11 @@ public sealed class PortTable
     private static bool HasDifferentValue(string? expected, string? actual) =>
         !string.IsNullOrWhiteSpace(expected) && !string.IsNullOrWhiteSpace(actual) &&
         !string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase);
+
+    private void EnsureEnabled()
+    {
+        if (!IsEnabled) throw new InvalidOperationException(Warning);
+    }
 }
 
 internal sealed class PortTableDocument

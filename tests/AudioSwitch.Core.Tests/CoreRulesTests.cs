@@ -156,6 +156,29 @@ public sealed class CoreRulesTests
     }
 
     [Fact]
+    public void ExistingEndpointCanCalibrateItsCurrentUsbPathWithoutReplugging()
+    {
+        var ports = PortTable.Empty();
+        ports.AddInterface(new PortDefinition { Id = "usb-c-left", Name = "左側 USB-C", Type = "usb-c", Edge = "left", Order = 0 });
+        var snapshot = new Snapshot
+        {
+            Endpoints = [new AudioEndpoint { EndpointId = "usb-speaker", State = "active", Flow = "render", DevnodeId = @"SWD\MMDEVAPI\usb-speaker" }],
+            Devnodes =
+            [
+                new DeviceNode { InstanceId = @"SWD\MMDEVAPI\usb-speaker", ParentId = @"USB\VID_SPEAKER\A" },
+                new DeviceNode { InstanceId = @"USB\VID_SPEAKER\A", ParentId = @"USB\ROOT_HUB30\1", LocationPaths = ["PCIROOT(0)#USBROOT(0)#USB(4)#HS01"] },
+                new DeviceNode { InstanceId = @"USB\ROOT_HUB30\1", Name = "USB Root Hub" }
+            ]
+        };
+
+        var result = ports.CalibrateExistingEndpoint("usb-c-left", snapshot, "usb-speaker");
+
+        Assert.Equal("calibrated", result.Status);
+        Assert.Equal(["USB 2"], result.Transports);
+        Assert.Equal(["PCIROOT(0)#USBROOT(0)#USB(4)#HS01"], ports.FindInterface("usb-c-left")!.UsbLocationPathPrefixes);
+    }
+
+    [Fact]
     public void EndpointMmdevapiWrapperDoesNotMakeUnknownPciAudioVirtual()
     {
         var endpoint = new AudioEndpoint

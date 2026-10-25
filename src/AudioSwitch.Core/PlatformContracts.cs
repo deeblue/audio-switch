@@ -96,3 +96,16 @@ public interface IAudioProbe : IDisposable
     float ReadPeakLevel(string endpointId);
     Task StopPeakSamplingAsync(CancellationToken cancellationToken = default);
 }
+
+public sealed record HotkeyRegistrationResult(bool Success, string? Error);
+
+public interface IHotkeyService : IDisposable
+{
+    HotkeyRegistrationResult Register(IntPtr targetWindow, string? playbackHotkey, string? recordingHotkey);
+    void Unregister();
+}
+
+public interface IAutostartService
+{
+    void SetEnabled(bool enabled);
+}
