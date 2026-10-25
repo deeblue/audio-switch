@@ -227,6 +227,18 @@ tests/
 - [x] 測試：示意圖 view model（拖放到邊後的側別與順序、移動、刪除、名稱預填）、校準流程狀態機（兩種順序、ambiguous、取消）、快捷鍵循環跳過不可用端點、開機啟動開關呼叫正確服務（以假物件驗證，不在單元測試寫登錄）。
 - [x] 通過自我審查，commit。
 
+## 階段 5a：設定視窗修正（R6、R9、R11、R12、R14、R18）
+
+在階段 6 之前完成。每項先寫會失敗的測試，再修正。
+
+- [ ] **快捷鍵錄製**：WPF 在按住 Alt（以及單按 F10）時 `KeyEventArgs.Key` 為 `Key.System`，實際按鍵在 `SystemKey`；也要處理 `Key.ImeProcessed`（實際按鍵在 `ImeProcessedKey`）。把「修飾鍵 + 實際按鍵 → 快捷鍵字串」抽成 Presentation 的純函式，App 只把 `Keyboard.Modifiers` 與實際按鍵傳入。單元測試涵蓋 Ctrl+Alt+F1、Ctrl+Shift+D1、Win+Alt+A、只按修飾鍵（不產生結果）、Escape 清除；並測試產生的字串都能被 `WindowsHotkeyService` 的解析接受（解析邏輯如需共用，放在 Core 或 Presentation，平台層只做 `RegisterHotKey`）。
+- [ ] **裝置樹由 Core 產生**：「Dock／Hub（未定義）」的判斷移到 Core 的 `TopologyBuilder`，樹狀結構依實際 USB 連接逐層展開（hub 下的裝置、hub 接在 hub 上），USB 顯示 adapter 仍與同一 USB 裝置的音訊併組（例如同一個 USB 裝置同時提供喇叭與螢幕時在同一節點下）。設定視窗的裝置樹與快速面板都只讀 `TopologyTree`，App 不得自行走 devnode 祖先鏈或判斷 Dock／Hub。Core 測試以合成快照涵蓋：外接 hub 下的 USB 音訊裝置顯示在「Dock／Hub（未定義）」下、hub 串接 hub、沒有 hub 的 USB 裝置不出現 Dock／Hub 節點、USB 顯示路徑與音訊同節點；golden 測試維持通過。
+- [ ] **別名預填**：別名欄位預填該端點目前的 `PKEY_Device_DeviceDesc`（`IEndpointNameWriter.ReadDeviceDescription`），不是 `FriendlyName`；未修改直接套用時名稱不得改變。
+- [ ] **邏輯移到 Presentation**：別名套用（同組成員、保存原名、寫入失敗時逆序還原已寫成員）、別名清除、「這個裝置插在…」校準、「聽」的開始／停止（再按一次、選取其他端點、切換分頁、關閉視窗都要停止）移到 Presentation 的 view model，以假介面寫單元測試。`SettingsWindow` 只建立控制項、繫結與轉送事件；一行一個敘述，不把多個敘述寫在同一行。
+- [ ] **「設定接口…」連結**開啟設定視窗並直接切到「接口定義」頁；齒輪與右鍵「設定」開啟「裝置」頁。
+- [ ] **快捷鍵切換的回饋**：切換成功時以系統匣通知顯示切換後的端點名稱（別名或 Windows 名稱）；失敗時顯示原因並寫入記錄檔。
+- [ ] 通過自我審查，commit。手動驗收項目寫入審查報告。
+
 ## 階段 6：整體驗收與文件
 
 - [ ] 執行全部測試（含 `AUDIOSWITCH_LIVE=1`）與狀態檢查。
