@@ -2,7 +2,7 @@
 
 目的與範圍見 `README.md`。這是一個 side project，跟 `D:\WORK\Claude\poc\AI-Vibe-Hub` 是不同的 repo，不要去改那邊的檔案。
 
-核心目標是**以本機實體接口（USB-A、USB-C／Thunderbolt、HDMI、3.5mm、內建）為根**呈現音訊端點，讓使用者立刻找到對的裝置；端點仍是切換單位。呈現原則見 README「呈現方式」，端點分類與接口對應見「端點來源分類與接口對應」。唯讀 Python 探針在 `probes/`，是 Windows 桌面版分類、拓樸與校準邏輯的參考實作；桌面版採 C#／.NET 10、WPF 與 WinForms `NotifyIcon`，主要功能及 Release 自包含發佈已完成。產品必須動態列舉當下端點，不要求預先登記設備。建置、測試、發佈與設定檔位置見 `src/README.md`；完整計畫見 `docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md`。硬體拓樸、會議軟體與多螢幕縮放仍須依 `.superpowers/reviews/phase-6.md` 使用者驗收清單操作確認。
+核心目標是**以本機實體接口（USB-A、USB-C／Thunderbolt、HDMI、3.5mm、內建）為根**呈現音訊端點，讓使用者立刻找到對的裝置；端點仍是切換單位。呈現原則見 README「呈現方式」，端點分類與接口對應見「端點來源分類與接口對應」。唯讀 Python 探針在 `probes/`，是 Windows 桌面版分類、拓樸與校準邏輯的參考實作；桌面版採 C#／.NET 10、WPF 與 WinForms `NotifyIcon`，主要功能及 Release 自包含發佈已完成。產品必須動態列舉當下端點，不要求預先登記設備。建置、測試、發佈與設定檔位置見 `src/README.md`；完整計畫見 `docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md`，尚待實際操作的驗收項目列在該計畫「階段 6」。
 
 ## 慣例
 
@@ -22,7 +22,7 @@
 - **別名**：寫入端點的 `PKEY_Device_DeviceDesc`，一般使用者權限即可（本機已驗證）；Windows 顯示為「別名 (介面卡名稱)」，Windows 設定、Teams、Zoom 都看得到。同一實體設備的播放與錄音端點共用同一別名。Windows 依端點保存名稱；程式只另存「端點 ID → 原始名稱」供還原，新端點不推測沿用別名。Teams 對可插拔裝置在重新插拔後更新名稱，內建裝置須完整重開 Teams。Microsoft 文件註明用戶端不應設定端點屬性，沒有相容性保證。
 - **其他程式跟隨預設**：Teams 通話中跟隨 Windows 預設播放與錄音端點（本機已驗證）；Zoom「與系統相同」跟隨系統預設。跟隨哪個 role 未驗證。
 - **個別程式指定裝置**（後續範圍的進階設定）：未公開的 WinRT `Windows.Media.Internal.AudioPolicyConfig`，`SetPersistedDefaultAudioEndpoint(pid, flow, role, deviceId)`，21H2 後 IID `ab3d4648-e242-459f-b02f-541c70306324`，實作參考 EarTrumpet。本機以一般使用者權限驗證播放端點：立即生效、不跟隨系統預設切換、Windows 音量混音程式同步顯示；依應用程式保存，但設定與清除都須傳入執行中的 PID。錄音端點未驗證。
-- **這台電腦**：Lenovo ThinkPad T14p Gen 3（21RU），Windows 11 Pro x64 組建 26300；有 Python 3.12（py -3.12）與 .NET 8.0.11 執行環境，沒有 .NET SDK。唯讀探針在 `probes/`：讀取 Core Audio、PnP 祖先鏈（LocationPaths、ContainerId、RemovalPolicy、`_PLD`）、KS jack 描述與 DisplayConfig；結果見 README「本機可行性實驗」。`Speakers (speaker)`（`USB\VID_303A&PID_2986`）是 7C，同一 USB 裝置也提供 S2719DGF 顯示路徑。
+- **這台電腦**：Lenovo ThinkPad T14p Gen 3（21RU），Windows 11 Pro x64 組建 26300；Python 3.12（`py -3.12`）與 .NET SDK 10.0.402 已安裝。唯讀探針在 `probes/`：讀取 Core Audio、PnP 祖先鏈（LocationPaths、ContainerId、RemovalPolicy、`_PLD`）、KS jack 描述與 DisplayConfig；結果見 README「本機可行性實驗」。`Speakers (speaker)`（`USB\VID_303A&PID_2986`）是 7C，同一 USB 裝置也提供 S2719DGF 顯示路徑。
 
 ## 待決事項
 

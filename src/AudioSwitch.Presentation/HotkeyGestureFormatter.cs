@@ -23,8 +23,26 @@ public static class HotkeyGestureFormatter
         if (modifiers.HasFlag(HotkeyModifiers.Control)) tokens.Add("Ctrl");
         if (modifiers.HasFlag(HotkeyModifiers.Alt)) tokens.Add("Alt");
         if (modifiers.HasFlag(HotkeyModifiers.Shift)) tokens.Add("Shift");
-        tokens.Add(actualKey);
+        tokens.Add(NormalizeKeyName(actualKey));
         var formatted = string.Join('+', tokens);
         return HotkeyBindingParser.TryParse(formatted, out _) ? formatted : null;
     }
+
+    private static string NormalizeKeyName(string key) => key switch
+    {
+        "Return" => "Enter",
+        "Next" => "PageDown",
+        "Prior" => "PageUp",
+        "NumPad0" => "N0",
+        "NumPad1" => "N1",
+        "NumPad2" => "N2",
+        "NumPad3" => "N3",
+        "NumPad4" => "N4",
+        "NumPad5" => "N5",
+        "NumPad6" => "N6",
+        "NumPad7" => "N7",
+        "NumPad8" => "N8",
+        "NumPad9" => "N9",
+        _ => key
+    };
 }

@@ -172,7 +172,7 @@ public partial class App : System.Windows.Application
         }
         try
         {
-            _settingsWindow = new SettingsWindow(_snapshotSource!, _endpointSource!, _probe!, _defaultWriter!, _nameWriter!, _hotkeyService!, _hotkeyWindow!.Handle, _configuration!, _machine!, _dataDirectory, IdentifyScreens, selectedTab);
+            _settingsWindow = new SettingsWindow(_snapshotSource!, _endpointSource!, _probe!, _defaultWriter!, _nameWriter!, _hotkeyService!, _hotkeyWindow!.Handle, _configuration!, _machine!, _dataDirectory, IdentifyScreens, new WindowsAutostartService(), selectedTab);
             _settingsWindow.Closed += (_, _) => _settingsWindow = null;
             _settingsWindow.Show();
         }
@@ -189,22 +189,7 @@ public partial class App : System.Windows.Application
             var bounds = PopupPlacement.ToDipBounds(
                 new PhysicalRect(screen.Bounds.Left, screen.Bounds.Top, screen.Bounds.Width, screen.Bounds.Height),
                 new AudioSwitch.Presentation.DpiScale(dpi.X / 96d, dpi.Y / 96d));
-            var overlay = new Window
-            {
-                WindowStyle = WindowStyle.None,
-                ResizeMode = ResizeMode.NoResize,
-                ShowInTaskbar = false,
-                Topmost = true,
-                ShowActivated = false,
-                AllowsTransparency = true,
-                IsHitTestVisible = false,
-                Left = bounds.Left,
-                Top = bounds.Top,
-                Width = bounds.Width,
-                Height = bounds.Height,
-                Background = System.Windows.Media.Brushes.Transparent,
-                Content = new TextBlock { Text = index.ToString(), FontSize = 72, FontWeight = FontWeights.Bold, Foreground = System.Windows.Media.Brushes.White, Background = System.Windows.Media.Brushes.DarkSlateBlue, HorizontalAlignment = System.Windows.HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(30) }
-            };
+            var overlay = new ScreenIdentificationWindow(index, bounds.Left, bounds.Top, bounds.Width, bounds.Height);
             overlay.Show();
             var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
             timer.Tick += (_, _) => { timer.Stop(); overlay.Close(); };

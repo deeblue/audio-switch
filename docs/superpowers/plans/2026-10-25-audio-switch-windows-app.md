@@ -243,27 +243,27 @@ tests/
 
 在使用者驗收前完成。每項先寫會失敗的測試，再修正。
 
-- [ ] **設定視窗無法建立**：`SettingsWindow` 把同一個 `_error` `TextBlock` 加進接口定義、快捷鍵、一般三頁。WPF 元素只能有一個父元素，建構子在 `BuildHotkeyPage`（`SettingsWindow.cs:295`）拋出 `InvalidOperationException: Specified element is already the logical child of another element`，因此齒輪、右鍵「設定」與「設定接口…」都打不開設定視窗。每一頁改用各自的狀態文字。裝置頁也要有自己的狀態文字，顯示別名、試音、校準的結果與錯誤；目前這些訊息寫進 `_error`，在裝置頁看不到。
-- [ ] **「聽」的峰值顯示在裝置頁**：峰值目前也寫進 `_error`，所以在裝置頁按「聽」後看不到數值。在裝置頁以進度條（或同等控制項）加百分比顯示取樣中端點的峰值，停止後歸零或隱藏。
-- [ ] **視窗冒煙測試**：在 `AudioSwitch.App.Tests` 新增一般（非 live）測試。在 STA 執行緒以假介面建立 `SettingsWindow`、`QuickSwitchPanelWindow` 與識別螢幕視窗，並觸發版面配置；視窗可放在螢幕外，不取得焦點。對設定視窗依序切換每個分頁、在裝置樹選取一個播放端點與一個錄音端點，過程中不得拋出例外。目前在視窗內直接建立的服務（例如 `WindowsAutostartService`）改由建構子注入介面。測試不得寫入登錄、不得設定預設端點或改名，設定檔目錄使用暫存目錄。先確認這個測試在修正前失敗。
-- [ ] **快捷鍵按鍵名稱**：WPF 的 `Key.ToString()` 對 Enter 回傳 `Return`、對 PageDown 回傳 `Next`，目前解析會拒絕，所以這兩個鍵錄不進去。另外 `HotkeyBindingParser` 把 `N`＋數字轉成主鍵盤數字的虛擬鍵碼，與數字鍵台不符。格式化時把這些名稱正規化為解析接受的名稱。數字鍵台若要支援，就對應到 `VK_NUMPAD0`～`VK_NUMPAD9`（WPF 名稱為 `NumPad0`～`NumPad9`）；不支援就移除 `N` 規則。補上對應的單元測試。
-- [ ] **文件語言與現狀**：
+- [x] **設定視窗無法建立**：`SettingsWindow` 把同一個 `_error` `TextBlock` 加進接口定義、快捷鍵、一般三頁。WPF 元素只能有一個父元素，建構子在 `BuildHotkeyPage`（`SettingsWindow.cs:295`）拋出 `InvalidOperationException: Specified element is already the logical child of another element`，因此齒輪、右鍵「設定」與「設定接口…」都打不開設定視窗。每一頁改用各自的狀態文字。裝置頁也要有自己的狀態文字，顯示別名、試音、校準的結果與錯誤；目前這些訊息寫進 `_error`，在裝置頁看不到。
+- [x] **「聽」的峰值顯示在裝置頁**：峰值目前也寫進 `_error`，所以在裝置頁按「聽」後看不到數值。在裝置頁以進度條（或同等控制項）加百分比顯示取樣中端點的峰值，停止後歸零或隱藏。
+- [x] **視窗冒煙測試**：在 `AudioSwitch.App.Tests` 新增一般（非 live）測試。在 STA 執行緒以假介面建立 `SettingsWindow`、`QuickSwitchPanelWindow` 與識別螢幕視窗，並觸發版面配置；視窗可放在螢幕外，不取得焦點。對設定視窗依序切換每個分頁、在裝置樹選取一個播放端點與一個錄音端點，過程中不得拋出例外。目前在視窗內直接建立的服務（例如 `WindowsAutostartService`）改由建構子注入介面。測試不得寫入登錄、不得設定預設端點或改名，設定檔目錄使用暫存目錄。先確認這個測試在修正前失敗。
+- [x] **快捷鍵按鍵名稱**：WPF 的 `Key.ToString()` 對 Enter 回傳 `Return`、對 PageDown 回傳 `Next`，目前解析會拒絕，所以這兩個鍵錄不進去。另外 `HotkeyBindingParser` 把 `N`＋數字轉成主鍵盤數字的虛擬鍵碼，與數字鍵台不符。格式化時把這些名稱正規化為解析接受的名稱。數字鍵台若要支援，就對應到 `VK_NUMPAD0`～`VK_NUMPAD9`（WPF 名稱為 `NumPad0`～`NumPad9`）；不支援就移除 `N` 規則。補上對應的單元測試。
+- [x] **文件語言與現狀**：
   - `src/README.md` 改為繁體中文，依 CLAUDE.md 慣例。
   - CLAUDE.md「這台電腦」寫的是「.NET 8.0.11 執行環境，沒有 .NET SDK」，改為現狀：已安裝 .NET SDK 10.0.402。
   - README「狀態」只寫現狀，刪除「目前已確認 3.5mm 耳麥插孔狀態及各 flow 至少兩個作用中端點」這類測試當時的觀察。
-- [ ] **驗收清單位置**：`.superpowers/` 列在 `.gitignore`，但 `phase-5a.md`、`phase-6.md`、`progress.md` 被強制加入版本控制，CLAUDE.md 與 README 也指向 `.superpowers/reviews/phase-6.md`。處理方式如下：
+- [x] **驗收清單位置**：`.superpowers/` 列在 `.gitignore`，但 `phase-5a.md`、`phase-6.md`、`progress.md` 被強制加入版本控制，CLAUDE.md 與 README 也指向 `.superpowers/reviews/phase-6.md`。處理方式如下：
   - 以 `git rm --cached` 取消追蹤這些檔案，本機檔案保留。
   - CLAUDE.md 與 README 改為指向本計畫「階段 6」的使用者驗收清單。
   - 之後不得強制加入 `.superpowers/`。
-- [ ] 重新執行 Release 自包含發佈，並確認 README「狀態」與發佈結果一致。
-- [ ] 通過自我審查，commit。
+- [x] 重新執行 Release 自包含發佈，並確認 README「狀態」與發佈結果一致。
+- [x] 通過自我審查，commit。
 
 ## 階段 6：整體驗收與文件
 
 - [x] 執行全部測試（含 `AUDIOSWITCH_LIVE=1`）與狀態檢查。
 - [x] 以 Release 自包含發佈：`dotnet publish src/AudioSwitch.App -c Release -r win-x64 --self-contained`，記錄輸出大小。
 - [x] 更新 README「狀態」「實作計畫」與 CLAUDE.md 開頭段落為現狀；新增 `src/README.md` 說明建置、測試、發佈與設定檔位置。
-- [x] 產生「使用者驗收清單」（寫在審查報告，不寫進 README），逐項列出需要使用者操作的檢查：
+- [x] 將使用者驗收清單列在本計畫本階段（以下項目），不放進 README 或忽略目錄中的審查報告：
   1. 7C 插在已校準的孔時出現在該接口下；換孔後跟著移動。
   2. 3.5mm 耳麥插拔時面板即時更新；耳機與麥克風落在 3.5mm 插孔下。
   3. 點選切換後 YouTube 與 Teams 是否跟著改走新端點。

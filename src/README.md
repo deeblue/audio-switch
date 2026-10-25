@@ -1,24 +1,24 @@
-# AudioSwitch Windows app
+# AudioSwitch Windows 應用程式
 
-The Windows desktop app targets .NET 10 and uses WPF for its windows and WinForms `NotifyIcon` for the system tray.
+Windows 桌面程式以 .NET 10 建置，視窗使用 WPF，系統匣使用 WinForms `NotifyIcon`。
 
-## Build
+## 建置
 
-From the repository root in PowerShell:
+在 PowerShell 從儲存庫根目錄執行：
 
 ```powershell
 dotnet build src/AudioSwitch.sln -c Release
 ```
 
-## Tests
+## 測試
 
-Run the full automated suite:
+執行完整自動測試：
 
 ```powershell
 dotnet test src/AudioSwitch.sln -c Release
 ```
 
-The hardware live tests are opt-in. Regenerate the probe comparison file immediately before running them:
+實機 live 測試預設停用。執行前立刻重新產生探針比對檔：
 
 ```powershell
 probes/.venv/Scripts/python.exe probes/audio_topology.py json live-compare
@@ -26,30 +26,30 @@ $env:AUDIOSWITCH_LIVE = '1'
 dotnet test src/AudioSwitch.sln -c Release
 ```
 
-Each live test records system state immediately before and after the test and compares the snapshots. A detected state mismatch blocks later state-changing live tests in that test process.
+每個 live 測試會在測試前後立即擷取系統狀態並比較；若發現狀態不一致，該測試程序會停止後續會寫入狀態的 live 測試。
 
-The probe Python unit tests run with:
+探針的 Python 單元測試：
 
 ```powershell
 probes/.venv/Scripts/python.exe -m unittest discover -s probes/tests -t .
 ```
 
-## Publish
+## 發佈
 
-Create a self-contained Windows x64 Release build:
+建立 Windows x64 Release 自包含版本：
 
 ```powershell
 dotnet publish src/AudioSwitch.App -c Release -r win-x64 --self-contained
 ```
 
-The publish directory is `src/AudioSwitch.App/bin/Release/net10.0-windows/win-x64/publish/`.
+發佈目錄為 `src/AudioSwitch.App/bin/Release/net10.0-windows/win-x64/publish/`。
 
-## User data
+## 使用者資料
 
-Configuration is stored under `%APPDATA%\AudioSwitch\`:
+設定檔存放於 `%APPDATA%\AudioSwitch\`：
 
-- `ports.json`: per-machine physical interface diagram and calibration paths.
-- `aliases.json`: original endpoint descriptions needed to restore aliases.
-- `settings.json`: hotkeys, autostart preference, and first-run notice state.
+- `ports.json`：本機實體接口示意圖與校準路徑。
+- `aliases.json`：還原端點原始描述所需的資料。
+- `settings.json`：快捷鍵、自動啟動偏好與首次通知狀態。
 
-Application logs are written under `%LOCALAPPDATA%\AudioSwitch\logs\`.
+程式記錄存放於 `%LOCALAPPDATA%\AudioSwitch\logs\`。

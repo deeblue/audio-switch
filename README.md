@@ -213,7 +213,7 @@ LocationPaths 前綴共同為 `PCIROOT(0)#PCI(1400)#USBROOT(0)#`。本機 USB �
 1. **探針與可行性驗證**：Python 工具列舉端點、PnP 祖先鏈、KS jack 與 DisplayConfig，並提供快照、比較、校準與 JSON 匯出。結果是正式版分類與拓樸的參考；設備清單不作為預先登錄限制。
 2. **產品架構**：C#／.NET 10、WPF 與 WinForms `NotifyIcon`。Core 負責模型、分類、拓樸與設定；Presentation 負責 view model；Platform.Windows 封裝 Windows API；App 組成視窗與系統匣。
 3. **使用介面與切換**：快速面板依接口呈現播放／錄音端點；設定視窗提供裝置樹、接口示意圖與校準、別名、試音、峰值監看、全域快捷鍵、開機啟動及螢幕識別。未知裝置仍可直接選取，不依名稱猜測位置。
-4. **驗證與發佈**：Release 自包含發佈已產生。自動測試、實機狀態保護與尚需實際操作的驗收項目列在 `.superpowers/reviews/phase-6.md`。
+4. **驗證與發佈**：Release 自包含發佈已產生。自動測試、實機狀態保護與尚待實際操作的使用者驗收清單列在本計畫「階段 6」。
 
 插入特定裝置後自動切換與個別程式指定音訊仍屬後續範圍；新增前須定義優先順序、拔除後回復及使用者手動改選行為。
 
@@ -233,6 +233,6 @@ SoundSwitch 能以系統匣與快捷鍵切換端點，裝置選單是 Windows �
 
 ## 狀態
 
-Windows 桌面版已完成主要功能與 Release 自包含發佈，產物位於 `src/AudioSwitch.App/bin/Release/net10.0-windows/win-x64/publish/`，大小約 172.86 MiB。自動測試與實機 live 測試通過；自動測試不能取代實際 Dock、顯示器、會議軟體與縮放情境的使用者驗收，清單見 `.superpowers/reviews/phase-6.md`。目前已確認 3.5mm 耳麥插孔狀態及各 flow 至少兩個作用中端點；其餘硬體情境須依清單逐項確認。
+Windows 桌面版主要功能與 Release 自包含發佈已完成。Release 自包含版本目前位於 `src/AudioSwitch.App/bin/Release/net10.0-windows/win-x64/publish/`，大小約 172.86 MiB。自動測試及實機 live 測試已通過；Dock、顯示器、會議軟體與縮放情境仍待使用者依本計畫「階段 6」清單實際驗收。
 
 **macOS（後續範圍）**：切換預設輸出／輸入有公開 API，但沒有通訊預設；USB 孔位可能以 IOKit `locationID` 校準；別名寫回系統與個別程式指定沒有已知的系統層級做法；內建喇叭與 3.5mm 是否為獨立裝置依機種而定。以上皆待 macOS 探針實測。

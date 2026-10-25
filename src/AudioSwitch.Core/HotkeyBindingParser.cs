@@ -51,9 +51,14 @@ public static class HotkeyBindingParser
             virtualKey = char.ToUpperInvariant(value[0]);
             return true;
         }
-        if (value.Length == 2 && (value[0] is 'D' or 'd' or 'N' or 'n') && char.IsAsciiDigit(value[1]))
+        if (value.Length == 2 && (value[0] is 'D' or 'd') && char.IsAsciiDigit(value[1]))
         {
             virtualKey = value[1];
+            return true;
+        }
+        if (value.Length == 2 && (value[0] is 'N' or 'n') && char.IsAsciiDigit(value[1]))
+        {
+            virtualKey = (uint)(0x60 + value[1] - '0');
             return true;
         }
         if (value.StartsWith('F') && int.TryParse(value[1..], out var functionKey) && functionKey is >= 1 and <= 24)

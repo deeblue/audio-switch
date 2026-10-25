@@ -43,4 +43,18 @@ public sealed class HotkeyGestureFormatterTests
         Assert.NotNull(binding);
         Assert.True(HotkeyBindingParser.TryParse(binding, out _));
     }
+
+    [Theory]
+    [InlineData("Return", "Ctrl+Enter", 0x0D)]
+    [InlineData("Next", "Ctrl+PageDown", 0x22)]
+    [InlineData("Prior", "Ctrl+PageUp", 0x21)]
+    [InlineData("NumPad1", "Ctrl+N1", 0x61)]
+    public void NormalizesWpfKeyNamesToTheCorrectVirtualKey(string key, string expected, uint expectedVirtualKey)
+    {
+        var formatted = HotkeyGestureFormatter.Format(HotkeyModifiers.Control, key);
+
+        Assert.Equal(expected, formatted);
+        Assert.True(HotkeyBindingParser.TryParse(formatted, out var binding));
+        Assert.Equal(expectedVirtualKey, binding.VirtualKey);
+    }
 }

@@ -36,7 +36,12 @@ internal sealed class SettingsWindow : Window
     private readonly WpfTextBox _portNameEditor = new() { Margin = new Thickness(3) };
     private readonly TextBlock _calibrationStatus = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(6) };
     private readonly WpfTextBox _calibrationAlias = new() { Margin = new Thickness(3), ToolTip = "校準偵測到音訊端點時可選填別名" };
-    private readonly TextBlock _error = new() { TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.Firebrick, Margin = new Thickness(6) };
+    private readonly TextBlock _deviceStatus = new() { TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.Firebrick, Margin = new Thickness(6) };
+    private readonly TextBlock _portStatus = new() { TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.Firebrick, Margin = new Thickness(6) };
+    private readonly TextBlock _hotkeyStatus = new() { TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.Firebrick, Margin = new Thickness(6) };
+    private readonly TextBlock _generalStatus = new() { TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.Firebrick, Margin = new Thickness(6) };
+    private readonly System.Windows.Controls.ProgressBar _peakProgress = new() { Minimum = 0, Maximum = 1, Height = 16, MinWidth = 180, Visibility = Visibility.Collapsed, Margin = new Thickness(3) };
+    private readonly TextBlock _peakPercent = new() { Margin = new Thickness(3) };
     private readonly Dictionary<string, Border> _diagramZones = new(StringComparer.Ordinal);
     private readonly DispatcherTimer _peakTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
     private WpfButton? _listenButton;
@@ -48,7 +53,7 @@ internal sealed class SettingsWindow : Window
 
     public SettingsWindow(IAudioTopologySnapshotSource snapshots, IAudioEndpointSource endpoints, IAudioProbe probe,
         IDefaultEndpointWriter writer, IEndpointNameWriter nameWriter, IHotkeyService hotkeyService, IntPtr hotkeyTarget, AudioSwitchConfiguration configuration,
-        MachineIdentity machine, string dataDirectory, Action identifyScreens, int selectedTab = 0)
+        MachineIdentity machine, string dataDirectory, Action identifyScreens, IAutostartService autostartService, int selectedTab = 0)
     {
         _snapshots = snapshots;
         _probe = probe;
@@ -60,8 +65,8 @@ internal sealed class SettingsWindow : Window
         _diagram = new PortDiagramViewModel(configuration.Ports, machine);
         _calibration = new CalibrationWorkflowViewModel(snapshots, configuration.Ports);
         _hotkeys = new HotkeySettingsViewModel(_hotkeyService, endpoints, writer, configuration.Settings);
-        _general = new GeneralSettingsViewModel(new WindowsAutostartService(), configuration.Settings);
-        _deviceSettings = new DeviceSettingsViewModel(probe, nameWriter, snapshots, configuration.Ports, configuration.Aliases, Save);
+        _general = new GeneralSettingsViewModel(autostartService, configuration.Settings);
+        _deviceSettings = new DeviceSettingsViewModel(probe, nameWriter, snapshots, configuration.Ports, configuration.Aliases, () => Save(_deviceStatus));
         Title = "AudioSwitch 設定";
         Width = 920;
         Height = 660;
@@ -89,7 +94,7 @@ internal sealed class SettingsWindow : Window
         Closing += async (_, _) =>
         {
             await _deviceSettings.CloseAsync();
-            Save();
+            Save(_deviceStatus);
         };
     }
 
@@ -112,6 +117,7 @@ internal sealed class SettingsWindow : Window
         layout.Children.Add(_deviceTree);
         layout.Children.Add(new ScrollViewer { Content = _deviceDetails, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         _deviceDetails.Children.Add(Button("識別螢幕", (_, _) => _identifyScreens()));
+        _deviceDetails.Children.Add(_deviceStatus);
         _deviceTree.SelectedItemChanged += async (_, _) =>
         {
             if (_deviceTree.SelectedItem is not TreeViewItem { Tag: string id }) return;
@@ -125,7 +131,7 @@ internal sealed class SettingsWindow : Window
             }
             catch (Exception exception)
             {
-                _error.Text = exception.Message;
+                _deviceStatus.Text = exception.Message;
             }
         };
         return layout;
@@ -274,8 +280,8 @@ internal sealed class SettingsWindow : Window
         editor.Children.Add(_calibrationStatus);
         Grid.SetColumn(editor, 1);
         body.Children.Add(editor);
-        DockPanel.SetDock(_error, Dock.Bottom);
-        root.Children.Add(_error);
+        DockPanel.SetDock(_portStatus, Dock.Bottom);
+        root.Children.Add(_portStatus);
         root.Children.Add(body);
         RefreshPorts();
         return root;
@@ -289,10 +295,14 @@ internal sealed class SettingsWindow : Window
         AddHotkeyField(panel, "錄音端點循環", _hotkeys.RecordingHotkey, value => _hotkeys.RecordingHotkey = value);
         panel.Children.Add(Button("套用快捷鍵", (_, _) =>
         {
-            if (_hotkeys.Register(_hotkeyTarget)) Save();
-            _error.Text = _hotkeys.ErrorMessage ?? "快捷鍵已套用。";
+            if (!_hotkeys.Register(_hotkeyTarget))
+            {
+                _hotkeyStatus.Text = _hotkeys.ErrorMessage ?? "快捷鍵無法套用。";
+                return;
+            }
+            if (Save(_hotkeyStatus)) _hotkeyStatus.Text = "快捷鍵已套用。";
         }));
-        panel.Children.Add(_error);
+        panel.Children.Add(_hotkeyStatus);
         return panel;
     }
 
@@ -303,18 +313,18 @@ internal sealed class SettingsWindow : Window
         check.Checked += (_, _) =>
         {
             _general.AutostartEnabled = true;
-            _error.Text = _general.ErrorMessage ?? "";
-            Save();
+            _generalStatus.Text = _general.ErrorMessage ?? "";
+            Save(_generalStatus);
         };
         check.Unchecked += (_, _) =>
         {
             _general.AutostartEnabled = false;
-            _error.Text = _general.ErrorMessage ?? "";
-            Save();
+            _generalStatus.Text = _general.ErrorMessage ?? "";
+            Save(_generalStatus);
         };
         panel.Children.Add(check);
         panel.Children.Add(Button("識別所有螢幕", (_, _) => _identifyScreens()));
-        panel.Children.Add(_error);
+        panel.Children.Add(_generalStatus);
         return panel;
     }
 
@@ -363,7 +373,7 @@ internal sealed class SettingsWindow : Window
         }
         catch (Exception exception)
         {
-            _error.Text = exception.Message;
+            _deviceStatus.Text = exception.Message;
         }
     }
 
@@ -394,6 +404,7 @@ internal sealed class SettingsWindow : Window
         var selectedTopologyEndpoint = topologyEndpoint;
         _deviceDetails.Children.Clear();
         _deviceDetails.Children.Add(Button("識別螢幕", (_, _) => _identifyScreens()));
+        _deviceDetails.Children.Add(_deviceStatus);
         _deviceDetails.Children.Add(new TextBlock { Text = selectedEndpoint.FriendlyName ?? endpointId, FontSize = 18, FontWeight = FontWeights.Bold });
         AddDetail("Flow / State", $"{selectedEndpoint.Flow} / {selectedEndpoint.State}");
         AddDetail("Endpoint ID", endpointId);
@@ -421,6 +432,8 @@ internal sealed class SettingsWindow : Window
                 UpdateListeningUi();
             });
             _deviceDetails.Children.Add(_listenButton);
+            _deviceDetails.Children.Add(_peakProgress);
+            _deviceDetails.Children.Add(_peakPercent);
         }
         var endpointPort = new WpfComboBox { ItemsSource = _diagram.Interfaces.Select(port => new { port.Id, port.Name }).ToArray(), DisplayMemberPath = "Name", SelectedValuePath = "Id", Margin = new Thickness(3) };
         _deviceDetails.Children.Add(new TextBlock { Text = "這個裝置插在…（以目前裝置路徑校準）" });
@@ -431,11 +444,11 @@ internal sealed class SettingsWindow : Window
             {
                 if (endpointPort.SelectedValue is not string portId)
                 {
-                    _error.Text = "請先選擇接口。";
+                    _deviceStatus.Text = "請先選擇接口。";
                     return;
                 }
                 var result = _deviceSettings.CalibrateSelectedDevice(portId);
-                _error.Text = _deviceSettings.ErrorMessage ?? (result is null ? "校準失敗。" : $"已校準：{string.Join("、", result.Transports)}");
+                _deviceStatus.Text = _deviceSettings.ErrorMessage ?? (result is null ? "校準失敗。" : $"已校準：{string.Join("、", result.Transports)}");
                 if (result?.Status == "calibrated")
                 {
                     RefreshPorts();
@@ -444,7 +457,7 @@ internal sealed class SettingsWindow : Window
             }
             catch (Exception exception)
             {
-                _error.Text = exception.Message;
+                _deviceStatus.Text = exception.Message;
             }
         }));
         _deviceDetails.Children.Add(Button("重新整理拓樸", (_, _) => RefreshDevices()));
@@ -456,10 +469,10 @@ internal sealed class SettingsWindow : Window
         if (_tree is null) return;
         if (!_deviceSettings.ApplyAlias(_tree.Endpoints))
         {
-            _error.Text = _deviceSettings.ErrorMessage ?? "別名套用失敗。";
+            _deviceStatus.Text = _deviceSettings.ErrorMessage ?? "別名套用失敗。";
             return;
         }
-        _error.Text = string.Empty;
+        _deviceStatus.Text = "別名已套用。";
         RefreshDevices();
     }
 
@@ -468,11 +481,11 @@ internal sealed class SettingsWindow : Window
         if (_tree is null) return;
         if (!_deviceSettings.ClearAlias(_tree.Endpoints))
         {
-            _error.Text = _deviceSettings.ErrorMessage ?? "別名清除失敗。";
+            _deviceStatus.Text = _deviceSettings.ErrorMessage ?? "別名清除失敗。";
             return;
         }
         alias.Text = _deviceSettings.AliasText;
-        _error.Text = string.Empty;
+        _deviceStatus.Text = "別名已清除。";
         RefreshDevices();
     }
 
@@ -481,11 +494,11 @@ internal sealed class SettingsWindow : Window
         try
         {
             await _probe.PlayTestToneAsync(endpointId, TimeSpan.FromSeconds(2));
-            _error.Text = string.Empty;
+            _deviceStatus.Text = "試音完成。";
         }
         catch (Exception exception)
         {
-            _error.Text = exception.Message;
+            _deviceStatus.Text = exception.Message;
         }
     }
 
@@ -500,7 +513,10 @@ internal sealed class SettingsWindow : Window
         if (_deviceSettings.IsListening) _peakTimer.Start();
         else _peakTimer.Stop();
         if (_listenButton is not null) _listenButton.Content = _deviceSettings.IsListening ? "停止聽" : "聽";
-        _error.Text = _deviceSettings.ErrorMessage ?? (_deviceSettings.IsListening ? $"收音峰值：{_deviceSettings.PeakLevel:P0}" : string.Empty);
+        _peakProgress.Value = Math.Clamp(_deviceSettings.PeakLevel, 0f, 1f);
+        _peakProgress.Visibility = _deviceSettings.IsListening ? Visibility.Visible : Visibility.Collapsed;
+        _peakPercent.Text = _deviceSettings.IsListening ? $"{_deviceSettings.PeakLevel:P0}" : string.Empty;
+        _deviceStatus.Text = _deviceSettings.ErrorMessage ?? (_deviceSettings.IsListening ? "正在取樣麥克風峰值。" : string.Empty);
     }
 
     private void RefreshPorts()
@@ -599,7 +615,7 @@ internal sealed class SettingsWindow : Window
                     _deviceSettings.ApplyAlias(topologyEndpoint, _tree.Endpoints, _calibrationAlias.Text);
             }
         }
-        Save();
+        Save(_portStatus);
     }
     private void RefreshPortDiagram()
     {
@@ -639,15 +655,17 @@ internal sealed class SettingsWindow : Window
         _portNameEditor.SelectAll();
         _portNameEditor.Focus();
     }
-    private void Save()
+    private bool Save(TextBlock? status = null)
     {
         try
         {
             ConfigurationStore.Save(_dataDirectory, _configuration);
+            return true;
         }
         catch (Exception ex)
         {
-            _error.Text = ex.Message;
+            (status ?? _portStatus).Text = ex.Message;
+            return false;
         }
     }
     private static WpfButton Button(string text, RoutedEventHandler action)
