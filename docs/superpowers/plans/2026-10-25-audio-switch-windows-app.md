@@ -24,13 +24,22 @@
 
 - [ ] 執行 `dotnet --list-sdks`。若沒有 10.x，自行執行 `winget install --id Microsoft.DotNet.SDK.10 --exact --accept-source-agreements --accept-package-agreements` 安裝（使用者已授權），完成後重開 shell 再確認 `dotnet --list-sdks` 列出 10.x。安裝失敗時停止回報。
 - [ ] 確認 `probes/.venv/Scripts/python.exe` 可執行探針：`probes/.venv/Scripts/python.exe probes/audio_topology.py tree`。
-- [ ] 以 NuGet 查詢當下最新穩定版的 Avalonia（需支援 net10.0）、Avalonia.Headless.XUnit、CommunityToolkit.Mvvm、NAudio、xUnit、Microsoft.NET.Test.Sdk，寫入 `src/Directory.Packages.props` 鎖定版本。不得使用預覽版。
+- [ ] 以 NuGet 查詢下列允許套件的最新穩定版，寫入 `src/Directory.Packages.props` 鎖定版本。不得使用預覽版。
+
+  | 用途 | 允許的套件 | 版本規則 |
+  |---|---|---|
+  | UI | `Avalonia`、`Avalonia.Desktop`、`Avalonia.Themes.Fluent`、`Avalonia.Fonts.Inter`、`Avalonia.Headless`、`Avalonia.Headless.XUnit` | 所有 `Avalonia*` 用同一個版本，需支援 net10.0 |
+  | MVVM | `CommunityToolkit.Mvvm` | 最新穩定版 |
+  | Windows Core Audio | `NAudio.Core`、`NAudio.Wasapi`（或合併套件 `NAudio`） | 最新穩定版；只在 `AudioSwitch.Platform.Windows` 引用 |
+  | 測試 | `Microsoft.NET.Test.Sdk`、`xunit` 或 `xunit.v3`、`xunit.runner.visualstudio` | xUnit 的主版本必須和 `Avalonia.Headless.XUnit` 相容（以該套件的相依性為準，三個測試專案用同一個主版本） |
+
+  這些套件自動帶入的相依套件不需另外列出，也不算清單外套件。
 
 ## 全域限制
 
 1. 介面文字用繁體中文；程式碼、識別字、commit 訊息用英文。
 2. 文件只寫現狀，不寫經過。審查報告寫在 `.superpowers/reviews/`（已在 `.gitignore`），不寫進 README。
-3. 允許的 NuGet 套件只有上面列出的幾個；需要其他套件時**停止**詢問。
+3. 直接引用的 NuGet 套件只限「環境前置」表格中的套件（相依套件不在此限）；需要其他套件時**停止**詢問。
 4. `AudioSwitch.Core` 與 `AudioSwitch.App` 不得引用 Windows 專屬 API（P/Invoke、COM、`Microsoft.Win32`、NAudio）；這些只能在 `AudioSwitch.Platform.Windows`。
 5. 不以裝置名稱、VID/PID、ContainerId 或匯流排標籤單獨推斷機身接口；不以 `_PLD` 判斷孔位或類型（`_PLD` 只在詳細資訊顯示）；程式碼中不得寫死本機裝置名稱或 VID/PID。
 6. 只對 `DEVICE_STATE_ACTIVE` 端點做分類、切換、試音與峰值。
@@ -223,7 +232,7 @@ tests/
 ## 停止條件（停下回報，不要繞過）
 
 - .NET 10 SDK 安裝失敗，或需要安裝 .NET 10 SDK 以外的任何軟體。
-- 需要清單以外的 NuGet 套件。
+- 需要直接引用「環境前置」表格以外的 NuGet 套件。
 - 寫入類 live 測試無法還原，或 `compare_state.py` 顯示前後不一致。
 - 未公開介面（`IPolicyConfig`）在本機回傳失敗。
 - 規格之間互相矛盾、規格沒有涵蓋某個必要行為，或需要選定待決事項的預設值。
