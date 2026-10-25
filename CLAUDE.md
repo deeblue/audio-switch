@@ -2,14 +2,14 @@
 
 目的與範圍見 `README.md`。這是一個 side project，跟 `D:\WORK\Claude\poc\AI-Vibe-Hub` 是不同的 repo，不要去改那邊的檔案。
 
-核心目標是**以本機實體接口（USB-A、USB-C／Thunderbolt、HDMI、3.5mm、內建）為根**呈現音訊端點，讓使用者立刻找到對的裝置；端點仍是切換單位。呈現原則見 README「呈現方式」，端點分類與接口對應見「端點來源分類與接口對應」，執行順序見「實作計畫」。下一步是 `probes/` 的 Python 測試應用，需求見 `probes/TASK.md`，逐步執行計畫見 `docs/superpowers/plans/2026-10-23-audio-topology-probe.md`；尚未開始寫產品程式。產品必須動態列舉當下端點，不要求預先登記設備。
+核心目標是**以本機實體接口（USB-A、USB-C／Thunderbolt、HDMI、3.5mm、內建）為根**呈現音訊端點，讓使用者立刻找到對的裝置；端點仍是切換單位。呈現原則見 README「呈現方式」，端點分類與接口對應見「端點來源分類與接口對應」，執行順序見「實作計畫」。唯讀 Python 探針在 `probes/`（需求見 `probes/TASK.md`），是正式版分類、樹狀與校準邏輯的參考實作。下一步是 Windows 正式版，執行計畫見 `docs/superpowers/plans/2026-10-25-audio-switch-windows-app.md`。產品必須動態列舉當下端點，不要求預先登記設備。
 
 ## 慣例
 
 - 文件與介面文字用繁體中文；程式碼、識別字、commit 訊息用英文。
-- 只在使用者要求時 commit；沒有 remote，不 push。
+- 只在使用者要求時 commit；執行計畫中明定的階段 commit 視為已授權。沒有 remote，不 push。
 - 文件只寫現狀，不寫經過。
-- 先讓使用者決定下面「待決事項」，再開始寫產品程式。`probes/` 的測試應用不受此限。
+- 「待決事項」未決定前，產品程式只實作可設定的機制，不自行選定預設值。
 
 ## 技術上已知的事
 
@@ -26,14 +26,13 @@
 
 ## 待決事項
 
-**正式版語言建議**：C#／.NET 10 LTS + Windows Forms（`NotifyIcon` 常駐系統匣、TreeView 呈現接口樹、可自包含發佈）。需先安裝 .NET 10 SDK；.NET 10 支援至 2028-11-14。測試應用用 Python。[官方支援期限](https://dotnet.microsoft.com/en-us/platform/support/policy)
+**正式版技術**：C#／.NET 10 LTS + Avalonia（Fluent 主題、內建系統匣圖示）。先做 Windows；macOS 列為後續，平台相依程式碼集中在平台層，資料模型、分類、校準與 UI 共用。需先安裝 .NET 10 SDK；.NET 10 支援至 2028-11-14。介面分快速切換面板與設定視窗，見 README「介面」。[官方支援期限](https://dotnet.microsoft.com/en-us/platform/support/policy)
 
 以下首版行為仍待使用者決定：
 
-1. **正式版語言**：是否採用上面的建議。
-2. **快捷鍵**：預設組合鍵；在當下可用端點中循環，或另提供可選的自訂循環集合（所有端點仍可從系統匣直接選取）。
-3. **開機自動啟動**：要不要預設開啟。
-4. **自動切換**（README 第 5 項，後續範圍）：若納入首版，規則怎麼設定。
+1. **快捷鍵**：預設組合鍵；在當下可用端點中循環，或另提供可選的自訂循環集合（所有端點仍可從系統匣直接選取）。
+2. **開機自動啟動**：要不要預設開啟。
+3. **自動切換**（README 第 5 項，後續範圍）：若納入首版，規則怎麼設定。
 
 ## 驗收
 
