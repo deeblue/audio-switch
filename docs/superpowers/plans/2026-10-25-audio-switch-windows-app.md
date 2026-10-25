@@ -239,6 +239,25 @@ tests/
 - [x] **快捷鍵切換的回饋**：切換成功時以系統匣通知顯示切換後的端點名稱（別名或 Windows 名稱）；失敗時顯示原因並寫入記錄檔。
 - [x] 通過自我審查，commit。手動驗收項目寫入審查報告。
 
+## 階段 5b：設定視窗開啟失敗與文件修正（R9、R14、R18）
+
+在使用者驗收前完成。每項先寫會失敗的測試，再修正。
+
+- [ ] **設定視窗無法建立**：`SettingsWindow` 把同一個 `_error` `TextBlock` 加進接口定義、快捷鍵、一般三頁。WPF 元素只能有一個父元素，建構子在 `BuildHotkeyPage`（`SettingsWindow.cs:295`）拋出 `InvalidOperationException: Specified element is already the logical child of another element`，因此齒輪、右鍵「設定」與「設定接口…」都打不開設定視窗。每一頁改用各自的狀態文字。裝置頁也要有自己的狀態文字，顯示別名、試音、校準的結果與錯誤；目前這些訊息寫進 `_error`，在裝置頁看不到。
+- [ ] **「聽」的峰值顯示在裝置頁**：峰值目前也寫進 `_error`，所以在裝置頁按「聽」後看不到數值。在裝置頁以進度條（或同等控制項）加百分比顯示取樣中端點的峰值，停止後歸零或隱藏。
+- [ ] **視窗冒煙測試**：在 `AudioSwitch.App.Tests` 新增一般（非 live）測試。在 STA 執行緒以假介面建立 `SettingsWindow`、`QuickSwitchPanelWindow` 與識別螢幕視窗，並觸發版面配置；視窗可放在螢幕外，不取得焦點。對設定視窗依序切換每個分頁、在裝置樹選取一個播放端點與一個錄音端點，過程中不得拋出例外。目前在視窗內直接建立的服務（例如 `WindowsAutostartService`）改由建構子注入介面。測試不得寫入登錄、不得設定預設端點或改名，設定檔目錄使用暫存目錄。先確認這個測試在修正前失敗。
+- [ ] **快捷鍵按鍵名稱**：WPF 的 `Key.ToString()` 對 Enter 回傳 `Return`、對 PageDown 回傳 `Next`，目前解析會拒絕，所以這兩個鍵錄不進去。另外 `HotkeyBindingParser` 把 `N`＋數字轉成主鍵盤數字的虛擬鍵碼，與數字鍵台不符。格式化時把這些名稱正規化為解析接受的名稱。數字鍵台若要支援，就對應到 `VK_NUMPAD0`～`VK_NUMPAD9`（WPF 名稱為 `NumPad0`～`NumPad9`）；不支援就移除 `N` 規則。補上對應的單元測試。
+- [ ] **文件語言與現狀**：
+  - `src/README.md` 改為繁體中文，依 CLAUDE.md 慣例。
+  - CLAUDE.md「這台電腦」寫的是「.NET 8.0.11 執行環境，沒有 .NET SDK」，改為現狀：已安裝 .NET SDK 10.0.402。
+  - README「狀態」只寫現狀，刪除「目前已確認 3.5mm 耳麥插孔狀態及各 flow 至少兩個作用中端點」這類測試當時的觀察。
+- [ ] **驗收清單位置**：`.superpowers/` 列在 `.gitignore`，但 `phase-5a.md`、`phase-6.md`、`progress.md` 被強制加入版本控制，CLAUDE.md 與 README 也指向 `.superpowers/reviews/phase-6.md`。處理方式如下：
+  - 以 `git rm --cached` 取消追蹤這些檔案，本機檔案保留。
+  - CLAUDE.md 與 README 改為指向本計畫「階段 6」的使用者驗收清單。
+  - 之後不得強制加入 `.superpowers/`。
+- [ ] 重新執行 Release 自包含發佈，並確認 README「狀態」與發佈結果一致。
+- [ ] 通過自我審查，commit。
+
 ## 階段 6：整體驗收與文件
 
 - [x] 執行全部測試（含 `AUDIOSWITCH_LIVE=1`）與狀態檢查。
@@ -264,7 +283,7 @@ tests/
 1. **建置**：`dotnet build src/AudioSwitch.sln -c Release`，0 個警告（警告視為錯誤）。
 2. **格式**：`dotnet format src/AudioSwitch.sln --verify-no-changes`。
 3. **測試**：本步驟的指令一律在新開的 shell 執行，不沿用執行過程中設定的環境變數（`AUDIOSWITCH_LIVE` 除外），也不得另設 `PYTHONPATH`。記錄每組的通過數與略過數；略過的測試要說明原因。
-   - `dotnet test src/AudioSwitch.sln -c Release`，全部通過。
+   - `dotnet test src/AudioSwitch.sln -c Release`，全部通過。本階段新增或修改的每個視窗，都要在 `AudioSwitch.App.Tests` 有冒煙測試：能建立、完成版面配置、切換每個分頁。不得以「WPF 互動列入人工驗收」代替視窗能否開啟的自動測試。
    - `probes/.venv/Scripts/python.exe -m unittest discover -s probes/tests -t .`，全部通過。
    - 階段 2 起：先執行 `probes/.venv/Scripts/python.exe probes/audio_topology.py json live-compare` 重新產生比對檔，再以 `AUDIOSWITCH_LIVE=1` 執行 `dotnet test`。不得使用先前留下的 `live-compare.json`。
    - 本階段若改動探針的輸出格式或欄位（`snapshot`、`json`、`tree` 等），所有讀取這些輸出的地方都要重跑並列入報告：`probes/export_golden.py`（比對 golden SHA-256）、Core golden 測試、實機比對測試、`probes/compare_state.py`。
@@ -281,7 +300,8 @@ tests/
    - 錯誤處理：平台呼叫失敗有記錄並回報；沒有吞掉例外。
    - 執行緒：COM 回呼不直接碰 UI；UI 更新在 UI 執行緒。
    - 資源：COM 物件、事件訂閱、快捷鍵、計時器在結束時釋放。
-   - 介面文字為繁體中文，識別字為英文；沒有殘留的除錯輸出或未說明的 TODO。
+   - 介面文字與文件（含 `src/README.md`）為繁體中文，識別字為英文；沒有殘留的除錯輸出或未說明的 TODO。
+   - WPF 元素只能有一個父元素：同一個控制項實例不得加入兩個面板或分頁。
 7. **系統狀態**：有跑寫入類 live 測試的階段，附上 `compare_state.py` 的比對結果。
 8. **審查報告**：寫入 `.superpowers/reviews/phase-<n>.md`，包含：執行的指令與結果摘要、需求追蹤表、掃描結果與逐筆判斷、發現的問題與修正、剩餘風險、需要使用者驗收的項目。
 9. **修正後重審**：審查中發現任何問題，修正後從第 1 步重新執行。報告中的結論只能根據最後一次的結果。
