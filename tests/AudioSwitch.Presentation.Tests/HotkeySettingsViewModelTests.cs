@@ -13,9 +13,10 @@ public sealed class HotkeySettingsViewModelTests
         var writer = new FakeWriter { DefaultRender = "one" };
         var model = new HotkeySettingsViewModel(new FakeHotkeyService(), source, writer, new AudioSwitchSettings());
 
-        model.Cycle(AudioEndpointFlow.Render);
+        var result = model.Cycle(AudioEndpointFlow.Render);
 
         Assert.Equal("two", writer.LastSelectedEndpoint);
+        Assert.Equal(new HotkeyCycleResult(true, "two"), result);
         Assert.Null(model.ErrorMessage);
     }
 
@@ -25,10 +26,11 @@ public sealed class HotkeySettingsViewModelTests
         var writer = new FakeWriter();
         var model = new HotkeySettingsViewModel(new FakeHotkeyService(), new FakeEndpointSource(), writer, new AudioSwitchSettings());
 
-        model.Cycle(AudioEndpointFlow.Capture);
+        var result = model.Cycle(AudioEndpointFlow.Capture);
 
         Assert.Null(writer.LastSelectedEndpoint);
         Assert.Equal("目前沒有可用的錄音端點。", model.ErrorMessage);
+        Assert.Equal(new HotkeyCycleResult(false, Error: "目前沒有可用的錄音端點。"), result);
     }
 
     [Fact]

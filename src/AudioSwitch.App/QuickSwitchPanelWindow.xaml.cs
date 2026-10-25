@@ -9,11 +9,11 @@ namespace AudioSwitch.App;
 public partial class QuickSwitchPanelWindow : Window
 {
     private readonly QuickSwitchPanelViewModel _viewModel;
-    private readonly Action _settings;
+    private readonly Action<int> _settings;
     private readonly PropertyChangedEventHandler _viewModelChanged;
     private bool _loading;
 
-    public QuickSwitchPanelWindow(QuickSwitchPanelViewModel viewModel, Action settings)
+    public QuickSwitchPanelWindow(QuickSwitchPanelViewModel viewModel, Action<int> settings)
     {
         InitializeComponent();
         _viewModel = viewModel;
@@ -63,6 +63,6 @@ public partial class QuickSwitchPanelWindow : Window
         if (sender is System.Windows.Controls.Button { Tag: string endpointId }) await _viewModel.PlayToneAsync(endpointId);
     }
 
-    private void Settings_Click(object sender, RoutedEventArgs e) => _settings();
-    private void Configure_Click(object sender, RoutedEventArgs e) => _settings();
+    private void Settings_Click(object sender, RoutedEventArgs e) => _settings(0);
+    private void Configure_Click(object sender, RoutedEventArgs e) => _settings(1);
 }

@@ -70,7 +70,7 @@ public partial class App : System.Windows.Application
             _trayIconHost = new TrayIconHost();
             _trayIconHost.ExitRequested += ExitApplication;
             _trayIconHost.TogglePanelRequested += (_, _) => TogglePanel();
-            _trayIconHost.SettingsRequested += (_, _) => ShowSettings();
+            _trayIconHost.SettingsRequested += (_, _) => ShowSettings(0);
             _trayIconHost.IdentifyScreensRequested += (_, _) => IdentifyScreens();
             _endpointSource.EndpointChanged += OnEndpointNotification;
             _endpointSource.DefaultEndpointChanged += OnEndpointNotification;
@@ -163,12 +163,16 @@ public partial class App : System.Windows.Application
         }
     }
 
-    private void ShowSettings()
+    private void ShowSettings(int selectedTab = 0)
     {
-        if (_settingsWindow?.IsVisible == true) { _settingsWindow.Activate(); return; }
+        if (_settingsWindow?.IsVisible == true)
+        {
+            _settingsWindow.SelectTab(selectedTab);
+            return;
+        }
         try
         {
-            _settingsWindow = new SettingsWindow(_snapshotSource!, _endpointSource!, _probe!, _defaultWriter!, _nameWriter!, _hotkeyService!, _hotkeyWindow!.Handle, _configuration!, _machine!, _dataDirectory, IdentifyScreens);
+            _settingsWindow = new SettingsWindow(_snapshotSource!, _endpointSource!, _probe!, _defaultWriter!, _nameWriter!, _hotkeyService!, _hotkeyWindow!.Handle, _configuration!, _machine!, _dataDirectory, IdentifyScreens, selectedTab);
             _settingsWindow.Closed += (_, _) => _settingsWindow = null;
             _settingsWindow.Show();
         }
@@ -214,8 +218,16 @@ public partial class App : System.Windows.Application
         var id = wParam.ToInt32();
         var flow = id == 0x4151 ? AudioEndpointFlow.Render : id == 0x4152 ? AudioEndpointFlow.Capture : (AudioEndpointFlow?)null;
         if (flow is null) return IntPtr.Zero;
-        _hotkeyViewModel.Cycle(flow.Value);
-        if (_hotkeyViewModel.ErrorMessage is { Length: > 0 } error) Log(error);
+        var result = _hotkeyViewModel.Cycle(flow.Value);
+        if (result.Success)
+        {
+            _trayIconHost?.ShowNotice("AudioSwitch", result.EndpointName ?? "已切換音訊端點。", Forms.ToolTipIcon.Info);
+        }
+        else
+        {
+            Log(result.Error ?? "快捷鍵切換失敗。");
+            _trayIconHost?.ShowNotice("AudioSwitch", result.Error ?? "快捷鍵切換失敗。", Forms.ToolTipIcon.Error);
+        }
         if (_panel?.IsVisible == true) _viewModel?.Refresh();
         handled = true;
         return IntPtr.Zero;

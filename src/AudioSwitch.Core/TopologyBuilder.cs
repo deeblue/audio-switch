@@ -22,6 +22,7 @@ public sealed class TopologyNode
     public string? GroupKey { get; init; }
     public string? EndpointId { get; init; }
     public string? Category { get; init; }
+    public IReadOnlyList<string> PhysicalDeviceLocationRaw { get; init; } = [];
     public List<TopologyNode> Children { get; } = [];
 }
 
@@ -68,36 +69,33 @@ public static class TopologyBuilder
             var root = rootsById[rootId];
             endpointRoots[endpoint.EndpointId] = rootId;
 
-            var usb = chain.FirstOrDefault(node => node.InstanceId.StartsWith("USB\\VID_", StringComparison.OrdinalIgnoreCase) &&
-                node.LocationPaths.Count > 0 && !node.InstanceId.Contains("&MI_", StringComparison.OrdinalIgnoreCase)) ??
-                chain.FirstOrDefault(node => node.InstanceId.StartsWith("USB\\", StringComparison.OrdinalIgnoreCase) &&
-                    !node.InstanceId.Contains("&MI_", StringComparison.OrdinalIgnoreCase));
-            var groupKey = usb?.InstanceId;
+            var usbDevices = chain.Where(IsUsbDeviceNode).Reverse().ToArray();
+            var endpointUsbDevice = usbDevices.LastOrDefault();
+            var groupKey = endpointUsbDevice?.InstanceId;
             var leaf = new TopologyNode
             {
                 Name = endpoint.FriendlyName ?? "（無名稱）",
                 Kind = "endpoint",
                 EndpointId = endpoint.EndpointId,
-                Category = classification.Category
+                Category = classification.Category,
+                PhysicalDeviceLocationRaw = chain.Where(node => node.PhysicalDeviceLocationRaw is { Length: > 0 })
+                    .Select(node => $"{node.InstanceId}: {Convert.ToHexString(node.PhysicalDeviceLocationRaw!)}").ToArray()
             };
 
-            if (usb is not null)
+            TopologyNode? parentGroup = null;
+            foreach (var usb in usbDevices)
             {
                 var key = (rootId, usb.InstanceId.ToUpperInvariant());
                 if (!usbGroups.TryGetValue(key, out var group))
                 {
-                    var functionName = snapshot.Devnodes.FirstOrDefault(node =>
-                        node.ParentId?.Equals(usb.InstanceId, StringComparison.OrdinalIgnoreCase) == true &&
-                        !string.IsNullOrWhiteSpace(node.Name) && !node.Name.StartsWith("36fc", StringComparison.OrdinalIgnoreCase) &&
-                        !node.Name.StartsWith("4d36", StringComparison.OrdinalIgnoreCase))?.Name;
-                    var label = functionName ?? (usb.Name is not null && !usb.Name.StartsWith("36fc", StringComparison.OrdinalIgnoreCase) &&
-                        !usb.Name.StartsWith("4d36", StringComparison.OrdinalIgnoreCase) ? usb.Name : "USB 裝置");
-                    group = new TopologyNode { Name = label, GroupKey = usb.InstanceId };
-                    root.Children.Add(group);
+                    group = CreateUsbGroup(usb, snapshot.Devnodes);
+                    if (parentGroup is null) root.Children.Add(group);
+                    else parentGroup.Children.Add(group);
                     usbGroups[key] = group;
                 }
-                group.Children.Add(leaf);
+                parentGroup = group;
             }
+            if (parentGroup is not null) parentGroup.Children.Add(leaf);
             else
             {
                 root.Children.Add(leaf);
@@ -132,11 +130,11 @@ public static class TopologyBuilder
                 continue;
             }
 
-            TopologyNode? device = null;
-            if (groupKey is not null)
-            {
+            TopologyNode? device = groupKey is not null && usbGroups.TryGetValue((interfaceId, groupKey.ToUpperInvariant()), out var usbGroup)
+                ? usbGroup
+                : null;
+            if (device is null && groupKey is not null)
                 device = root.Children.FirstOrDefault(child => child.GroupKey?.Equals(groupKey, StringComparison.OrdinalIgnoreCase) == true);
-            }
             if (device is null)
             {
                 device = new TopologyNode { Name = path.TargetName ?? "顯示器", GroupKey = groupKey };
@@ -152,6 +150,26 @@ public static class TopologyBuilder
     private static bool IsActive(AudioEndpoint endpoint) =>
         endpoint.State.Equals("active", StringComparison.OrdinalIgnoreCase) ||
         endpoint.State.EndsWith(".active", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsUsbDeviceNode(DeviceNode node) =>
+        node.InstanceId.StartsWith("USB\\", StringComparison.OrdinalIgnoreCase) &&
+        !node.InstanceId.Contains("&MI_", StringComparison.OrdinalIgnoreCase) &&
+        !node.InstanceId.Contains("ROOT_HUB", StringComparison.OrdinalIgnoreCase);
+
+    private static TopologyNode CreateUsbGroup(DeviceNode usb, IReadOnlyList<DeviceNode> nodes)
+    {
+        var isHub = nodes.Any(node => node.ParentId?.Equals(usb.InstanceId, StringComparison.OrdinalIgnoreCase) == true && IsUsbDeviceNode(node));
+        var functionName = nodes.FirstOrDefault(node =>
+            node.ParentId?.Equals(usb.InstanceId, StringComparison.OrdinalIgnoreCase) == true &&
+            !IsUsbDeviceNode(node) && !string.IsNullOrWhiteSpace(node.Name) &&
+            !node.Name.StartsWith("36fc", StringComparison.OrdinalIgnoreCase) &&
+            !node.Name.StartsWith("4d36", StringComparison.OrdinalIgnoreCase))?.Name;
+        var label = isHub
+            ? "Dock／Hub（未定義）"
+            : functionName ?? (usb.Name is not null && !usb.Name.StartsWith("36fc", StringComparison.OrdinalIgnoreCase) &&
+                !usb.Name.StartsWith("4d36", StringComparison.OrdinalIgnoreCase) ? usb.Name : "USB 裝置");
+        return new TopologyNode { Name = label, Kind = isHub ? "dock-hub" : "device", GroupKey = usb.InstanceId };
+    }
 
     private static List<DeviceNode> BuildChain(string? startId, IReadOnlyDictionary<string, DeviceNode> nodes)
     {

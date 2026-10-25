@@ -4,6 +4,8 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Presentation;
 
+public sealed record HotkeyCycleResult(bool Success, string? EndpointName = null, string? Error = null);
+
 public sealed class HotkeySettingsViewModel : INotifyPropertyChanged
 {
     private readonly IHotkeyService _hotkeyService;
@@ -46,7 +48,7 @@ public sealed class HotkeySettingsViewModel : INotifyPropertyChanged
         return true;
     }
 
-    public void Cycle(AudioEndpointFlow flow)
+    public HotkeyCycleResult Cycle(AudioEndpointFlow flow)
     {
         try
         {
@@ -56,7 +58,7 @@ public sealed class HotkeySettingsViewModel : INotifyPropertyChanged
             if (endpoints.Length == 0)
             {
                 ErrorMessage = flow == AudioEndpointFlow.Render ? "目前沒有可用的播放端點。" : "目前沒有可用的錄音端點。";
-                return;
+                return new HotkeyCycleResult(false, Error: ErrorMessage);
             }
             var currentId = _endpointWriter.GetDefaultEndpointId(flow, AudioEndpointRole.Multimedia);
             var currentIndex = Array.FindIndex(endpoints, endpoint => endpoint.EndpointId.Equals(currentId, StringComparison.OrdinalIgnoreCase));
@@ -67,13 +69,15 @@ public sealed class HotkeySettingsViewModel : INotifyPropertyChanged
             {
                 ErrorMessage = string.Join(" ", result.Roles.Where(role => !role.Success).Select(role => role.Error).Where(message => !string.IsNullOrWhiteSpace(message)));
                 if (string.IsNullOrWhiteSpace(ErrorMessage)) ErrorMessage = "Windows 未確認快捷鍵切換結果。";
-                return;
+                return new HotkeyCycleResult(false, Error: ErrorMessage);
             }
             ErrorMessage = null;
+            return new HotkeyCycleResult(true, EndpointName: target.FriendlyName);
         }
         catch (Exception exception)
         {
             ErrorMessage = exception.Message;
+            return new HotkeyCycleResult(false, Error: ErrorMessage);
         }
     }
 
