@@ -61,10 +61,13 @@ def export_snapshot(name: str, ports: dict) -> dict:
             for child in _leaves(root.get("children", []))
             if child.get("endpoint_id") == endpoint.endpoint_id
         )
+        if category == "A" and root_id == "未辨識":
+            root_id = "USB（未設定接口）"
         interface_ids = {port["id"] for port in ports.get("interfaces", [])}
         endpoints.append({
             "endpoint_id": endpoint.endpoint_id,
             "category": category,
+            "root_id": root_id,
             "interface_id": root_id if root_id in interface_ids else None,
             "group_key": group_key,
         })

@@ -216,7 +216,8 @@ public static class TopologyBuilder
         }
         if (category == "D")
         {
-            var ids = chain.Select(node => node.InstanceId.ToUpperInvariant()).ToArray();
+            var ids = chain.Where(node => !node.InstanceId.StartsWith("SWD\\MMDEVAPI\\", StringComparison.OrdinalIgnoreCase))
+                .Select(node => node.InstanceId.ToUpperInvariant()).ToArray();
             if (ids.Any(id => id.Contains("BTH", StringComparison.Ordinal) || id.Contains("BLUETOOTH", StringComparison.Ordinal)))
             {
                 return "藍牙／無線";

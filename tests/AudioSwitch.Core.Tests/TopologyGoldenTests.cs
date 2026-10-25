@@ -26,7 +26,8 @@ public sealed class TopologyGoldenTests
                 endpoint.EndpointId,
                 endpoint.Category,
                 endpoint.InterfaceId,
-                endpoint.GroupKey)).ToArray();
+                endpoint.GroupKey,
+                FindRootId(tree, endpoint.EndpointId))).ToArray();
             var actualDisplays = tree.DisplayGroups.Select(display => new DisplayGolden(
                 display.PathId,
                 display.InterfaceId,
@@ -99,10 +100,25 @@ public sealed class TopologyGoldenTests
 
     private string Fixture(string name) => Path.Combine(_fixtures, name);
 
+    private static string FindRootId(TopologyTree tree, string endpointId)
+    {
+        foreach (var root in tree.Roots)
+        {
+            if (ContainsEndpoint(root.Children, endpointId))
+            {
+                return root.Id;
+            }
+        }
+        return "未辨識";
+    }
+
+    private static bool ContainsEndpoint(IEnumerable<TopologyNode> nodes, string endpointId) => nodes.Any(node =>
+        node.EndpointId == endpointId || ContainsEndpoint(node.Children, endpointId));
+
     private sealed record GoldenDocument(GoldenSnapshot[] Snapshots, GoldenCalibration[] Calibrations);
     private sealed record GoldenSnapshot(string Snapshot, EndpointGolden[] Endpoints, DisplayGolden[] DisplayGroups);
     private sealed record GoldenCalibration(string Before, string After, string InterfaceId, GoldenResult Result);
     private sealed record GoldenResult(string Status, string? InterfaceId, string[] Transports, string[] LocationPaths);
-    private sealed record EndpointGolden(string EndpointId, string Category, string? InterfaceId, string? GroupKey);
+    private sealed record EndpointGolden(string EndpointId, string Category, string? InterfaceId, string? GroupKey, string RootId);
     private sealed record DisplayGolden(string PathId, string? InterfaceId, string? GroupKey);
 }

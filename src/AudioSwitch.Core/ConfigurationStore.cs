@@ -9,6 +9,7 @@ public sealed class AudioSwitchConfiguration
     public required AliasStore Aliases { get; init; }
     public required AudioSwitchSettings Settings { get; init; }
     public required IReadOnlyList<string> Errors { get; init; }
+    internal HashSet<string> ProtectedFiles { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public sealed class AudioSwitchSettings
@@ -98,11 +99,19 @@ public static class ConfigurationStore
         var portsPath = Path.Combine(directory, "ports.json");
         var aliasesPath = Path.Combine(directory, "aliases.json");
         var settingsPath = Path.Combine(directory, "settings.json");
+        var protectedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        var ports = LoadPart(portsPath, () => PortTable.Empty(), json => PortTable.Read(json, machine), errors);
-        var aliases = LoadPart(aliasesPath, () => new AliasStore(), json => ReadAliases(json), errors);
-        var settings = LoadPart(settingsPath, () => new AudioSwitchSettings(), json => ReadSettings(json), errors);
-        return new AudioSwitchConfiguration { Ports = ports, Aliases = aliases, Settings = settings, Errors = errors };
+        var ports = LoadPart(portsPath, () => PortTable.Empty(), json => PortTable.Read(json, machine), errors, protectedFiles);
+        var aliases = LoadPart(aliasesPath, () => new AliasStore(), json => ReadAliases(json), errors, protectedFiles);
+        var settings = LoadPart(settingsPath, () => new AudioSwitchSettings(), json => ReadSettings(json), errors, protectedFiles);
+        return new AudioSwitchConfiguration
+        {
+            Ports = ports,
+            Aliases = aliases,
+            Settings = settings,
+            Errors = errors,
+            ProtectedFiles = protectedFiles
+        };
     }
 
     public static void Save(string directory, AudioSwitchConfiguration configuration)
@@ -110,9 +119,9 @@ public static class ConfigurationStore
         ArgumentException.ThrowIfNullOrWhiteSpace(directory);
         ArgumentNullException.ThrowIfNull(configuration);
         Directory.CreateDirectory(directory);
-        WriteAtomic(Path.Combine(directory, "ports.json"), configuration.Ports.ToJson());
-        WriteAtomic(Path.Combine(directory, "aliases.json"), WriteAliases(configuration.Aliases));
-        WriteAtomic(Path.Combine(directory, "settings.json"), WriteSettings(configuration.Settings));
+        SavePart(directory, "ports.json", configuration.Ports.ToJson(), configuration);
+        SavePart(directory, "aliases.json", WriteAliases(configuration.Aliases), configuration);
+        SavePart(directory, "settings.json", WriteSettings(configuration.Settings), configuration);
     }
 
     public static void WriteAtomic(string path, string content)
@@ -137,7 +146,16 @@ public static class ConfigurationStore
         }
     }
 
-    private static T LoadPart<T>(string path, Func<T> empty, Func<string, T> read, ICollection<string> errors)
+    private static void SavePart(string directory, string fileName, string content, AudioSwitchConfiguration configuration)
+    {
+        if (!configuration.ProtectedFiles.Contains(fileName))
+        {
+            WriteAtomic(Path.Combine(directory, fileName), content);
+        }
+    }
+
+    private static T LoadPart<T>(string path, Func<T> empty, Func<string, T> read, ICollection<string> errors,
+        ISet<string> protectedFiles)
     {
         if (!File.Exists(path))
         {
@@ -150,7 +168,18 @@ public static class ConfigurationStore
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException or ArgumentException)
         {
-            errors.Add($"{Path.GetFileName(path)}：{exception.Message}");
+            var fileName = Path.GetFileName(path);
+            var archivePath = path + ".corrupt-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture);
+            try
+            {
+                File.Move(path, archivePath);
+                errors.Add($"{fileName}：{exception.Message}；原始檔已保留為 {Path.GetFileName(archivePath)}。");
+            }
+            catch (Exception archiveException) when (archiveException is IOException or UnauthorizedAccessException)
+            {
+                protectedFiles.Add(fileName);
+                errors.Add($"{fileName}：{exception.Message}；無法封存原始檔（{archiveException.Message}），本次執行期間不會覆寫此檔。");
+            }
             return empty();
         }
     }

@@ -85,31 +85,36 @@
           "category": "C",
           "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
           "group_key": null,
-          "interface_id": "jack-combo"
+          "interface_id": "jack-combo",
+          "root_id": "jack-combo"
         },
         {
           "category": "A",
           "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
           "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
-          "interface_id": "usb-a-left"
+          "interface_id": "usb-a-left",
+          "root_id": "usb-a-left"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
           "group_key": null,
-          "interface_id": "jack-combo"
+          "interface_id": "jack-combo",
+          "root_id": "jack-combo"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         }
       ],
       "snapshot": "port-left-usba"
@@ -132,31 +137,36 @@
           "category": "C",
           "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
           "group_key": null,
-          "interface_id": "jack-combo"
+          "interface_id": "jack-combo",
+          "root_id": "jack-combo"
         },
         {
           "category": "A",
           "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
           "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
-          "interface_id": "usb-a-right"
+          "interface_id": "usb-a-right",
+          "root_id": "usb-a-right"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
           "group_key": null,
-          "interface_id": "jack-combo"
+          "interface_id": "jack-combo",
+          "root_id": "jack-combo"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         }
       ],
       "snapshot": "port-right-usba"
@@ -179,31 +189,36 @@
           "category": "C",
           "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
           "group_key": null,
-          "interface_id": "jack-combo"
+          "interface_id": "jack-combo",
+          "root_id": "jack-combo"
         },
         {
           "category": "A",
           "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
           "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
-          "interface_id": "usb-c-left-front"
+          "interface_id": "usb-c-left-front",
+          "root_id": "usb-c-left-front"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
           "group_key": null,
-          "interface_id": "jack-combo"
+          "interface_id": "jack-combo",
+          "root_id": "jack-combo"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         }
       ],
       "snapshot": "port-left-usbc-front"
@@ -226,31 +241,36 @@
           "category": "C",
           "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
           "group_key": null,
-          "interface_id": "jack-combo"
+          "interface_id": "jack-combo",
+          "root_id": "jack-combo"
         },
         {
           "category": "A",
           "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
           "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
-          "interface_id": "usb-c-left-rear"
+          "interface_id": "usb-c-left-rear",
+          "root_id": "usb-c-left-rear"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
           "group_key": null,
-          "interface_id": "jack-combo"
+          "interface_id": "jack-combo",
+          "root_id": "jack-combo"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         }
       ],
       "snapshot": "port-left-usbc-rear"
@@ -273,31 +293,36 @@
           "category": "C",
           "endpoint_id": "{0.0.0.00000000}.{70c04f4d-cf1c-43ac-98a9-2c1843de06aa}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         },
         {
           "category": "A",
           "endpoint_id": "{0.0.0.00000000}.{8f543f63-43d2-48ed-9ab3-4aa3684b254b}",
           "group_key": "USB\\VID_303A&PID_2986\\80456B6259CC",
-          "interface_id": "usb-a-right"
+          "interface_id": "usb-a-right",
+          "root_id": "usb-a-right"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.0.00000000}.{edca8fa3-113e-43a3-bbd0-33d61822ffa2}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.1.00000000}.{8db40e5e-ace4-41e1-ba5b-84a751c803a2}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         },
         {
           "category": "C",
           "endpoint_id": "{0.0.1.00000000}.{ad7b76dc-fb20-44e5-965e-5fa1f91bb870}",
           "group_key": null,
-          "interface_id": null
+          "interface_id": null,
+          "root_id": "內建"
         }
       ],
       "snapshot": "final-after"

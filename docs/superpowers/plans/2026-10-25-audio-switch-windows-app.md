@@ -160,14 +160,14 @@ tests/
 
 在階段 3 之前完成。每項先寫會失敗的測試，再修正。
 
-- [ ] **根節點分類**：`TopologyBuilder` 判斷「藍牙／無線」「虛擬」時，和探針 `classify_endpoint` 一樣排除端點本身的 `SWD\MMDEVAPI\` devnode，只看其上的祖先。沒有 USB、顯示 sink、jack 或 HDAUDIO 證據，且祖先不是 `ROOT\MEDIA`、`SWD\`、`ROOT\SYSTEM` 的端點必須落在「未辨識」。
+- [x] **根節點分類**：`TopologyBuilder` 判斷「藍牙／無線」「虛擬」時，和探針 `classify_endpoint` 一樣排除端點本身的 `SWD\MMDEVAPI\` devnode，只看其上的祖先。沒有 USB、顯示 sink、jack 或 HDAUDIO 證據，且祖先不是 `ROOT\MEDIA`、`SWD\`、`ROOT\SYSTEM` 的端點必須落在「未辨識」。
   - 測試：端點 devnode 為 `SWD\MMDEVAPI\…`、父節點為未知 `PCI\` 裝置時，根為「未辨識」；父節點為 `ROOT\MEDIA\…` 時，根為「虛擬」。
   - Golden：`probes/export_golden.py` 對每個端點另外輸出所在根節點 ID（含「內建」「藍牙／無線」「虛擬」「未辨識」；探針中未校準 USB 的「未辨識」對應 C# 的「USB（未設定接口）」，在腳本中明確轉換），C# golden 測試一併比對。重新產生 golden 後在審查報告記錄 SHA-256。
-- [ ] **損毀設定檔不得被覆寫**：`ConfigurationStore.Load` 某個檔案讀取或驗證失敗時，先把該檔改名為 `<檔名>.corrupt-<UTC 時間 yyyyMMddHHmmss>` 保留原內容，再以空設定運作並回報錯誤；改名失敗時，該檔在這次執行期間不得被 `Save` 寫回（回報錯誤，其他檔案照常寫入）。
+- [x] **損毀設定檔不得被覆寫**：`ConfigurationStore.Load` 某個檔案讀取或驗證失敗時，先把該檔改名為 `<檔名>.corrupt-<UTC 時間 yyyyMMddHHmmss>` 保留原內容，再以空設定運作並回報錯誤；改名失敗時，該檔在這次執行期間不得被 `Save` 寫回（回報錯誤，其他檔案照常寫入）。
   - 測試：損毀的 `aliases.json` 經 `Load` → `Save` 後，原內容仍存在於 `.corrupt-*` 檔；改名失敗的情境（例如以唯讀或鎖定模擬）下 `Save` 不改動該檔。
-- [ ] **以目前路徑校準取最上層接點**：`AttachmentDetector.FindCurrentPathAttachment` 在祖先鏈中有多個「父節點為 USB root hub 或 PCIe root port」的節點時，取最靠近電腦根的那一個（例如 Thunderbolt／USB4 Dock 取 root port 底下的 Dock 節點，而不是 Dock 內部 root hub 底下的 USB 裝置）。PCIe root port 改以結構判斷，不以裝置名稱判斷：父節點是 `PCI\` devnode 且有一條 LocationPaths 為 `PCIROOT(n)#PCI(xxxx)`（只有一層 `#PCI(`），而目前節點本身也是 `PCI\` devnode、LocationPaths 至少兩層 `#PCI(`（與 `IsAttachment` 的 PCIe 規則相同）。只看父節點層數不夠：主機的 xHCI（`PCI(1400)`）與 iGPU 也只有一層，root hub 不能因此被當成接點。USB root hub 維持以 instance ID 的 `ROOT_HUB` 判斷。
+- [x] **以目前路徑校準取最上層接點**：`AttachmentDetector.FindCurrentPathAttachment` 在祖先鏈中有多個「父節點為 USB root hub 或 PCIe root port」的節點時，取最靠近電腦根的那一個（例如 Thunderbolt／USB4 Dock 取 root port 底下的 Dock 節點，而不是 Dock 內部 root hub 底下的 USB 裝置）。PCIe root port 改以結構判斷，不以裝置名稱判斷：父節點是 `PCI\` devnode 且有一條 LocationPaths 為 `PCIROOT(n)#PCI(xxxx)`（只有一層 `#PCI(`），而目前節點本身也是 `PCI\` devnode、LocationPaths 至少兩層 `#PCI(`（與 `IsAttachment` 的 PCIe 規則相同）。只看父節點層數不夠：主機的 xHCI（`PCI(1400)`）與 iGPU 也只有一層，root hub 不能因此被當成接點。USB root hub 維持以 instance ID 的 `ROOT_HUB` 判斷。
   - 測試：合成鏈「端點 → USB 裝置 → Dock root hub → Dock xHCI → Dock PCIe 交換器 → root port」回傳 Dock PCIe 交換器；直接接在主機 root hub 的 USB 裝置經外接 hub 時回傳該 hub；root port 名稱為非英文時結果相同。
-- [ ] 通過自我審查，commit。
+- [x] 通過自我審查，commit。
 
 ## 階段 3：Windows 平台層寫入（R5、R6、R13 的音訊部分）
 

@@ -149,10 +149,126 @@ public sealed class CoreRulesTests
             [
                 new DeviceNode { InstanceId = @"SWD\MMDEVAPI\pci-audio", ParentId = @"PCI\DEVICE\A" },
                 new DeviceNode { InstanceId = @"PCI\DEVICE\A", ParentId = @"PCI\ROOTPORT\1", LocationPaths = ["PCIROOT(0)#PCI(0700)#PCI(0000)"] },
-                new DeviceNode { InstanceId = @"PCI\ROOTPORT\1", Name = "PCI Express Root Port" }
+                new DeviceNode { InstanceId = @"PCI\ROOTPORT\1", Name = "根連接埠", LocationPaths = ["PCIROOT(0)#PCI(0700)"] }
             ]
         };
         Assert.Equal(@"PCI\DEVICE\A", AttachmentDetector.FindCurrentPathAttachment(pciSnapshot, "pci-audio")!.InstanceId);
+    }
+
+    [Fact]
+    public void EndpointMmdevapiWrapperDoesNotMakeUnknownPciAudioVirtual()
+    {
+        var endpoint = new AudioEndpoint
+        {
+            EndpointId = "unknown-audio",
+            State = "active",
+            Flow = "render",
+            DevnodeId = @"SWD\MMDEVAPI\unknown-audio"
+        };
+        var snapshot = new Snapshot
+        {
+            Endpoints = [endpoint],
+            Devnodes =
+            [
+                new DeviceNode { InstanceId = endpoint.DevnodeId!, ParentId = @"PCI\UNKNOWN\DEVICE" },
+                new DeviceNode { InstanceId = @"PCI\UNKNOWN\DEVICE" }
+            ]
+        };
+
+        var tree = TopologyBuilder.Build(snapshot, PortTable.Empty());
+
+        Assert.Equal("未辨識", Assert.Single(tree.Roots).Id);
+        Assert.Equal("D", Assert.Single(tree.Endpoints).Category);
+    }
+
+    [Fact]
+    public void RootMediaAncestorClassifiesAudioAsVirtual()
+    {
+        var endpoint = new AudioEndpoint
+        {
+            EndpointId = "virtual-audio",
+            State = "active",
+            Flow = "render",
+            DevnodeId = @"SWD\MMDEVAPI\virtual-audio"
+        };
+        var snapshot = new Snapshot
+        {
+            Endpoints = [endpoint],
+            Devnodes =
+            [
+                new DeviceNode { InstanceId = endpoint.DevnodeId!, ParentId = @"ROOT\MEDIA\SOFTWARE_AUDIO" },
+                new DeviceNode { InstanceId = @"ROOT\MEDIA\SOFTWARE_AUDIO" }
+            ]
+        };
+
+        var tree = TopologyBuilder.Build(snapshot, PortTable.Empty());
+
+        Assert.Equal("虛擬", Assert.Single(tree.Roots).Id);
+        Assert.Equal("D", Assert.Single(tree.Endpoints).Category);
+    }
+
+    [Fact]
+    public void CurrentPathCalibrationSelectsDockPcieSwitchAboveDockUsbHub()
+    {
+        var endpointId = @"SWD\MMDEVAPI\dock-speaker";
+        var snapshot = new Snapshot
+        {
+            Endpoints = [new AudioEndpoint { EndpointId = "dock-speaker", State = "active", Flow = "render", DevnodeId = endpointId }],
+            Devnodes =
+            [
+                new DeviceNode { InstanceId = endpointId, ParentId = @"USB\VID_SPEAKER\A" },
+                new DeviceNode { InstanceId = @"USB\VID_SPEAKER\A", ParentId = @"USB\DOCK_ROOT_HUB\1", LocationPaths = ["PCIROOT(0)#PCI(0700)#PCI(0000)#USBROOT(0)#USB(1)"] },
+                new DeviceNode { InstanceId = @"USB\DOCK_ROOT_HUB\1", ParentId = @"PCI\DOCK_XHCI\1", LocationPaths = ["PCIROOT(0)#PCI(0700)#PCI(0000)#USBROOT(0)"] },
+                new DeviceNode { InstanceId = @"PCI\DOCK_XHCI\1", ParentId = @"PCI\DOCK_SWITCH\1", LocationPaths = ["PCIROOT(0)#PCI(0700)#PCI(0000)#PCI(0100)"] },
+                new DeviceNode { InstanceId = @"PCI\DOCK_SWITCH\1", ParentId = @"PCI\HOST_PORT\1", LocationPaths = ["PCIROOT(0)#PCI(0700)#PCI(0000)"] },
+                new DeviceNode { InstanceId = @"PCI\HOST_PORT\1", LocationPaths = ["PCIROOT(0)#PCI(0700)"] }
+            ]
+        };
+
+        var attachment = AttachmentDetector.FindCurrentPathAttachment(snapshot, "dock-speaker");
+
+        Assert.Equal(@"PCI\DOCK_SWITCH\1", attachment?.InstanceId);
+    }
+
+    [Fact]
+    public void CurrentPathCalibrationSelectsExternalUsbHubOnHostRootHubPath()
+    {
+        var endpointId = @"SWD\MMDEVAPI\usb-speaker";
+        var snapshot = new Snapshot
+        {
+            Endpoints = [new AudioEndpoint { EndpointId = "usb-speaker", State = "active", Flow = "render", DevnodeId = endpointId }],
+            Devnodes =
+            [
+                new DeviceNode { InstanceId = endpointId, ParentId = @"USB\VID_SPEAKER\A" },
+                new DeviceNode { InstanceId = @"USB\VID_SPEAKER\A", ParentId = @"USB\VID_EXTERNAL_HUB\1", LocationPaths = ["PCIROOT(0)#USBROOT(0)#USB(2)#USB(1)"] },
+                new DeviceNode { InstanceId = @"USB\VID_EXTERNAL_HUB\1", ParentId = @"USB\ROOT_HUB30\1", LocationPaths = ["PCIROOT(0)#USBROOT(0)#USB(2)"] },
+                new DeviceNode { InstanceId = @"USB\ROOT_HUB30\1" }
+            ]
+        };
+
+        var attachment = AttachmentDetector.FindCurrentPathAttachment(snapshot, "usb-speaker");
+
+        Assert.Equal(@"USB\VID_EXTERNAL_HUB\1", attachment?.InstanceId);
+    }
+
+    [Fact]
+    public void CurrentPathCalibrationRecognizesPcieRootPortFromLocationStructure()
+    {
+        var endpointId = @"SWD\MMDEVAPI\pcie-audio";
+        var snapshot = new Snapshot
+        {
+            Endpoints = [new AudioEndpoint { EndpointId = "pcie-audio", State = "active", Flow = "render", DevnodeId = endpointId }],
+            Devnodes =
+            [
+                new DeviceNode { InstanceId = endpointId, ParentId = @"PCI\DEVICE\ENDPOINT" },
+                new DeviceNode { InstanceId = @"PCI\DEVICE\ENDPOINT", ParentId = @"PCI\HOST_PORT\2", LocationPaths = ["PCIROOT(0)#PCI(0800)#PCI(0000)"] },
+                new DeviceNode { InstanceId = @"PCI\HOST_PORT\2", Name = "根連接埠", LocationPaths = ["PCIROOT(0)#PCI(0800)"] }
+            ]
+        };
+
+        var attachment = AttachmentDetector.FindCurrentPathAttachment(snapshot, "pcie-audio");
+
+        Assert.Equal(@"PCI\DEVICE\ENDPOINT", attachment?.InstanceId);
     }
 
     [Fact]
@@ -234,6 +350,52 @@ public sealed class CoreRulesTests
         Assert.Equal("Original", restored.Aliases.OriginalDescriptions["ep"]);
         Assert.True(restored.Settings.FirstRunNotificationShown);
         Assert.Empty(Directory.GetFiles(temp.Path, "*.tmp", SearchOption.TopDirectoryOnly));
+    }
+
+    [Fact]
+    public void CorruptAliasConfigurationIsArchivedBeforeDefaultsCanBeSaved()
+    {
+        using var temp = new TemporaryDirectory();
+        var aliasesPath = Path.Combine(temp.Path, "aliases.json");
+        const string corruptContent = "not valid alias json";
+        File.WriteAllText(aliasesPath, corruptContent);
+
+        var configuration = ConfigurationStore.Load(temp.Path);
+
+        var archivePath = Assert.Single(Directory.GetFiles(temp.Path, "aliases.json.corrupt-*"));
+        Assert.Equal(corruptContent, File.ReadAllText(archivePath));
+        Assert.Empty(configuration.Aliases.OriginalDescriptions);
+        ConfigurationStore.Save(temp.Path, configuration);
+        Assert.NotEqual(corruptContent, File.ReadAllText(aliasesPath));
+        Assert.Contains(configuration.Errors, error => error.Contains("aliases.json", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void FailedCorruptAliasArchiveProtectsFileWhileSavingOtherSettings()
+    {
+        using var temp = new TemporaryDirectory();
+        var aliasesPath = Path.Combine(temp.Path, "aliases.json");
+        var originalContent = System.Text.Encoding.UTF8.GetBytes("locked corrupt aliases");
+        using var lockedFile = new FileStream(aliasesPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+        lockedFile.Write(originalContent);
+        lockedFile.Flush();
+        lockedFile.Position = 0;
+
+        var configuration = ConfigurationStore.Load(temp.Path);
+        ConfigurationStore.Save(temp.Path, configuration);
+
+        Assert.Equal(originalContent, ReadAllBytes(lockedFile));
+        Assert.True(File.Exists(Path.Combine(temp.Path, "ports.json")));
+        Assert.True(File.Exists(Path.Combine(temp.Path, "settings.json")));
+        Assert.Contains(configuration.Errors, error => error.Contains("aliases.json", StringComparison.Ordinal));
+    }
+
+    private static byte[] ReadAllBytes(Stream stream)
+    {
+        stream.Position = 0;
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        return buffer.ToArray();
     }
 
     [Fact]

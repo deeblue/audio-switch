@@ -15,11 +15,12 @@ public static class AttachmentDetector
         var nodes = snapshot.Devnodes.ToDictionary(node => node.InstanceId, StringComparer.OrdinalIgnoreCase);
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var currentId = endpoint.DevnodeId;
+        DeviceNode? highestAttachment = null;
         while (seen.Add(currentId) && nodes.TryGetValue(currentId, out var current))
         {
-            if (current.ParentId is not null && nodes.TryGetValue(current.ParentId, out var parent) && IsRootConnector(parent))
+            if (current.ParentId is not null && nodes.TryGetValue(current.ParentId, out var parent) && IsRootConnector(parent, current))
             {
-                return current;
+                highestAttachment = current;
             }
             currentId = current.ParentId ?? string.Empty;
             if (currentId.Length == 0)
@@ -28,7 +29,7 @@ public static class AttachmentDetector
             }
         }
 
-        return null;
+        return highestAttachment;
     }
 
     public static IReadOnlyList<DeviceNode> Detect(Snapshot before, Snapshot after)
@@ -101,17 +102,21 @@ public static class AttachmentDetector
                    System.Text.RegularExpressions.Regex.Matches(path, @"#PCI\(", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Count >= 2);
     }
 
-    private static bool IsRootConnector(DeviceNode node)
+    private static bool IsRootConnector(DeviceNode parent, DeviceNode child)
     {
-        if (node.InstanceId.Contains("ROOT_HUB", StringComparison.OrdinalIgnoreCase) ||
-            node.InstanceId.Contains("ROOTPORT", StringComparison.OrdinalIgnoreCase))
+        if (parent.InstanceId.Contains("ROOT_HUB", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        var name = node.Name ?? JsonValue.String(node.Properties, "friendly_name") ?? JsonValue.String(node.Properties, "device_description");
-        return node.InstanceId.StartsWith("PCI\\", StringComparison.OrdinalIgnoreCase) && name is not null &&
-            (name.Contains("PCI Express Root Port", StringComparison.OrdinalIgnoreCase) ||
-             name.Contains("PCI root port", StringComparison.OrdinalIgnoreCase));
+        return parent.InstanceId.StartsWith("PCI\\", StringComparison.OrdinalIgnoreCase) &&
+               child.InstanceId.StartsWith("PCI\\", StringComparison.OrdinalIgnoreCase) &&
+               parent.LocationPaths.Any(path => IsPciLocationPath(path) && CountPciSegments(path) == 1) &&
+               child.LocationPaths.Any(path => IsPciLocationPath(path) && CountPciSegments(path) >= 2);
     }
+
+    private static bool IsPciLocationPath(string path) => path.StartsWith("PCIROOT(", StringComparison.OrdinalIgnoreCase);
+
+    private static int CountPciSegments(string path) =>
+        System.Text.RegularExpressions.Regex.Matches(path, @"#PCI\(", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Count;
 }
