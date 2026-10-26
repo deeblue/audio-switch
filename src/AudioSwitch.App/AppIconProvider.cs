@@ -9,8 +9,9 @@ namespace AudioSwitch.App;
 internal static class AppIconProvider
 {
     private const string ApplicationIcon = "pack://application:,,,/AudioSwitch.App;component/Assets/AudioSwitch.ico";
-    private const string DarkTrayIcon = "pack://application:,,,/AudioSwitch.App;component/Assets/AudioSwitch.Tray.Dark.ico";
-    private const string LightTrayIcon = "pack://application:,,,/AudioSwitch.App;component/Assets/AudioSwitch.Tray.Light.ico";
+    // Tray icon files are named after their glyph colour: a dark glyph for a light taskbar and vice versa.
+    private const string LightTaskbarTrayIcon = "pack://application:,,,/AudioSwitch.App;component/Assets/AudioSwitch.Tray.Dark.ico";
+    private const string DarkTaskbarTrayIcon = "pack://application:,,,/AudioSwitch.App;component/Assets/AudioSwitch.Tray.Light.ico";
 
     public static BitmapSource LoadWindowIcon()
     {
@@ -25,7 +26,7 @@ internal static class AppIconProvider
 
     public static Icon LoadTrayIcon(bool taskbarUsesLightTheme, int dpi)
     {
-        var uri = new Uri(taskbarUsesLightTheme ? LightTrayIcon : DarkTrayIcon);
+        var uri = new Uri(taskbarUsesLightTheme ? LightTaskbarTrayIcon : DarkTaskbarTrayIcon);
         var stream = System.Windows.Application.GetResourceStream(uri)?.Stream
             ?? throw new FileNotFoundException("System tray icon resource is missing.");
         using (stream)

@@ -2,6 +2,9 @@ namespace AudioSwitch.App.Tests;
 
 public class TrayIconHostTests
 {
+    // Registers the pack:// scheme, which a running WPF Application otherwise provides.
+    static TrayIconHostTests() => _ = System.IO.Packaging.PackUriHelper.UriSchemePack;
+
     [Fact]
     public void ApplicationIconContainsAllRequiredSizes()
     {
@@ -26,6 +29,22 @@ public class TrayIconHostTests
         Assert.Equal(expectedSize, typeof(TrayIconHost).Assembly.GetType("AudioSwitch.App.AppIconProvider")!
             .GetMethod("GetTrayIconSize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)!
             .Invoke(null, [dpi]));
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void TrayIconGlyphContrastsWithTaskbar(bool taskbarUsesLightTheme, bool expectLightGlyph)
+    {
+        using var icon = AppIconProvider.LoadTrayIcon(taskbarUsesLightTheme, 192);
+        using var bitmap = icon.ToBitmap();
+        var glyph = Enumerable.Range(0, bitmap.Width * bitmap.Height)
+            .Select(index => bitmap.GetPixel(index % bitmap.Width, index / bitmap.Width))
+            .Where(pixel => pixel.A > 128)
+            .ToArray();
+
+        Assert.NotEmpty(glyph);
+        Assert.Equal(expectLightGlyph, glyph.Average(pixel => pixel.GetBrightness()) > 0.5);
+    }
 
     [Fact]
     public void ExitMenuItemRequestsApplicationExit()
