@@ -1,6 +1,7 @@
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.ComponentModel;
 using AudioSwitch.Core;
 using AudioSwitch.Presentation;
 
@@ -8,9 +9,11 @@ namespace AudioSwitch.App;
 
 public partial class QuickSwitchPanelWindow : Window
 {
+    private const double MinimumPanelHeight = 220;
     private readonly QuickSwitchPanelViewModel _viewModel;
     private readonly Action<int> _settings;
     private readonly PropertyChangedEventHandler _viewModelChanged;
+    private readonly NotifyCollectionChangedEventHandler _groupsChanged;
     private bool _loading;
 
     public QuickSwitchPanelWindow(QuickSwitchPanelViewModel viewModel, Action<int> settings)
@@ -24,14 +27,20 @@ public partial class QuickSwitchPanelWindow : Window
         _loading = false;
         _viewModelChanged = (_, args) =>
         {
-            if (args.PropertyName == nameof(QuickSwitchPanelViewModel.ErrorMessage))
-                StatusText.Text = _viewModel.ErrorMessage ?? string.Empty;
-            if (args.PropertyName == nameof(QuickSwitchPanelViewModel.HasUnconfiguredUsbEndpoints))
-                SetUnconfiguredUsbVisible(_viewModel.HasUnconfiguredUsbEndpoints);
+            if (args.PropertyName == nameof(QuickSwitchPanelViewModel.ErrorMessage)) UpdateStatus();
+            if (args.PropertyName == nameof(QuickSwitchPanelViewModel.HasUnconfiguredUsbEndpoints)) UpdateUnconfiguredNotice();
         };
+        _groupsChanged = (_, _) => UpdateEmptyState();
         _viewModel.PropertyChanged += _viewModelChanged;
-        Closed += (_, _) => _viewModel.PropertyChanged -= _viewModelChanged;
-        SetUnconfiguredUsbVisible(_viewModel.HasUnconfiguredUsbEndpoints);
+        _viewModel.Groups.CollectionChanged += _groupsChanged;
+        Closed += (_, _) =>
+        {
+            _viewModel.PropertyChanged -= _viewModelChanged;
+            _viewModel.Groups.CollectionChanged -= _groupsChanged;
+        };
+        UpdateStatus();
+        UpdateUnconfiguredNotice();
+        UpdateEmptyState();
         Deactivated += (_, _) =>
         {
             FocusLossClosed?.Invoke(this, EventArgs.Empty);
@@ -43,11 +52,32 @@ public partial class QuickSwitchPanelWindow : Window
 
     public event EventHandler? FocusLossClosed;
 
-    public void SetUnconfiguredUsbVisible(bool visible) => ConfigureButton.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+    /// <summary>Sizes the panel to its content, up to <see cref="Window.MaxHeight"/>, before it is placed near the tray.</summary>
+    public void FitToContent()
+    {
+        RootBorder.Measure(new Size(Width, double.PositiveInfinity));
+        Height = Math.Clamp(Math.Ceiling(RootBorder.DesiredSize.Height), MinimumPanelHeight, MaxHeight);
+    }
+
+    private void UpdateStatus()
+    {
+        StatusText.Text = _viewModel.ErrorMessage ?? string.Empty;
+        StatusText.Visibility = string.IsNullOrEmpty(_viewModel.ErrorMessage) ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void UpdateUnconfiguredNotice() =>
+        UnconfiguredNotice.Visibility = _viewModel.HasUnconfiguredUsbEndpoints ? Visibility.Visible : Visibility.Collapsed;
+
+    private void UpdateEmptyState()
+    {
+        var empty = _viewModel.Groups.Count == 0;
+        EmptyText.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
+        GroupsScrollViewer.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
+    }
 
     private void Flow_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_loading || FlowTabs.SelectedIndex < 0) return;
+        if (_loading || !ReferenceEquals(e.OriginalSource, FlowTabs) || FlowTabs.SelectedIndex < 0) return;
         _loading = true;
         try { _viewModel.SelectFlow(CurrentFlow); }
         finally { _loading = false; }
@@ -55,12 +85,12 @@ public partial class QuickSwitchPanelWindow : Window
 
     private void Endpoint_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is System.Windows.Controls.Button { Tag: string endpointId }) _viewModel.SelectEndpoint(endpointId);
+        if (sender is Button { Tag: string endpointId }) _viewModel.SelectEndpoint(endpointId);
     }
 
     private async void Tone_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is System.Windows.Controls.Button { Tag: string endpointId }) await _viewModel.PlayToneAsync(endpointId);
+        if (sender is Button { Tag: string endpointId }) await _viewModel.PlayToneAsync(endpointId);
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e) => _settings(0);

@@ -36,7 +36,7 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        ThemeMode = System.Windows.ThemeMode.System;
+        AppTheme.Apply(this, System.Windows.ThemeMode.System);
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         _instance = new SingleInstanceGate();
         if (!_instance.IsPrimary)
@@ -151,6 +151,7 @@ public partial class App : System.Windows.Application
             _panel.FocusLossClosed += (_, _) => _panelToggle.RecordFocusLoss(DateTimeOffset.UtcNow);
             _panel.Closed += (_, _) => _panel = null;
             _viewModel!.Refresh();
+            _panel.FitToContent();
             var bounds = new WindowsTrayAnchor(new WindowsMonitorDpiSource()).PlacePopup(_panel.Width, _panel.Height);
             _panel.Left = bounds.Left;
             _panel.Top = bounds.Top;

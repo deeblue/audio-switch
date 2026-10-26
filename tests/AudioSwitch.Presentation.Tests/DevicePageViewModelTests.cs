@@ -1,0 +1,118 @@
+using AudioSwitch.Core;
+using AudioSwitch.Presentation;
+
+namespace AudioSwitch.Presentation.Tests;
+
+public sealed class DevicePageViewModelTests
+{
+    [Fact]
+    public void RefreshGroupsEndpointsByLocationAndMarksDefaults()
+    {
+        var model = CreateModel(out _);
+
+        model.Refresh();
+
+        var builtIn = Assert.Single(model.Roots);
+        Assert.Equal("內建", builtIn.Name);
+        Assert.Equal(DeviceNodeKind.Category, builtIn.Kind);
+        var speaker = Assert.Single(builtIn.Children, node => node.Kind == DeviceNodeKind.Playback);
+        var microphone = Assert.Single(builtIn.Children, node => node.Kind == DeviceNodeKind.Recording);
+        Assert.True(speaker.IsDefault);
+        Assert.False(microphone.IsDefault);
+        Assert.Equal("內建", speaker.GroupName);
+    }
+
+    [Fact]
+    public async Task ActionsFollowTheSelectedDeviceType()
+    {
+        var model = CreateModel(out _);
+        model.Refresh();
+
+        await model.SelectAsync(model.FindEndpoint("speaker"));
+        Assert.True(model.CanTestTone);
+        Assert.False(model.CanListen);
+        Assert.False(model.CanIdentifyScreen);
+        Assert.Equal("喇叭", model.Settings.AliasText);
+        Assert.Equal("使用中", model.StateText);
+        Assert.Contains("端點 ID：speaker", model.TechnicalDetails, StringComparison.Ordinal);
+
+        await model.SelectAsync(model.FindEndpoint("microphone"));
+        Assert.False(model.CanTestTone);
+        Assert.True(model.CanListen);
+    }
+
+    [Fact]
+    public async Task ListeningStopsWhenAnotherNodeIsSelected()
+    {
+        var model = CreateModel(out var probe);
+        model.Refresh();
+        await model.SelectAsync(model.FindEndpoint("microphone"));
+
+        await model.ToggleListeningAsync();
+        Assert.True(model.IsListening);
+
+        await model.SelectAsync(model.Roots[0]);
+
+        Assert.False(model.IsListening);
+        Assert.Equal(1, probe.StopCount);
+        Assert.False(model.HasSelection && model.IsEndpointSelected);
+    }
+
+    private static DevicePageViewModel CreateModel(out FakeProbe probe)
+    {
+        var snapshot = new Snapshot
+        {
+            Endpoints =
+            [
+                new AudioEndpoint { EndpointId = "speaker", Flow = "render", State = "active", FriendlyName = "喇叭", DevnodeId = "SWD\\MMDEVAPI\\speaker", FormFactor = 1 },
+                new AudioEndpoint { EndpointId = "microphone", Flow = "capture", State = "active", FriendlyName = "麥克風", DevnodeId = "SWD\\MMDEVAPI\\microphone", FormFactor = 4 }
+            ],
+            Devnodes =
+            [
+                new DeviceNode { InstanceId = "HDAUDIO\\CODEC", Name = "Realtek(R) Audio" },
+                new DeviceNode { InstanceId = "SWD\\MMDEVAPI\\speaker", ParentId = "HDAUDIO\\CODEC" },
+                new DeviceNode { InstanceId = "SWD\\MMDEVAPI\\microphone", ParentId = "HDAUDIO\\CODEC" }
+            ]
+        };
+        var source = new FakeSnapshotSource(snapshot);
+        var table = PortTable.Empty();
+        probe = new FakeProbe();
+        var settings = new DeviceSettingsViewModel(probe, new FakeNameWriter(), source, table, new AliasStore(), () => { });
+        return new DevicePageViewModel(source, new FakeWriter(), probe, table, settings);
+    }
+
+    private sealed class FakeSnapshotSource(Snapshot snapshot) : IAudioTopologySnapshotSource
+    {
+        public Snapshot Capture() => snapshot;
+    }
+
+    private sealed class FakeWriter : IDefaultEndpointWriter
+    {
+        public string? GetDefaultEndpointId(AudioEndpointFlow flow, AudioEndpointRole role) => flow == AudioEndpointFlow.Render ? "speaker" : null;
+        public EndpointSwitchResult SetDefaultEndpoint(string endpointId, AudioEndpointFlow flow) => throw new NotSupportedException();
+        public EndpointRoleChangeResult SetDefaultEndpointRole(string endpointId, AudioEndpointFlow flow, AudioEndpointRole role) => throw new NotSupportedException();
+        public void Dispose() { }
+    }
+
+    private sealed class FakeNameWriter : IEndpointNameWriter
+    {
+        public string ReadDeviceDescription(string endpointId) => endpointId == "speaker" ? "喇叭" : "麥克風";
+        public string ReadFriendlyName(string endpointId) => ReadDeviceDescription(endpointId);
+        public void WriteDeviceDescription(string endpointId, string value) => throw new NotSupportedException();
+        public void Dispose() { }
+    }
+
+    internal sealed class FakeProbe : IAudioProbe
+    {
+        public int StopCount { get; private set; }
+        public Task PlayTestToneAsync(string endpointId, TimeSpan duration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public void StartPeakSampling(string endpointId) { }
+        public float ReadPeakLevel(string endpointId) => 0.3f;
+        public Task StopPeakSamplingAsync(CancellationToken cancellationToken = default)
+        {
+            StopCount++;
+            return Task.CompletedTask;
+        }
+        public void Dispose() { }
+    }
+}

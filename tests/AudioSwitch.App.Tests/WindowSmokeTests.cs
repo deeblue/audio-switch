@@ -1,9 +1,11 @@
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using System.Windows.Threading;
 using AudioSwitch.Core;
 using AudioSwitch.Presentation;
+#pragma warning disable WPF0001
 
 namespace AudioSwitch.App.Tests;
 
@@ -15,85 +17,111 @@ public sealed class WindowSmokeTests
         var error = RunSta(() =>
         {
             var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            AppTheme.Apply(application, ThemeMode.Dark);
+            Assert.Equal(ThemeMode.Dark, application.ThemeMode);
+            Assert.True(IsReadableContrast(
+                (SolidColorBrush)application.FindResource("SolidBackgroundFillColorBaseBrush"),
+                (SolidColorBrush)application.FindResource("TextFillColorSecondaryBrush")));
             var testRoot = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "AudioSwitch.App.Tests"));
             var dataDirectory = Path.Combine(testRoot, Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(dataDirectory);
-            Window? window = null;
+            SettingsWindow? window = null;
             var autostart = new FakeAutostartService();
             try
             {
                 var snapshot = new FakeSnapshotSource();
-                var endpointSource = new FakeEndpointSource();
                 var writer = new FakeDefaultEndpointWriter();
                 var probe = new FakeAudioProbe();
-                var assembly = typeof(TrayIconHost).Assembly;
-                var settingsWindowType = assembly.GetType("AudioSwitch.App.SettingsWindow", throwOnError: true)!;
-                var constructor = settingsWindowType.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Single();
-                window = (Window)constructor.Invoke([
-                    snapshot,
-                    endpointSource,
-                    probe,
-                    writer,
-                    new FakeEndpointNameWriter(),
-                    new FakeHotkeyService(),
-                    IntPtr.Zero,
-                    new AudioSwitchConfiguration
+                window = new SettingsWindow(snapshot, new FakeEndpointSource(), probe, writer, new FakeEndpointNameWriter(), new FakeHotkeyService(),
+                    IntPtr.Zero, new AudioSwitchConfiguration
                     {
                         Ports = PortTable.Empty(),
                         Aliases = new AliasStore(),
                         Settings = new AudioSwitchSettings(),
                         Errors = []
-                    },
-                    new MachineIdentity(),
-                    dataDirectory,
-                    (Action)(() => { }),
-                    autostart,
-                    0
-                ]);
-                window.ShowActivated = false;
-                window.Show();
-                window.UpdateLayout();
-                var tabs = (TabControl)window.Content;
-                for (var index = 0; index < tabs.Items.Count; index++)
+                    }, new MachineIdentity(), dataDirectory, () => { }, autostart, 0)
                 {
-                    tabs.SelectedIndex = index;
-                    tabs.UpdateLayout();
-                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+                    ShowActivated = false,
+                    WindowStartupLocation = WindowStartupLocation.Manual,
+                    Left = -20000,
+                    Top = -20000
+                };
+                Assert.NotNull(window.Icon);
+                window.Show();
+                for (var index = 0; index < window.Tabs.Items.Count; index++)
+                {
+                    window.Tabs.SelectedIndex = index;
+                    Pump();
                 }
-                tabs.SelectedIndex = 0;
-                tabs.UpdateLayout();
-                var deviceTree = FindVisualTree(window);
-                Assert.True(SelectEndpoint(deviceTree, "render-1"));
-                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
-                Assert.Empty(ReadDeviceStatus(settingsWindowType, window));
-                Assert.True(SelectEndpoint(deviceTree, "capture-1"));
-                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
-                Assert.Empty(ReadDeviceStatus(settingsWindowType, window));
-                var listenButton = (Button)settingsWindowType.GetField("_listenButton", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(window)!;
-                listenButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                settingsWindowType.GetMethod("UpdatePeak", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, null);
-                var peakProgress = (ProgressBar)settingsWindowType.GetField("_peakProgress", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(window)!;
-                var peakPercent = (TextBlock)settingsWindowType.GetField("_peakPercent", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(window)!;
-                Assert.Equal(Visibility.Visible, peakProgress.Visibility);
-                Assert.Equal(0.42, peakProgress.Value, 2);
-                Assert.Contains("42", peakPercent.Text);
-                Assert.EndsWith("%", peakPercent.Text);
-                listenButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Assert.Equal(Visibility.Collapsed, peakProgress.Visibility);
+
+                window.Tabs.SelectedIndex = 0;
+                Pump();
+                Assert.True(SelectNode(window.DevicesPage.DeviceTree, window.Devices.FindEndpoint("render-1")!));
+                Pump();
+                Assert.True(window.Devices.CanTestTone);
+                Assert.False(window.Devices.CanListen);
+                Assert.False(window.Devices.CanIdentifyScreen);
+                var names = FindVisualElements<TextBlock>(window.DevicesPage.DeviceTree).Where(block => block.Name == "NodeName").ToArray();
+                Assert.NotEmpty(names);
+                Assert.All(names, name =>
+                {
+                    Assert.Equal(TextTrimming.CharacterEllipsis, name.TextTrimming);
+                    Assert.True(double.IsFinite(((FrameworkElement)name.Parent).MaxWidth));
+                });
+
+                Assert.True(SelectNode(window.DevicesPage.DeviceTree, window.Devices.FindEndpoint("capture-1")!));
+                Pump();
+                Assert.True(window.Devices.CanListen);
+                window.DevicesPage.ListenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                Pump();
+                Assert.True(window.Devices.IsListening);
+                window.Devices.Settings.RefreshPeak();
+                Pump();
+                var peak = FindVisualElements<ProgressBar>(window.DevicesPage).Single();
+                Assert.True(peak.IsVisible);
+                Assert.Equal(0.42, peak.Value, 2);
+                window.DevicesPage.ListenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                Pump();
+                Assert.False(window.Devices.IsListening);
                 Assert.Equal(1, probe.StartCount);
                 Assert.Equal(1, probe.StopCount);
 
+                window.Tabs.SelectedIndex = 1;
+                Pump();
+                Assert.True(window.Ports.ShowIdleHint);
+                var port = window.Ports.Add(PortConnectorType.UsbA, PortEdge.Left, 0)!;
+                Pump();
+                Assert.Equal(port.Id, window.PortsPage.Diagram.SelectedId);
+                Assert.Single(FindVisualElements<Border>(window.PortsPage.Diagram), border => Equals(border.Tag, port.Id));
+                Assert.False(window.Ports.ShowIdleHint);
+                Assert.True(File.Exists(Path.Combine(dataDirectory, "ports.json")));
+                Assert.True(window.PortsPage.MoveEarlierButton.IsEnabled);
+                window.Ports.BeginCalibration();
+                Pump();
+                Assert.False(window.PortsPage.MoveEarlierButton.IsEnabled);
+                Assert.False(window.PortsPage.EdgeChoice.IsEnabled);
+                window.Ports.CancelCalibration();
+                Pump();
                 window.Hide();
-                var snapshotTree = TopologyBuilder.Build(snapshot.Capture(), PortTable.Empty());
+
                 var panelModel = new QuickSwitchPanelViewModel(snapshot, PortTable.Empty(), writer, probe);
-                panelModel.Refresh(snapshotTree, AudioEndpointFlow.Render);
-                var panel = new AudioSwitch.App.QuickSwitchPanelWindow(panelModel, _ => { }) { ShowActivated = false };
+                panelModel.Refresh();
+                var panel = new QuickSwitchPanelWindow(panelModel, _ => { })
+                {
+                    ShowActivated = false,
+                    WindowStartupLocation = WindowStartupLocation.Manual,
+                    Left = -20000,
+                    Top = -20000
+                };
+                panel.FitToContent();
+                Assert.InRange(panel.Height, 1, panel.MaxHeight);
                 panel.Show();
-                panel.UpdateLayout();
+                Pump();
+                var marks = FindVisualElements<TextBlock>(panel).Where(block => block.Name == "DefaultMark").ToArray();
+                Assert.Single(marks, mark => mark.IsVisible);
                 panel.Close();
 
-                var screenType = assembly.GetType("AudioSwitch.App.ScreenIdentificationWindow", throwOnError: true)!;
-                var screen = (Window)Activator.CreateInstance(screenType, 1, -10000d, -10000d, 800d, 600d)!;
+                var screen = new ScreenIdentificationWindow(1, -10000, -10000, 800, 600);
                 screen.Show();
                 screen.UpdateLayout();
                 screen.Close();
@@ -113,33 +141,52 @@ public sealed class WindowSmokeTests
         Assert.Null(error);
     }
 
-    private static TreeView FindVisualTree(DependencyObject root)
+    private static void Pump()
     {
-        if (root is TreeView tree) return tree;
-        for (var index = 0; index < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); index++)
-        {
-            var found = FindVisualTree(System.Windows.Media.VisualTreeHelper.GetChild(root, index));
-            if (found is not null) return found;
-        }
-        throw new InvalidOperationException("Settings window did not create its endpoint tree.");
+        for (var index = 0; index < 3; index++)
+            Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
     }
 
-    private static bool SelectEndpoint(ItemsControl parent, string endpointId)
+    private static bool SelectNode(ItemsControl parent, object node)
     {
-        foreach (var item in parent.Items.OfType<TreeViewItem>())
+        parent.UpdateLayout();
+        if (parent.ItemContainerGenerator.ContainerFromItem(node) is TreeViewItem direct)
         {
-            if (Equals(item.Tag, endpointId))
-            {
-                item.IsSelected = true;
-                return true;
-            }
-            if (SelectEndpoint(item, endpointId)) return true;
+            direct.IsSelected = true;
+            return true;
         }
+        foreach (var item in parent.Items)
+            if (parent.ItemContainerGenerator.ContainerFromItem(item) is TreeViewItem container && SelectNode(container, node))
+                return true;
         return false;
     }
 
-    private static string ReadDeviceStatus(Type settingsWindowType, Window window) =>
-        ((TextBlock)settingsWindowType.GetField("_deviceStatus", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(window)!).Text;
+    private static IEnumerable<T> FindVisualElements<T>(DependencyObject root) where T : DependencyObject
+    {
+        if (root is T match) yield return match;
+        for (var index = 0; index < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); index++)
+            foreach (var child in FindVisualElements<T>(System.Windows.Media.VisualTreeHelper.GetChild(root, index)))
+                yield return child;
+    }
+
+    private static bool IsReadableContrast(SolidColorBrush background, SolidColorBrush foreground)
+    {
+        static double Luminance(Color color)
+        {
+            static double Linear(byte channel)
+            {
+                var value = channel / 255d;
+                return value <= 0.04045 ? value / 12.92 : Math.Pow((value + 0.055) / 1.055, 2.4);
+            }
+
+            return 0.2126 * Linear(color.R) + 0.7152 * Linear(color.G) + 0.0722 * Linear(color.B);
+        }
+
+        var first = Luminance(background.Color);
+        var second = Luminance(foreground.Color);
+        var ratio = (Math.Max(first, second) + 0.05) / (Math.Min(first, second) + 0.05);
+        return ratio >= 4.5;
+    }
 
     private static Exception? RunSta(Action action)
     {
@@ -190,7 +237,7 @@ public sealed class WindowSmokeTests
 
     private sealed class FakeDefaultEndpointWriter : IDefaultEndpointWriter
     {
-        public string? GetDefaultEndpointId(AudioEndpointFlow flow, AudioEndpointRole role) => null;
+        public string? GetDefaultEndpointId(AudioEndpointFlow flow, AudioEndpointRole role) => flow == AudioEndpointFlow.Render ? "render-1" : "capture-1";
         public EndpointSwitchResult SetDefaultEndpoint(string endpointId, AudioEndpointFlow flow) => throw new InvalidOperationException("Smoke tests must not change default endpoints.");
         public EndpointRoleChangeResult SetDefaultEndpointRole(string endpointId, AudioEndpointFlow flow, AudioEndpointRole role) => throw new InvalidOperationException("Smoke tests must not change default endpoints.");
         public void Dispose() { }

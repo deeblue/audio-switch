@@ -1,0 +1,164 @@
+<UserControl x:Class="AudioSwitch.App.Views.PortsPageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:AudioSwitch.App.Views">
+  <UserControl.Resources>
+    <ResourceDictionary Source="/AudioSwitch.App;component/Views/AppStyles.xaml"/>
+  </UserControl.Resources>
+  <Grid Margin="0,12,0,0">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*"/>
+      <ColumnDefinition Width="16"/>
+      <ColumnDefinition Width="300"/>
+    </Grid.ColumnDefinitions>
+
+    <Border Style="{StaticResource Card}" Margin="0" Padding="12">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*" MinHeight="160"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="120"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel>
+          <Button DockPanel.Dock="Right" Content="偵測新裝置…" Style="{StaticResource TextButton}" Click="DetectNewDevice_Click"
+                  IsEnabled="{Binding CanStartDetection}"
+                  ToolTip="先插裝置，再指出它插在哪個接口"/>
+          <ItemsControl x:Name="Palette" VerticalAlignment="Center" IsEnabled="{Binding IsEnabled}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal"/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+          </ItemsControl>
+        </DockPanel>
+
+        <views:LaptopDiagramView x:Name="Diagram" Grid.Row="1" Margin="0,8" MaxWidth="560" IsInteractive="{Binding IsEnabled}"
+                                 PortSelected="Diagram_PortSelected" PortDropped="Diagram_PortDropped"/>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
+          <views:LegendItem BrushKey="SystemFillColorSuccessBrush" Text="已校準"/>
+          <views:LegendItem BrushKey="SystemFillColorCautionBrush" Text="缺部分路徑" Margin="16,0,0,0"/>
+          <views:LegendItem BrushKey="ControlStrongFillColorDefaultBrush" Text="未校準" Margin="16,0,0,0"/>
+        </StackPanel>
+
+        <DockPanel Grid.Row="3" Margin="0,4,0,4">
+          <Button x:Name="AddButton" DockPanel.Dock="Right" Content="新增…" Style="{StaticResource TextButton}" Click="Add_Click"
+                  IsEnabled="{Binding IsEnabled}"
+                  ToolTip="用鍵盤新增接口"/>
+          <TextBlock Text="接口" Style="{StaticResource SecondaryText}" VerticalAlignment="Center"/>
+        </DockPanel>
+
+        <ListBox x:Name="PortList" Grid.Row="4" SelectionChanged="PortList_SelectionChanged" AutomationProperties.Name="接口清單"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <DockPanel ToolTip="{Binding Description}">
+                <Grid DockPanel.Dock="Left" Width="28" Margin="0,0,8,0">
+                  <views:PortGlyph ConnectorType="{Binding Type}" FillBrushKey="{Binding State, Converter={x:Static views:PortStateBrushKeyConverter.Instance}}"/>
+                </Grid>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding ShortStatus}" Style="{StaticResource CaptionText}" TextWrapping="NoWrap"
+                           VerticalAlignment="Center" Margin="8,0,0,0" MaxWidth="150" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+              </DockPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+    </Border>
+
+    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel>
+        <Border Style="{StaticResource Card}" Visibility="{Binding IsEnabled, Converter={StaticResource VisibleWhenFalse}}">
+          <TextBlock Text="{Binding DisabledReason}" Style="{StaticResource ErrorText}" Margin="0"/>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Visibility="{Binding IsCalibrating, Converter={StaticResource VisibleWhenTrue}}"
+                BorderBrush="{DynamicResource AccentFillColorDefaultBrush}">
+          <StackPanel>
+            <TextBlock Text="校準" Style="{StaticResource SectionTitle}"/>
+            <ItemsControl ItemsSource="{Binding CalibrationSteps}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+              <Button Content="完成偵測" Style="{StaticResource PrimaryButton}" Click="CompleteDetection_Click"
+                      Visibility="{Binding IsWaitingForDevice, Converter={StaticResource VisibleWhenTrue}}"/>
+              <Button Content="套用到這個接口" Style="{StaticResource PrimaryButton}" Click="ApplyDetected_Click"
+                      Visibility="{Binding IsWaitingForPlacement, Converter={StaticResource VisibleWhenTrue}}"
+                      IsEnabled="{Binding CanApplyDetectedToSelected}"/>
+              <Button Content="取消" Style="{StaticResource TextButton}" Click="CancelCalibration_Click" Margin="8,0,0,0"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Visibility="{Binding CanEnterAlias, Converter={StaticResource VisibleWhenTrue}}">
+          <StackPanel>
+            <TextBlock Text="替裝置取名稱（選填）" Style="{StaticResource SectionTitle}" Margin="0"/>
+            <TextBlock Style="{StaticResource CaptionText}" Margin="0,4,0,8">
+              <Run Text="偵測到："/><Run Text="{Binding DetectedEndpointNames, Mode=OneWay}"/>
+            </TextBlock>
+            <TextBox Text="{Binding AliasText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="裝置名稱"/>
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+              <Button Content="套用" Style="{StaticResource TextButton}" Click="ApplyAlias_Click"/>
+              <Button Content="略過" Style="{StaticResource TextButton}" Click="SkipAlias_Click" Margin="8,0,0,0"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Visibility="{Binding HasSelection, Converter={StaticResource VisibleWhenTrue}}">
+          <StackPanel>
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Click="Delete_Click" VerticalAlignment="Top"
+                      IsEnabled="{Binding CanMoveSelected}" ToolTip="刪除接口" AutomationProperties.Name="刪除接口">
+                <TextBlock Style="{StaticResource IconGlyph}" Text="&#xE74D;"/>
+              </Button>
+              <StackPanel>
+                <TextBlock Text="{Binding SelectedTypeText}" Style="{StaticResource SectionTitle}" Margin="0"/>
+                <TextBlock Text="{Binding SelectedStatusText}" Style="{StaticResource CaptionText}" Margin="0,4,0,0"/>
+              </StackPanel>
+            </DockPanel>
+
+            <TextBlock Text="名稱" Style="{StaticResource CaptionText}" Margin="0,12,0,4"/>
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Content="儲存" Style="{StaticResource TextButton}" Click="SaveName_Click" Margin="8,0,0,0"/>
+              <TextBox x:Name="NameBox" Text="{Binding NameText, UpdateSourceTrigger=PropertyChanged}" KeyDown="NameBox_KeyDown"
+                       AutomationProperties.Name="接口名稱"/>
+            </DockPanel>
+
+            <TextBlock Text="位置" Style="{StaticResource CaptionText}" Margin="0,12,0,4"/>
+            <DockPanel IsEnabled="{Binding CanMoveSelected}">
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="8,0,0,0">
+                <Button x:Name="MoveEarlierButton" Style="{StaticResource IconButton}" Click="MoveEarlier_Click">
+                  <TextBlock x:Name="MoveEarlierGlyph" Style="{StaticResource IconGlyph}"/>
+                </Button>
+                <Button x:Name="MoveLaterButton" Style="{StaticResource IconButton}" Click="MoveLater_Click" Margin="4,0,0,0">
+                  <TextBlock x:Name="MoveLaterGlyph" Style="{StaticResource IconGlyph}"/>
+                </Button>
+              </StackPanel>
+              <ComboBox x:Name="EdgeChoice" SelectionChanged="EdgeChoice_SelectionChanged" AutomationProperties.Name="所在的邊"/>
+            </DockPanel>
+
+            <Button Content="校準…" Style="{StaticResource TextButton}" HorizontalAlignment="Left" Margin="0,16,0,0"
+                    Click="Calibrate_Click" IsEnabled="{Binding CanCalibrateSelected}"
+                    Visibility="{Binding CanCalibrateSelected, Converter={StaticResource VisibleWhenTrue}}"
+                    ToolTip="插入一個裝置，讓程式記住這個接口"/>
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Visibility="{Binding ShowIdleHint, Converter={StaticResource VisibleWhenTrue}}">
+          <TextBlock Style="{StaticResource SecondaryText}"
+                     Text="點選示意圖上的接口可以改名、移動、校準或刪除。把上方的接口類型拖到機身邊緣即可新增。"/>
+        </Border>
+
+        <TextBlock Text="{Binding Message}" Style="{StaticResource StatusMessage}"
+                   Visibility="{Binding Message, Converter={StaticResource VisibleWhenNotNull}}"/>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

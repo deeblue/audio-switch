@@ -10,6 +10,7 @@ __pycache__/
 .venv/
 dist/
 build/
+artifacts/
 
 # Probe output
 probes/out/

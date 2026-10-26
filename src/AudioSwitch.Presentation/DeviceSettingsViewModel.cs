@@ -57,6 +57,16 @@ public sealed class DeviceSettingsViewModel : INotifyPropertyChanged
         }
     }
 
+    public async Task ClearSelectionAsync()
+    {
+        await StopListeningAsync().ConfigureAwait(true);
+        SelectedEndpoint = null;
+        AliasText = string.Empty;
+        ErrorMessage = null;
+    }
+
+    public bool HasStoredOriginalName(string endpointId) => _aliases.OriginalDescriptions.ContainsKey(endpointId);
+
     public bool ApplyAlias(IEnumerable<TopologyEndpoint> endpoints)
     {
         return ApplyAlias(SelectedEndpoint, endpoints, AliasText);
@@ -65,7 +75,7 @@ public sealed class DeviceSettingsViewModel : INotifyPropertyChanged
     public bool ApplyAlias(TopologyEndpoint? selectedEndpoint, IEnumerable<TopologyEndpoint> endpoints, string aliasText)
     {
         if (selectedEndpoint is null) return Fail("請先選擇一個音訊端點。");
-        if (string.IsNullOrWhiteSpace(aliasText)) return Fail("別名不可空白；請使用清除別名。");
+        if (string.IsNullOrWhiteSpace(aliasText)) return Fail("名稱不可空白；要改回原名請按「還原原名」。");
         var members = AliasEndpointGrouping.GetMembers(selectedEndpoint, endpoints);
         var current = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try

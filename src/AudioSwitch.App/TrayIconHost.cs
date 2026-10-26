@@ -6,6 +6,7 @@ namespace AudioSwitch.App;
 public sealed class TrayIconHost : IDisposable
 {
     private readonly WinForms.NotifyIcon _notifyIcon;
+    private Icon? _currentIcon;
 
     public WinForms.ContextMenuStrip Menu { get; }
 
@@ -26,10 +27,12 @@ public sealed class TrayIconHost : IDisposable
         _notifyIcon = new WinForms.NotifyIcon
         {
             ContextMenuStrip = Menu,
-            Icon = SystemIcons.Application,
             Text = "AudioSwitch",
             Visible = true
         };
+        UpdateIcon();
+        Microsoft.Win32.SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
         _notifyIcon.MouseClick += OnMouseClick;
     }
 
@@ -37,7 +40,10 @@ public sealed class TrayIconHost : IDisposable
     {
         _notifyIcon.Visible = false;
         _notifyIcon.MouseClick -= OnMouseClick;
+        Microsoft.Win32.SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         _notifyIcon.Dispose();
+        _currentIcon?.Dispose();
         Menu.Dispose();
     }
 
@@ -47,5 +53,21 @@ public sealed class TrayIconHost : IDisposable
     {
         if (e.Button == WinForms.MouseButtons.Left)
             TogglePanelRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnUserPreferenceChanged(object? sender, Microsoft.Win32.UserPreferenceChangedEventArgs e)
+    {
+        if (e.Category == Microsoft.Win32.UserPreferenceCategory.General || e.Category == Microsoft.Win32.UserPreferenceCategory.Color)
+            UpdateIcon();
+    }
+
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e) => UpdateIcon();
+
+    private void UpdateIcon()
+    {
+        var next = AppIconProvider.LoadTrayIcon(AppIconProvider.IsTaskbarLightTheme(), AppIconProvider.GetCurrentDpi());
+        _notifyIcon.Icon = next;
+        _currentIcon?.Dispose();
+        _currentIcon = next;
     }
 }

@@ -37,9 +37,14 @@ public sealed class HotkeySettingsViewModel : INotifyPropertyChanged
         var result = _hotkeyService.Register(targetWindow, EmptyToNull(PlaybackHotkey), EmptyToNull(RecordingHotkey));
         if (!result.Success)
         {
-            ErrorMessage = result.Error ?? "無法註冊快捷鍵。";
+            var error = result.Error ?? "無法註冊快捷鍵。";
             var restore = _hotkeyService.Register(targetWindow, _settings.PlaybackHotkey, _settings.RecordingHotkey);
-            if (!restore.Success) ErrorMessage += $" 原有快捷鍵也無法恢復：{restore.Error}";
+            if (restore.Success)
+                ErrorMessage = _settings.PlaybackHotkey is null && _settings.RecordingHotkey is null ? error : $"{error} 已保留原本的快捷鍵。";
+            else if (string.IsNullOrWhiteSpace(restore.Error) || string.Equals(restore.Error, result.Error, StringComparison.Ordinal))
+                ErrorMessage = $"{error} 原本的快捷鍵也無法重新註冊。";
+            else
+                ErrorMessage = $"{error} 原本的快捷鍵也無法重新註冊：{restore.Error}";
             return false;
         }
         _settings.PlaybackHotkey = EmptyToNull(PlaybackHotkey);

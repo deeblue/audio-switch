@@ -5,7 +5,18 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <ApplicationIcon>Assets\AudioSwitch.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- WPF and WinForms share many type names; WinForms is only used through explicit aliases. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\AudioSwitch.ico" />
+    <Resource Include="Assets\AudioSwitch.Tray.Dark.ico" />
+    <Resource Include="Assets\AudioSwitch.Tray.Light.ico" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AudioSwitch.Core\AudioSwitch.Core.csproj" />
     <ProjectReference Include="..\AudioSwitch.Platform.Windows\AudioSwitch.Platform.Windows.csproj" />
