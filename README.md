@@ -237,6 +237,6 @@ SoundSwitch 能以系統匣與快捷鍵切換端點，裝置選單是 Windows �
 
 ## 狀態
 
-Windows 桌面版主要功能與 Release 自包含發佈已完成。Release 自包含版本目前位於 `src/AudioSwitch.App/bin/Release/net10.0-windows/win-x64/publish/`，大小約 172.86 MiB。自動測試及實機 live 測試已通過；Dock、顯示器、會議軟體與縮放情境仍待使用者依本計畫「階段 6」清單實際驗收。
+Windows 桌面版主要功能與 Release 自包含發佈已完成。Release 自包含版本發佈到 `dist/AudioSwitch/`，大小約 173 MiB。自動測試及實機 live 測試已通過；Dock、顯示器、會議軟體與縮放情境仍待使用者依本計畫「階段 6」清單實際驗收。
 
 **macOS（後續範圍）**：切換預設輸出／輸入有公開 API，但沒有通訊預設；USB 孔位可能以 IOKit `locationID` 校準；別名寫回系統與個別程式指定沒有已知的系統層級做法；內建喇叭與 3.5mm 是否為獨立裝置依機種而定。以上皆待 macOS 探針實測。

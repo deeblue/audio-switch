@@ -110,7 +110,7 @@ public partial class PortsPageView : UserControl
     private Button CreatePaletteButton(PortConnectorType type, string name)
     {
         var label = PortDiagramViewModel.ConnectorLabel(type);
-        var description = $"{label}：拖到機身邊緣新增，或按一下加到左側";
+        var description = $"{label}：拖到機身邊緣新增";
         var button = new Button
         {
             Width = 48,
@@ -127,7 +127,6 @@ public partial class PortsPageView : UserControl
             if (e.LeftButton != MouseButtonState.Pressed || Model?.IsEnabled != true) return;
             DragDrop.DoDragDrop(button, new DataObject(LaptopDiagramView.PortTypeFormat, name), DragDropEffects.Copy);
         };
-        button.Click += (_, _) => Model?.Add(type, PortEdge.Left, int.MaxValue);
         return button;
     }
 

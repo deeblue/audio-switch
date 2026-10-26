@@ -71,10 +71,10 @@ probes/.venv/Scripts/python.exe -m unittest discover -s probes/tests -t .
 建立 Windows x64 Release 自包含版本：
 
 ```powershell
-dotnet publish src/AudioSwitch.App -c Release -r win-x64 --self-contained
+dotnet publish src/AudioSwitch.App -c Release -r win-x64 --self-contained -o dist/AudioSwitch
 ```
 
-發佈目錄為 `src/AudioSwitch.App/bin/Release/net10.0-windows/win-x64/publish/`。
+輸出到 `dist/AudioSwitch/`（不納入版本控制），執行 `dist/AudioSwitch/AudioSwitch.App.exe`。`src/AudioSwitch.App/bin/` 下的檔案是建置與測試用的中間產物。
 
 ## 使用者資料
 

@@ -89,6 +89,9 @@ public sealed class WindowSmokeTests
                 window.Tabs.SelectedIndex = 1;
                 Pump();
                 Assert.True(window.Ports.ShowIdleHint);
+                foreach (var paletteButton in window.PortsPage.Palette.Items.OfType<Button>())
+                    paletteButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                Assert.Empty(window.Ports.Diagram.Interfaces);
                 var port = window.Ports.Add(PortConnectorType.UsbA, PortEdge.Left, 0)!;
                 Pump();
                 Assert.Equal(port.Id, window.PortsPage.Diagram.SelectedId);
