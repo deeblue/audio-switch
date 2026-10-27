@@ -30,21 +30,23 @@ probes/.venv/Scripts/python.exe -m unittest discover -s probes/tests -t .
 
 每次只改一條實體連線。執行前記下**實際插入的外殼接口**，再把下列 `<接口 ID>` 換成 `ports.json` 裡對應 ID。接口 ID：`usb-a-left`、`usb-a-right`、`usb-c-left-front`、`usb-c-left-rear`、`hdmi`、`jack-combo`。四個 USB 孔的位置來自使用者實測；HDMI 與 3.5mm 仍標為「未知」。勿依 USB(1) 或 HS07 等 OS 路徑編號猜測機身位置。
 
-`calibrate` 取前後快照之間新出現或 LocationPaths 改變的最上層節點（父節點不在變動集合內），作為這次連線的接點；只有屬性改變不算移動，所以同一 USB 裝置從前一孔移到下一孔的兩份快照也能用來校準。一個實體接口最多帶出 USB 2、USB 3、PCIe 隧道各一個接點，例如 Dock 一次帶出 USB 2 Hub、USB 3 Hub 與 USB4 隧道後的 PCIe 橋接器，全部記到同一接口；同一種傳輸出現兩個接點表示同時改了兩條連線，結果為 ambiguous。PCIe 接點須位於 root port 之後（路徑至少兩層 `PCI()`），iGPU 等直接掛在 root complex 的裝置不算。
+`calibrate` 取前後快照之間新出現或 LocationPaths 改變的最上層節點（父節點不在變動集合內），作為這次連線的接點；只有屬性改變不算移動，所以同一 USB 裝置從前一孔移到下一孔的兩份快照也能用來校準。一個實體接口最多帶出 USB 2、USB 3、PCIe 隧道各一個接點，例如 Dock 一次帶出 USB 2 Hub、USB 3 Hub 與 USB4 隧道後的 PCIe 橋接器，全部記到同一接口；同一種傳輸出現兩個接點表示同時改了兩條連線，結果為 ambiguous。PCIe 接點須位於 root port 之後（路徑至少兩層 `PCI()`），iGPU 等直接掛在 root complex 的裝置不算。USB-A 接口不記錄螢幕輸出，校準時新出現的螢幕不算它的證據。
+
+`tree` 的歸位規則與桌面版相同：USB 路徑取最長的校準前綴，兩個接口的前綴一樣長時不歸位；接口表只有一個 HDMI 接口時，筆電顯示卡（PCI adapter）上回報為 HDMI、且唯一一個尚未校準的顯示路徑自動歸到該接口。快照的 PnP 祖先鏈走到已讀過的節點即停止。
 
 1. **四個 USB 孔**：HS 路徑已用 7C（USB 2）校準。USB-C 的 USB 3 與 USB4 路徑由 Dock 測試一併校準；USB-A 的 USB 3 路徑不影響 USB 音訊裝置，暫不校準。每次執行 `snapshot <id>-before`，插入裝置，執行 `snapshot <id>-after`、`diff <id>-before <id>-after`、`calibrate <接口 ID> <id>-before <id>-after`。同一接口的多筆校準會累積。預期能看到 USB PnP LocationPaths 新增或改變，校準資料記錄 USB 2 或 USB 3。
 2. **HDMI 與兩個 USB-C 顯示輸出**：每個接口直接連接螢幕前後各存快照、執行 diff，再用該接口 ID 執行 calibrate。重插同一螢幕再比對。校準只比對穩定欄位；path ID、adapter LUID 與 `\.\DISPLAYn` 可能改變。不要同時經 Dock 測試，先分開建立基準。
 3. **機身 3.5mm**：插入耳麥前後執行 `snapshot`／`diff`，並檢查 `raw` 的 KS jack presence。確認播放與錄音端點是新增／消失，還是同一端點狀態改變。
-4. **Dock**：Dock 接入 USB-C 前後快照；再逐一測 Dock 3.5mm、Dock USB 孔的 USB speaker、Dock 螢幕，每次只改一項。確認 USB 音訊和 USB 顯示路徑是否落在同一裝置節點；記錄 ContainerId、removal policy、capabilities 及 LocationPaths。需要時以 USB-C 接口 ID 校準 Dock 所在孔。
+4. **Dock**：Dock 接入 USB-C 前後快照；再逐一測 Dock 3.5mm、Dock USB 孔的 USB speaker、Dock 螢幕，每次只改一項。確認 USB 音訊和 USB 顯示路徑是否落在同一裝置節點；記錄 ContainerId、removal policy、capabilities 及 LocationPaths。需要時以 USB-C 接口 ID 校準 Dock 所在孔。已用沒有音效晶片的 HP Thunderbolt 4 Dock 實測 Dock 接入、Dock 螢幕與 Dock USB 孔上的 7C，結果見下表與主 README「本機可行性實驗」；Dock 3.5mm 未測。
 
 ## 七項可行性結論
 
 | 問題 | 結論 | 證據／待補資料 |
 |---|---|---|
-| KS sink PortId 能否匹配 DisplayConfig | 待 HDMI／DisplayPort 螢幕實測 | 本機目前沒有顯示卡輸出的螢幕音訊端點；Realtek 與 7C 端點都不提供 `IKsJackSinkInformation`，符合預期。程式已實作 PortId 與 adapter LUID 比對及 EDID fallback。 |
+| KS sink PortId 能否匹配 DisplayConfig | EDID 對應成立；PortId 未實測 | VP2770（經 Dock）與直接接機身 HDMI 的螢幕，其 `IKsJackSinkInformation` 以 EDID ManufacturerId／ProductId 對應到各自的 DisplayConfig 路徑；本機沒有需要 PortId 比對的情況。Realtek 與 7C 端點不提供 sink，符合預期。 |
 | 兩個 USB-C 顯示 connector 能否區分 | 待逐孔校準 | 已改用穩定欄位；尚未分別直接連接螢幕測試。 |
-| 同孔 Dock USB 與顯示能否合併 | USB 顯示裝置成立；Dock 待實測 | 7C 的 `Speakers (speaker)` 與 S2719DGF 顯示路徑在 `tree` 中併在同一個 `speaker` 裝置節點下（顯示 adapter 為 `MI_00`、音訊為 `MI_03`，共用上層 USB 裝置）。 |
-| ContainerId／removability 能否辨識 Dock 內建音效與 USB 子裝置 | 待 Dock 實測 | ContainerId、RemovalPolicy、Capabilities 已加入讀取；無 Dock 對照快照。 |
+| 同孔 Dock USB 與顯示能否合併 | 成立 | 7C 的 `Speakers (speaker)` 與 S2719DGF 顯示路徑併在同一個 USB 裝置節點下（顯示 adapter 為 `MI_00`、音訊為 `MI_03`）。Dock 接入時 USB 2 hub、USB 3 hub 與兩個 iGPU 顯示路徑同時出現，`calibrate` 一次記錄到同一個 USB-C 孔。 |
+| ContainerId／removability 能否辨識 Dock 內建音效與 USB 子裝置 | ContainerId 不能歸組 Dock；音效區分未實測 | 實測 Dock 的 USB 2 hub、內部 hub 與 USB 3 hub ContainerId 各不相同，因此 Dock 改以「同一接口上經過 hub 的裝置」歸組。該 Dock 沒有音效晶片，內建音效與 USB 子裝置的區分沒有資料。 |
 | `_PLD` 是否給出機身孔位 | 部分；只作輔助 | 四孔皆有 `_PLD`。USB-A 面板值與實際側別相符（左 panel 2、右 panel 3）；兩個左側 USB-C 都回報 panel 0（上），與實際不符，且兩孔除群組位置（前 2、後 1）外欄位相同。孔位以 LocationPaths 校準為準。其他多數 devnode 回報 CR `0x0025`（屬性不存在）。 |
 | StableId 與指定端點試音 | StableId 不存在；試音未實作 | 五個作用中端點 StableId 均空。 |
 | Realtek jack 對應、7C 路徑與插拔 | 成立 | `IKsJackDescription`：`2nd output` 與 `麦克风 (Realtek)` 為 3.5mm、插孔連接、支援插入偵測；`扬声器` 為其他類比、內建裝置；`麦克风阵列` 為其他數位、內建裝置。與耳麥插拔結果一致。7C 端點與顯示路徑同時消失／恢復。 |

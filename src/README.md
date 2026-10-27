@@ -18,15 +18,15 @@ dotnet build src/AudioSwitch.sln -c Release
 dotnet test src/AudioSwitch.sln -c Release
 ```
 
-實機 live 測試預設停用。執行前立刻重新產生探針比對檔：
+實機 live 測試預設停用。執行前立刻重新產生探針比對檔，並排除會改動系統狀態的 `EndpointWriteLiveTests`：
 
 ```powershell
 probes/.venv/Scripts/python.exe probes/audio_topology.py json live-compare
 $env:AUDIOSWITCH_LIVE = '1'
-dotnet test src/AudioSwitch.sln -c Release
+dotnet test src/AudioSwitch.sln -c Release --filter "FullyQualifiedName!~EndpointWriteLiveTests"
 ```
 
-每個 live 測試會在測試前後立即擷取系統狀態並比較；若發現狀態不一致，該測試程序會停止後續會寫入狀態的 live 測試。
+`EndpointWriteLiveTests` 會實際改動這台電腦：暫時替內建播放端點改名、切換每個方向三個 role 的預設端點、播放試音並開啟麥克風取樣，結束後還原。只在可以接受這些變動時才拿掉篩選條件執行。每個 live 測試會在測試前後立即擷取系統狀態並比較；若發現狀態不一致，該測試程序會停止後續會寫入狀態的 live 測試。
 
 ## 畫面截圖
 

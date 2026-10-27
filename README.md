@@ -107,7 +107,7 @@ ThinkPad T14p
 
 **名稱**：擺好圖示後名稱欄立即可編輯，預填依位置產生的名稱（例如「左側 USB-C（前）」）並全選，直接輸入即取代，按 Enter 沿用。接口名稱只存在程式設定檔。若校準時插入的裝置有音訊端點，可選填裝置別名（寫回 Windows 端點，見「可行性與限制」）。接口名稱與裝置別名分開保存，因為裝置會換孔；面板上組合顯示。
 
-**Dock 與 Hub 示意圖**：Dock 為前後兩面的盒狀圖，Hub 為長條圖，擺放、命名、校準方式與筆電相同。孔位記錄為相對於 Dock／Hub 接點的路徑後段，因此 Dock 換插到筆電另一個孔或另一台筆電時沿用同一份定義（待 Dock 實測）。程式以 Dock／Hub 內部 hub 晶片的 VID/PID（必要時加序號）辨認使用者定義過的那台；同型號共用定義。Dock 內建 3.5mm 一直存在、無法以插拔偵測，改為在該 Dock 底下的裝置中點選指定。Dock 的 HDMI／DP 輸出孔能否分辨待 Dock 實測；無法分辨時只以螢幕編號與排列位置標示。Dock／Hub 節點預設名稱為「Dock／Hub」，可在設定視窗裝置頁選取後改名；名稱只存在程式設定檔，以該 Dock／Hub 最上層 hub 晶片的 VID/PID 組合為鍵，同型號共用。
+**Dock 與 Hub 示意圖**：Dock 為前後兩面的盒狀圖，Hub 為長條圖，擺放、命名、校準方式與筆電相同。孔位記錄為相對於 Dock／Hub 接點的路徑後段，因此 Dock 換插到筆電另一個孔或另一台筆電時沿用同一份定義（待 Dock 實測）。程式以 Dock／Hub 內部 hub 晶片的 VID/PID（必要時加序號）辨認使用者定義過的那台；同型號共用定義。Dock 內建 3.5mm 一直存在、無法以插拔偵測，改為在該 Dock 底下的裝置中點選指定。Dock 的 HDMI／DP 輸出孔能否分辨待 Dock 實測；無法分辨時只以螢幕編號與排列位置標示。Dock／Hub 節點預設名稱為「Dock／Hub」，可在設定視窗裝置頁選取後改名；名稱只存在程式設定檔，以該 Dock／Hub 最上層 hub 晶片的 VID/PID 組合為鍵，同型號共用。已知限制：使用相同通用 hub 晶片的不同產品（例如同晶片的便宜 Hub 或螢幕內建 Hub）會得到同一個鍵、顯示同一個名稱；要區分需要其他證據，例如 Dock 自身的 USB 功能裝置，目前未做。
 
 ### 未設定時
 
@@ -166,9 +166,9 @@ PnP 的 parent／instance ID 提供裝置樹資訊；`PKEY_Device_ContainerId` �
 | C. 主機板內建音效 | 內建喇叭、麥克風、機身 3.5mm | DeviceTopology connector 的 `IKsJackDescription`：連接器類型、位置、插入偵測 | 內建／機身 3.5mm |
 | D. 其他 | 藍牙、虛擬音效裝置 | 不判斷實體位置 | 藍牙／無線、虛擬、未辨識 |
 
-**A 類**：Dock、外接 hub 或直插只差在路徑長短，中間節點保留在詳細資訊。Thunderbolt 3 Dock 常有自己的 USB 控制器，經 PCIe 通道接入；Thunderbolt 4／USB4 Dock 可能走主機控制器的 USB 通道。兩種路徑都應落在某個已校準的機身 USB-C 前綴，須實測確認。Dock 的 hub、網卡與音效晶片通常共用 `PKEY_Device_ContainerId`，據此歸成一個 Dock 節點。Dock 內建音效晶片通常接在不可移除的內部 port，沿用 Dock 的 ContainerId；插在 Dock USB 孔的裝置接在可移除 port，有自己的 ContainerId；據此區分「Dock 3.5mm」與「Dock USB 孔上的裝置」，VID 只作輔助。這項判斷須以測試應用實測。Dock 自身 USB 孔沒有 ACPI 位置資料，不逐款校準 Dock，只顯示路徑上的 port 編號。
+**A 類**：Dock、外接 hub 或直插只差在路徑長短，中間節點保留在詳細資訊。Thunderbolt 3 Dock 常有自己的 USB 控制器，經 PCIe 通道接入；Thunderbolt 4／USB4 Dock 可能走主機控制器的 USB 通道。本機的 Thunderbolt 4 Dock 實測時，USB 2 與 USB 3 兩條路徑在一次校準中都記到同一個 USB-C 孔。同一個機身接口上經過 hub 的裝置都放在一個 Dock／Hub 節點下，不依 `PKEY_Device_ContainerId` 歸組：實測 Dock 的各個 hub ContainerId 各不相同（見「本機可行性實驗」）。Dock 內建音效與插在 Dock USB 孔上的裝置目前不另外區分，都以 USB 裝置列在 Dock 節點下；本機的 Dock 沒有音效晶片，這部分未實測。Dock 自身 USB 孔沒有 ACPI 位置資料，不逐款校準 Dock，只顯示路徑上的 port 編號。
 
-**B 類**：一般顯示器音訊端點掛在 Intel Display Audio 或 GPU 音訊下；由 KS sink 的 PortId 嘗試對應 DisplayConfig adapter／target，再依校準找到機身接口。USB 顯示裝置是例外：若顯示 adapter device path 與 USB 音訊端點的 PnP USB devnode 相符，兩者歸在同一 USB 裝置節點及接口下；關聯須由共同 PnP 身分證據成立，不能只憑名稱或 VID/PID。傳統 GPU 顯示路徑仍需 sink 與 connector 校準才能併入 Dock。[IKsJackSinkInformation](https://learn.microsoft.com/en-us/windows/win32/api/devicetopology/nn-devicetopology-iksjacksinkinformation)
+**B 類**：一般顯示器音訊端點掛在 Intel Display Audio 或 GPU 音訊下；由 KS sink 的 PortId 嘗試對應 DisplayConfig adapter／target，再依校準找到機身接口。USB 顯示裝置是例外：若顯示 adapter device path 與 USB 音訊端點的 PnP USB devnode 相符，兩者歸在同一 USB 裝置節點及接口下；關聯須由共同 PnP 身分證據成立，不能只憑名稱或 VID/PID。GPU 顯示路徑以校準時記錄的 connector 對應接口：USB-C 校準 Dock 時，Dock 上的螢幕輸出一併記錄並併入 Dock 節點；圖上只有一個 HDMI 孔時，筆電顯示卡回報為 HDMI 的輸出自動對應該孔（見「接口定義」）。本機實測螢幕音訊以 KS sink 的 EDID ID 對應到 DisplayConfig 路徑。[IKsJackSinkInformation](https://learn.microsoft.com/en-us/windows/win32/api/devicetopology/nn-devicetopology-iksjacksinkinformation)
 
 **接口校準**對機身接口與使用者定義的 Dock／Hub 各做一次；端點每次動態掛上。操作介面見「介面」的「接口定義」：
 
@@ -212,7 +212,9 @@ LocationPaths 前綴共同為 `PCIROOT(0)#PCI(1400)#USBROOT(0)#`。本機 USB �
 
 個別程式指定實驗（一般使用者權限）：以 `RoGetActivationFactory("Windows.Media.Internal.AudioPolicyConfig")` 取得 21H2 後的介面（IID `ab3d4648-e242-459f-b02f-541c70306324`，vtable 配置依 EarTrumpet），對 Chrome 音訊程序呼叫 `SetPersistedDefaultAudioEndpoint` 設定 `eConsole` 與 `eMultimedia` 的播放端點為內建喇叭。Chrome 立即改從喇叭出聲，Firefox 仍走系統預設（3.5mm 耳機）；切換 Windows 預設時 Chrome 維持在喇叭、Firefox 跟著切換；Windows「音量混音程式」同步顯示 Chrome 的指定。Chrome 音訊程序重啟換了 PID 後新程序仍沿用指定，表示 Windows 依應用程式保存；設定與清除都須傳入該程式目前執行中的 PID，程序已結束時回傳 `E_INVALIDARG`。傳入空字串即清除，測試後已清除。介面未公開，21H2 前後 IID 不同。[EarTrumpet 實作](https://github.com/File-New-Project/EarTrumpet/blob/master/EarTrumpet/DataModel/WindowsAudio/Internal/AudioPolicyConfigService.cs)
 
-**尚未驗證**：錄音端點的個別程式指定、沒有序號的 USB 裝置換孔是否產生新端點、裝置插入當下寫入別名時 Teams 是否直接顯示新名稱、KS sink 與 PortId 對 DisplayConfig 的匹配（本機目前沒有 HDMI／DisplayPort 螢幕音訊端點）、HDMI 與兩個 USB-C 的逐孔 connector 校準、Dock 內建音效與 Dock USB 裝置分組、USB-C 的 USB 3 與 USB4 隧道路徑（目前只校準四孔的 USB 2 路徑，待 Dock 實測）、USB 耳麥、通知事件、指定端點試音及實際收音。`ports.json` 中四個 USB 孔的位置來自使用者實測；HDMI 與 3.5mm 的位置仍標為未知。
+Dock 與螢幕實測（HP Thunderbolt 4 Ultra 180W G6 Dock 接左側後方 USB-C）：Dock 沒有音效晶片。USB 2 側為 `03F0:3BAF` hub（PCH xHCI `HS05`），其下有內部 hub 與 Dock 自身的 HID 複合裝置；USB 3 側為 Thunderbolt 控制器的 `8087:0B40` hub（TCSS xHCI `SS01`）；沒有 PCIe 隧道裝置。這些 hub 的 ContainerId 彼此不同，不能據此歸組 Dock。經 Dock 的 HDMI 與 DP 接出的螢幕掛在筆電 iGPU 下，DisplayConfig 回報輸出技術為 DisplayPort（10）；螢幕直接接機身 HDMI 時回報 HDMI（5）。USB 顯示卡（`34C7:2114`）與 7C 的 S2719DGF 也回報 HDMI，但顯示 adapter 在 USB 樹下。VP2770 與 HDMI 螢幕的音訊端點都以 KS sink 的 EDID ID 對應到各自的顯示路徑。Dock 拔除再插回後，螢幕與 Dock 上的 USB 裝置仍落在同一個機身接口下。
+
+**尚未驗證**：錄音端點的個別程式指定、沒有序號的 USB 裝置換孔是否產生新端點、裝置插入當下寫入別名時 Teams 是否直接顯示新名稱、KS sink 的 PortId 比對（本機螢幕都以 EDID ID 對應）、兩個 USB-C 直接接螢幕時的 connector 區分、Dock 內建音效（3.5mm）與 Dock USB 孔上裝置的區分、PCIe 隧道路徑、USB 耳麥。`ports.json` 中四個 USB 孔的位置來自使用者實測；HDMI 與 3.5mm 的位置仍標為未知。
 
 ## 實作計畫
 
@@ -241,6 +243,6 @@ SoundSwitch 能以系統匣與快捷鍵切換端點，裝置選單是 Windows �
 
 ## 狀態
 
-Windows 桌面版主要功能與 Release 自包含發佈已完成。Release 自包含版本發佈到 `dist/AudioSwitch/`，大小約 173 MiB。自動測試及實機 live 測試已通過；Dock、顯示器、會議軟體與縮放情境仍待使用者依本計畫「階段 6」清單實際驗收。
+Windows 桌面版主要功能與 Release 自包含發佈已完成。發佈結果是單一個自包含的 `dist/AudioSwitch/AudioSwitch.App.exe`（約 167 MB），不需安裝。自動測試及實機 live 測試已通過；本計畫「階段 6」的使用者驗收清單除快捷鍵在拔除裝置後的清單更新與開機自動啟動外，已在本機通過。
 
 **macOS（後續範圍）**：切換預設輸出／輸入有公開 API，但沒有通訊預設；USB 孔位可能以 IOKit `locationID` 校準；別名寫回系統與個別程式指定沒有已知的系統層級做法；內建喇叭與 3.5mm 是否為獨立裝置依機種而定。以上皆待 macOS 探針實測。
