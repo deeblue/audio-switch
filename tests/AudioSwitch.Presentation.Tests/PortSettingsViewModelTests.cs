@@ -56,9 +56,10 @@ public sealed class PortSettingsViewModelTests
     public void DeviceFirstFlowCalibratesThePortDroppedAfterDetection()
     {
         var table = PortTable.Empty();
-        var model = CreateModel(new FakeSnapshotSource(new Snapshot(), SpeakerSnapshot()), table);
+        var model = CreateModel(new FakeSnapshotSource(new Snapshot(), new Snapshot(), SpeakerSnapshot()), table);
 
         model.BeginDetectNewDevice();
+        Assert.True(model.IsWaitingForUnplug);
         model.ConfirmUnplugged();
         model.CompleteDetection();
 
@@ -67,6 +68,53 @@ public sealed class PortSettingsViewModelTests
 
         Assert.Equal(PortCalibrationPhase.Idle, model.Phase);
         Assert.NotEmpty(port.UsbLocationPathPrefixes);
+    }
+
+    [Fact]
+    public void PluggedInAudioDeviceIsPlacedWithoutUnplugging()
+    {
+        var table = PortTable.Empty();
+        var model = CreateModel(new FakeSnapshotSource(PluggedInSpeakerSnapshot()), table);
+
+        model.BeginDetectNewDevice();
+
+        Assert.True(model.IsPlacingPluggedInDevice);
+        Assert.False(model.IsWaitingForUnplug);
+        Assert.Equal("USB Speaker", Assert.Single(model.PluggedInDevices).Name);
+        Assert.Equal("speaker", model.ChosenDevice?.EndpointId);
+
+        var port = model.Add(PortConnectorType.UsbC, PortEdge.Left, 0)!;
+
+        Assert.Equal(PortCalibrationPhase.Idle, model.Phase);
+        Assert.Contains("PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(1)", port.UsbLocationPathPrefixes);
+        Assert.True(model.CanEnterAlias);
+        Assert.Equal("USB Speaker", model.DetectedEndpointNames);
+    }
+
+    [Fact]
+    public void OtherDeviceChoiceUsesTheUnplugAndPlugSteps()
+    {
+        var model = CreateModel(new FakeSnapshotSource(SpeakerSnapshot()), PortTable.Empty());
+        model.BeginDetectNewDevice();
+
+        model.UseOtherDevice();
+
+        Assert.False(model.IsPlacingPluggedInDevice);
+        Assert.True(model.IsWaitingForUnplug);
+    }
+
+    [Fact]
+    public void DeviceFirstDetectionWithoutAChangeAsksToUnplugAgainInsteadOfClaimingADevice()
+    {
+        var model = CreateModel(new FakeSnapshotSource(new Snapshot()), PortTable.Empty());
+        model.BeginDetectNewDevice();
+        model.ConfirmUnplugged();
+
+        model.CompleteDetection();
+
+        Assert.False(model.IsWaitingForPlacement);
+        Assert.True(model.IsWaitingForUnplug);
+        Assert.True(model.IsError);
     }
 
     [Fact]
@@ -153,6 +201,14 @@ public sealed class PortSettingsViewModelTests
             new AudioEndpoint { EndpointId = "speaker", Flow = "render", State = "active", FriendlyName = "USB Speaker", DevnodeId = "SWD\\MMDEVAPI\\speaker" }
         ]
     };
+
+    // A real snapshot always contains the root hub the device hangs from, which the current-path lookup walks up to.
+    private static Snapshot PluggedInSpeakerSnapshot()
+    {
+        var snapshot = SpeakerSnapshot();
+        snapshot.Devnodes.Add(new DeviceNode { InstanceId = "USB\\ROOT_HUB30\\0" });
+        return snapshot;
+    }
 
     private sealed class FakeSnapshotSource(params Snapshot[] snapshots) : IAudioTopologySnapshotSource
     {

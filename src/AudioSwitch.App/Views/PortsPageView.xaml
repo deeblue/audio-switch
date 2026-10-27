@@ -81,6 +81,14 @@
                 BorderBrush="{DynamicResource AccentFillColorDefaultBrush}">
           <StackPanel>
             <TextBlock Text="{app:Loc '校準'}" Style="{StaticResource SectionTitle}"/>
+            <StackPanel Visibility="{Binding IsPlacingPluggedInDevice, Converter={StaticResource VisibleWhenTrue}}" Margin="0,0,0,8">
+              <TextBlock Text="{app:Loc '目前插著、還沒對應到接口的裝置：'}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+              <ListBox ItemsSource="{Binding PluggedInDevices}" SelectedItem="{Binding ChosenDevice}" DisplayMemberPath="Name"
+                       AutomationProperties.Name="{app:Loc '目前插著、還沒對應到接口的裝置：'}"/>
+              <Button Content="{app:Loc '其他裝置（例如 Dock）…'}" Style="{StaticResource TextButton}" Click="UseOtherDevice_Click"
+                      HorizontalAlignment="Left" Margin="0,8,0,0"
+                      ToolTip="{app:Loc '沒有音訊的裝置要拔掉再插入才能偵測'}"/>
+            </StackPanel>
             <ItemsControl ItemsSource="{Binding CalibrationSteps}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>

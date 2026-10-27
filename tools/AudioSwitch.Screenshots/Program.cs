@@ -124,6 +124,7 @@ static class ProgramEntry
             window.Ports.ConfirmUnplugged();
         });
         shot.Settings("settings/ports/detect-new-device", standard, 1, window => window.Ports.BeginDetectNewDevice());
+        shot.Settings("settings/ports/detect-plugged-in-device", unconfigured, 1, window => window.Ports.BeginDetectNewDevice());
         var detecting = Fixtures.Standard();
         shot.Settings("settings/ports/device-detected", detecting, 1, window =>
         {

@@ -12,6 +12,9 @@ public enum PortCalibrationPhase
     WaitingForPlacement
 }
 
+/// <summary>A USB audio device that is plugged in but not on any port yet; <see cref="EndpointId"/> is one of its endpoints.</summary>
+public sealed record PluggedInDevice(string EndpointId, string Name, string GroupKey);
+
 public sealed class PortSettingsViewModel : INotifyPropertyChanged
 {
     private readonly IAudioTopologySnapshotSource _snapshotSource;
@@ -27,6 +30,8 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
     private PortCalibrationPhase _phase;
     private IReadOnlyList<AudioEndpoint> _detectedEndpoints = [];
     private string _aliasText = string.Empty;
+    private IReadOnlyList<PluggedInDevice> _pluggedInDevices = [];
+    private PluggedInDevice? _chosenDevice;
 
     public PortSettingsViewModel(IAudioTopologySnapshotSource snapshotSource, PortTable portTable, MachineIdentity? machine,
         DeviceSettingsViewModel devices, Action save, IDefaultEndpointWriter? defaults = null)
@@ -83,7 +88,21 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
     public bool IsWaitingForUnplug => IsWaitingForDevice && Calibration.State == CalibrationWorkflowState.AwaitingUnplug;
     public bool CanCompleteDetection => IsWaitingForDevice && Calibration.State == CalibrationWorkflowState.AwaitingDevice;
     public bool IsWaitingForPlacement => Phase == PortCalibrationPhase.WaitingForPlacement;
-    public bool CanApplyDetectedToSelected => IsWaitingForPlacement && SelectedInterface is { Type: not "audio-jack" };
+    public bool CanApplyDetectedToSelected => IsWaitingForPlacement && (IsPlacingPluggedInDevice
+        ? _chosenDevice is not null && SelectedInterface is { Type: "usb-a" or "usb-c" }
+        : SelectedInterface is { Type: not "audio-jack" });
+
+    /// <summary>USB audio devices that are plugged in but not on a port; placing one needs no unplugging.</summary>
+    public IReadOnlyList<PluggedInDevice> PluggedInDevices { get => _pluggedInDevices; private set => Set(ref _pluggedInDevices, value); }
+    public bool IsPlacingPluggedInDevice => IsWaitingForPlacement && PluggedInDevices.Count > 0;
+    public PluggedInDevice? ChosenDevice
+    {
+        get => _chosenDevice;
+        set
+        {
+            if (Set(ref _chosenDevice, value)) OnPropertyChanged(nameof(CanApplyDetectedToSelected));
+        }
+    }
     public IReadOnlyList<string> CalibrationSteps => BuildSteps();
 
     public IReadOnlyList<AudioEndpoint> DetectedEndpoints { get => _detectedEndpoints; private set => Set(ref _detectedEndpoints, value); }
@@ -113,15 +132,9 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
         {
             var created = Diagram.AddInterface(type, edge, order);
             Select(created.Id);
-            if (Phase == PortCalibrationPhase.WaitingForPlacement && type != PortConnectorType.AudioJack)
-            {
-                ApplyDetectedToSelected();
-            }
-            else
-            {
-                Persist();
-                ShowMessage(null);
-            }
+            Persist();
+            if (CanApplyDetectedToSelected) ApplyDetectedToSelected();
+            else if (!IsWaitingForPlacement) ShowMessage(null);
             DiagramChanged?.Invoke(this, EventArgs.Empty);
             NameEditRequested?.Invoke(this, EventArgs.Empty);
             return created;
@@ -217,20 +230,47 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
         RaiseState();
     }
 
+    /// <summary>
+    /// Starts "plug in first, then place". A USB audio device that is already plugged in only needs its port pointed out,
+    /// because its current path is known; other devices, such as a dock without audio, are found by unplugging and plugging in.
+    /// </summary>
     public void BeginDetectNewDevice()
     {
         if (!Guard() || IsCalibrating) return;
         try
         {
-            Calibration.BeginBeforePortPlacement();
             DetectedEndpoints = [];
-            Phase = PortCalibrationPhase.WaitingForNewDevice;
+            var snapshot = _snapshotSource.Capture();
+            PluggedInDevices = FindPluggedInDevices(TopologyBuilder.Build(snapshot, _portTable));
+            ChosenDevice = PluggedInDevices.FirstOrDefault();
+            if (PluggedInDevices.Count > 0)
+            {
+                Calibration.Cancel();
+                Phase = PortCalibrationPhase.WaitingForPlacement;
+            }
+            else
+            {
+                Calibration.BeginBeforePortPlacement();
+                Phase = PortCalibrationPhase.WaitingForNewDevice;
+            }
             ShowMessage(null);
         }
         catch (Exception exception)
         {
             ShowMessage(exception.Message, isError: true);
         }
+        RaiseState();
+    }
+
+    /// <summary>Leaves the list of plugged-in audio devices for a device that has to be found by plugging it in.</summary>
+    public void UseOtherDevice()
+    {
+        if (!IsPlacingPluggedInDevice) return;
+        PluggedInDevices = [];
+        ChosenDevice = null;
+        Calibration.BeginBeforePortPlacement();
+        Phase = PortCalibrationPhase.WaitingForNewDevice;
+        ShowMessage(null);
         RaiseState();
     }
 
@@ -274,10 +314,11 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
 
     public void ApplyDetectedToSelected()
     {
-        if (!IsWaitingForPlacement || SelectedInterface is not { } port) return;
+        if (!CanApplyDetectedToSelected || SelectedInterface is not { } port) return;
         try
         {
-            HandleResult(Calibration.SelectPort(port.Id));
+            if (ChosenDevice is { } device) ApplyPluggedInDevice(port, device);
+            else HandleResult(Calibration.SelectPort(port.Id));
         }
         catch (Exception exception)
         {
@@ -289,6 +330,8 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
     public void CancelCalibration()
     {
         Calibration.Cancel();
+        PluggedInDevices = [];
+        ChosenDevice = null;
         Phase = PortCalibrationPhase.Idle;
         ShowMessage(Loc.T("已取消校準。"));
         RaiseState();
@@ -331,12 +374,38 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
         RaiseState();
     }
 
-    private void HandleResult(CalibrationResult? result)
+    private void ApplyPluggedInDevice(PortDefinition port, PluggedInDevice device)
+    {
+        var snapshot = _snapshotSource.Capture();
+        var result = _portTable.CalibrateExistingEndpoint(port.Id, snapshot, device.EndpointId);
+        if (result.Status == "calibrated")
+        {
+            var groupIds = TopologyBuilder.Build(snapshot, _portTable).Endpoints
+                .Where(endpoint => string.Equals(endpoint.GroupKey, device.GroupKey, StringComparison.OrdinalIgnoreCase))
+                .Select(endpoint => endpoint.EndpointId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            PluggedInDevices = [];
+            ChosenDevice = null;
+            HandleResult(result, snapshot.Endpoints.Where(endpoint => groupIds.Contains(endpoint.EndpointId)).ToArray());
+            return;
+        }
+        ShowMessage(Loc.T(result.Status == "ambiguous"
+            ? "此接口已有相同傳輸類型的另一條路徑，請選擇其他接口。"
+            : "找不到剛才偵測到的裝置，請確認仍插著。"), isError: true);
+    }
+
+    private static IReadOnlyList<PluggedInDevice> FindPluggedInDevices(TopologyTree tree) => tree.Endpoints
+        .Where(endpoint => endpoint is { Category: "A", InterfaceId: null, GroupKey: not null })
+        .GroupBy(endpoint => endpoint.GroupKey!, StringComparer.OrdinalIgnoreCase)
+        .Select(group => group.OrderBy(endpoint => endpoint.Flow.Equals("render", StringComparison.OrdinalIgnoreCase) ? 0 : 1).First())
+        .Select(endpoint => new PluggedInDevice(endpoint.EndpointId, endpoint.Name ?? endpoint.EndpointId, endpoint.GroupKey!))
+        .ToArray();
+
+    private void HandleResult(CalibrationResult? result, IReadOnlyList<AudioEndpoint>? detected = null)
     {
         if (result?.Status == "calibrated")
         {
             Phase = PortCalibrationPhase.Idle;
-            DetectedEndpoints = Calibration.NewAudioEndpoints;
+            DetectedEndpoints = detected ?? Calibration.NewAudioEndpoints;
             var name = result.InterfaceId is { } id ? _portTable.FindInterface(id)?.Name ?? id : Loc.T("接口");
             Persist();
             if (result.InterfaceId is not null) Select(result.InterfaceId);
@@ -377,6 +446,8 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
                 Loc.T(isDisplay ? "2. 畫面出現後按「完成偵測」。" : isUsbC ? "2. 插好後按「完成偵測」（如果是接著螢幕的 Dock，等畫面出現再按）。" : "2. 插好後按「完成偵測」。")
             ];
         }
+        if (IsPlacingPluggedInDevice)
+            return [Loc.T("在示意圖上點選它插著的接口，再按「套用到這個接口」；"), Loc.T("或從上方把接口類型拖到示意圖上的對應位置。")];
         return IsWaitingForPlacement
             ?
             [
@@ -420,7 +491,7 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
             nameof(CanCalibrateSelected), nameof(CanMoveSelected), nameof(IsCalibrating), nameof(IsWaitingForDevice),
             nameof(IsWaitingForUnplug), nameof(CanCompleteDetection),
             nameof(IsWaitingForPlacement), nameof(CanApplyDetectedToSelected), nameof(CalibrationSteps), nameof(CanEnterAlias),
-            nameof(DetectedEndpointNames), nameof(ShowIdleHint), nameof(CanStartDetection)
+            nameof(DetectedEndpointNames), nameof(ShowIdleHint), nameof(CanStartDetection), nameof(IsPlacingPluggedInDevice)
         })
             OnPropertyChanged(name);
     }

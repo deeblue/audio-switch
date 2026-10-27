@@ -66,6 +66,7 @@ public sealed class CalibrationWorkflowViewModel
             NewAudioEndpoints = _after.Endpoints.Where(endpoint => IsActive(endpoint) && !beforeIds.Contains(endpoint.EndpointId)).ToArray();
             if (_interfaceId is null)
             {
+                if (!HasChanged(_before, _after)) return StartOverFromUnplug();
                 State = CalibrationWorkflowState.AwaitingPortPlacement;
                 ErrorMessage = Loc.T(NewAudioEndpoints.Count > 0 ? "已偵測新音訊端點，請選擇或新增對應接口。" : "已偵測裝置，請選擇或新增對應接口。");
                 return null;
@@ -105,11 +106,7 @@ public sealed class CalibrationWorkflowViewModel
             }
             else
             {
-                // Retrying against the same baseline cannot succeed once the device is plugged in; start over from unplugging.
-                _before = null;
-                _after = null;
-                State = CalibrationWorkflowState.AwaitingUnplug;
-                ErrorMessage = Loc.T("沒有偵測到新插入的裝置。請再拔掉一次，按「下一步」後再插入。");
+                StartOverFromUnplug();
             }
             return Result;
         }
@@ -118,6 +115,22 @@ public sealed class CalibrationWorkflowViewModel
             ErrorMessage = exception.Message;
             return null;
         }
+    }
+
+    // Retrying against the same baseline cannot succeed once the device is plugged in; start over from unplugging.
+    private CalibrationResult StartOverFromUnplug()
+    {
+        _before = null;
+        _after = null;
+        State = CalibrationWorkflowState.AwaitingUnplug;
+        ErrorMessage = Loc.T("沒有偵測到新插入的裝置。請再拔掉一次，按「下一步」後再插入。");
+        return Result ?? new CalibrationResult("no_candidate", null, [], [], [], []);
+    }
+
+    private static bool HasChanged(Snapshot before, Snapshot after)
+    {
+        var beforePaths = before.DisplayPaths.Select(path => path.PathId).ToHashSet(StringComparer.Ordinal);
+        return AttachmentDetector.Detect(before, after).Count > 0 || after.DisplayPaths.Any(path => !beforePaths.Contains(path.PathId));
     }
 
     private void Reset()
