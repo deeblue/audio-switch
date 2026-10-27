@@ -13,15 +13,22 @@ public sealed record ActiveDevices(ActiveDevice? Playback, ActiveDevice? Recordi
     public static ActiveDevices Find(Snapshot snapshot, TopologyTree tree, string? playbackEndpointId, string? recordingEndpointId) =>
         new(Locate(snapshot, tree, playbackEndpointId), Locate(snapshot, tree, recordingEndpointId));
 
+    // EPxJackConnection: integrated, or both integrated and a jack (a driver that shares one endpoint).
+    private static readonly HashSet<int> IntegratedPortConnections = [1, 2];
+
     /// <summary>
     /// The port an endpoint is on, or the built-in marker for a built-in speaker or microphone. Bluetooth, virtual and
-    /// unmatched endpoints, and a headphone jack without a 3.5mm port, have no place on the drawing.
+    /// unmatched endpoints, a headphone jack without a 3.5mm port, and screen audio whose screen was not found have no
+    /// place on the drawing: when the driver reports where the connector is, only an integrated one counts as built-in.
     /// </summary>
     public static string? DiagramId(Snapshot snapshot, TopologyEndpoint endpoint)
     {
         if (endpoint.InterfaceId is not null) return endpoint.InterfaceId;
         if (endpoint.Category != "C") return null;
-        if (snapshot.Jacks.Any(jack => jack.EndpointId.Equals(endpoint.EndpointId, StringComparison.OrdinalIgnoreCase) && TopologyBuilder.IsPhysicalJack(jack)))
+        var connections = snapshot.Jacks
+            .Where(jack => jack.EndpointId.Equals(endpoint.EndpointId, StringComparison.OrdinalIgnoreCase))
+            .Select(TopologyBuilder.PortConnection).OfType<int>().ToArray();
+        if (connections.Length > 0 && !connections.Any(IntegratedPortConnections.Contains))
             return null;
         return endpoint.Flow.Equals("capture", StringComparison.OrdinalIgnoreCase)
             ? PortDiagramViewModel.BuiltInMicrophoneId

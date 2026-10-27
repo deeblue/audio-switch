@@ -42,6 +42,39 @@ public sealed class DevicePageViewModelTests
     }
 
     [Fact]
+    public async Task ListeningStopsWhenTheSelectedMicrophoneIsUnplugged()
+    {
+        var model = CreateModel(out var probe, out var source);
+        model.Refresh();
+        await model.SelectAsync(model.FindEndpoint("microphone"));
+        await model.ToggleListeningAsync();
+        Assert.True(model.Settings.IsListening);
+
+        source.Snapshot.Endpoints.RemoveAll(endpoint => endpoint.EndpointId == "microphone");
+        model.Refresh();
+
+        Assert.Null(model.SelectedNode);
+        Assert.False(model.Settings.IsListening);
+        Assert.Equal(1, probe.StopCount);
+    }
+
+    [Fact]
+    public void ScreenAudioWithoutAFoundScreenIsNotShownAsTheBuiltInSpeaker()
+    {
+        var model = CreateModel(out _, out var source);
+        // Display audio whose screen was not matched falls back to category C; its jack is an HDMI jack, not integrated.
+        source.Snapshot.Jacks.Add(new JackRecord
+        {
+            EndpointId = "speaker",
+            Jack = new() { ["connection_type"] = Number(6), ["port_connection"] = Number(0) }
+        });
+
+        model.Refresh();
+
+        Assert.Null(model.Active.Playback);
+    }
+
+    [Fact]
     public async Task BuiltInEndpointsHighlightTheirMarkerOnTheLaptopDrawing()
     {
         var model = CreateModel(out _);
@@ -116,17 +149,7 @@ public sealed class DevicePageViewModelTests
     [Fact]
     public async Task DockNameIsSavedPerModelAndCanBeRestored()
     {
-        var snapshot = new Snapshot
-        {
-            Endpoints = [new AudioEndpoint { EndpointId = "usb-speaker", Flow = "render", State = "active", FriendlyName = "USB 喇叭", DevnodeId = @"SWD\MMDEVAPI\usb-speaker" }],
-            Devnodes =
-            [
-                new DeviceNode { InstanceId = @"USB\ROOT_HUB30\ROOT" },
-                new DeviceNode { InstanceId = @"USB\VID_03F0&PID_3BAF\DOCK", ParentId = @"USB\ROOT_HUB30\ROOT", LocationPaths = ["PCIROOT(0)#USBROOT(0)#USB(5)"] },
-                new DeviceNode { InstanceId = @"USB\VID_303A&PID_2986\SPK", ParentId = @"USB\VID_03F0&PID_3BAF\DOCK", Name = "speaker", LocationPaths = ["PCIROOT(0)#USBROOT(0)#USB(5)#USB(1)"] },
-                new DeviceNode { InstanceId = @"SWD\MMDEVAPI\usb-speaker", ParentId = @"USB\VID_303A&PID_2986\SPK" }
-            ]
-        };
+        var snapshot = DockSnapshot();
         var source = new FakeSnapshotSource(snapshot);
         var table = PortTable.Empty();
         var probe = new FakeProbe();
@@ -155,7 +178,43 @@ public sealed class DevicePageViewModelTests
         Assert.Equal(2, saves);
     }
 
-    private static DevicePageViewModel CreateModel(out FakeProbe probe)
+    [Fact]
+    public async Task DockNameThatCannotBeSavedIsNotKept()
+    {
+        var source = new FakeSnapshotSource(DockSnapshot());
+        var table = PortTable.Empty();
+        var probe = new FakeProbe();
+        var settings = new DeviceSettingsViewModel(probe, new FakeNameWriter(), source, table, new AliasStore(), () => { });
+        var names = new Dictionary<string, string> { ["VID_03F0&PID_3BAF"] = "桌上 Dock" };
+        var model = new DevicePageViewModel(source, new FakeWriter(), probe, table, settings, names,
+            () => throw new IOException("locked"));
+        model.Refresh();
+        await model.SelectAsync(Assert.Single(Assert.Single(model.Roots).Children));
+
+        model.DockNameText = "會議室";
+        model.ApplyDockName();
+        Assert.Equal("桌上 Dock", names["VID_03F0&PID_3BAF"]);
+        Assert.True(model.IsError);
+
+        model.RestoreDockName();
+        Assert.Equal("桌上 Dock", names["VID_03F0&PID_3BAF"]);
+    }
+
+    private static Snapshot DockSnapshot() => new()
+    {
+        Endpoints = [new AudioEndpoint { EndpointId = "usb-speaker", Flow = "render", State = "active", FriendlyName = "USB 喇叭", DevnodeId = @"SWD\MMDEVAPI\usb-speaker" }],
+        Devnodes =
+        [
+            new DeviceNode { InstanceId = @"USB\ROOT_HUB30\ROOT" },
+            new DeviceNode { InstanceId = @"USB\VID_03F0&PID_3BAF\DOCK", ParentId = @"USB\ROOT_HUB30\ROOT", LocationPaths = ["PCIROOT(0)#USBROOT(0)#USB(5)"] },
+            new DeviceNode { InstanceId = @"USB\VID_303A&PID_2986\SPK", ParentId = @"USB\VID_03F0&PID_3BAF\DOCK", Name = "speaker", LocationPaths = ["PCIROOT(0)#USBROOT(0)#USB(5)#USB(1)"] },
+            new DeviceNode { InstanceId = @"SWD\MMDEVAPI\usb-speaker", ParentId = @"USB\VID_303A&PID_2986\SPK" }
+        ]
+    };
+
+    private static DevicePageViewModel CreateModel(out FakeProbe probe) => CreateModel(out probe, out _);
+
+    private static DevicePageViewModel CreateModel(out FakeProbe probe, out FakeSnapshotSource source)
     {
         var snapshot = new Snapshot
         {
@@ -171,7 +230,7 @@ public sealed class DevicePageViewModelTests
                 new DeviceNode { InstanceId = "SWD\\MMDEVAPI\\microphone", ParentId = "HDAUDIO\\CODEC" }
             ]
         };
-        var source = new FakeSnapshotSource(snapshot);
+        source = new FakeSnapshotSource(snapshot);
         var table = PortTable.Empty();
         probe = new FakeProbe();
         var settings = new DeviceSettingsViewModel(probe, new FakeNameWriter(), source, table, new AliasStore(), () => { });
@@ -180,7 +239,8 @@ public sealed class DevicePageViewModelTests
 
     private sealed class FakeSnapshotSource(Snapshot snapshot) : IAudioTopologySnapshotSource
     {
-        public Snapshot Capture() => snapshot;
+        public Snapshot Snapshot { get; } = snapshot;
+        public Snapshot Capture() => Snapshot;
     }
 
     private sealed class FakeWriter : IDefaultEndpointWriter

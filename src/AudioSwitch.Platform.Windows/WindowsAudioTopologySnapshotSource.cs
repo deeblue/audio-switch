@@ -93,7 +93,7 @@ public sealed class WindowsAudioTopologySnapshotSource : IAudioTopologySnapshotS
     {
         try
         {
-            foreach (var node in _deviceTree.GetAncestors(instanceId))
+            foreach (var node in _deviceTree.GetAncestors(instanceId, seen))
             {
                 if (seen.Add(node.InstanceId)) snapshot.Devnodes.Add(node);
             }

@@ -1,5 +1,5 @@
 import unittest
-from probes.audio_topology.classify import classify_endpoint, build_tree
+from probes.audio_topology.classify import classify_endpoint, build_tree, usb_interface_id
 from probes.audio_topology.calibration import PortMap
 from probes.audio_topology.models import EndpointRecord, DeviceNodeRecord, SnapshotRecord, MachineRecord, JackRecord
 
@@ -39,6 +39,15 @@ class ClassifyTests(unittest.TestCase):
         result = classify_endpoint(endpoint, [node], [], None, [], pm)
         self.assertEqual(result.category, "A")
         self.assertEqual(result.interface_id, "usb1")
+
+    def test_usb_paths_use_the_longest_prefix_and_ties_stay_unplaced(self):
+        node = DeviceNodeRecord("USB\\VID_1", location_paths=["PCIROOT#USB(2)#USB(1)"])
+        nested = PortMap({"interfaces": [{"id": "outer", "usb_location_path_prefixes": ["PCIROOT#USB(2)"]},
+                                         {"id": "inner", "usb_location_path_prefixes": ["PCIROOT#USB(2)#USB(1)"]}]})
+        tied = PortMap({"interfaces": [{"id": "a", "usb_location_path_prefixes": ["PCIROOT#USB(2)"]},
+                                       {"id": "b", "usb_location_path_prefixes": ["PCIROOT#USB(2)"]}]})
+        self.assertEqual(usb_interface_id([node], nested), "inner")
+        self.assertIsNone(usb_interface_id([node], tied))
 
     def test_multiple_hs_and_ss_prefixes_map_to_one_physical_interface(self):
         endpoint = EndpointRecord("ep", "render", "active")

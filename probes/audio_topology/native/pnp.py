@@ -201,7 +201,9 @@ class CfgMgrApi:
         return props
 
 
-def walk_ancestors(instance_id: str, api: CfgMgrApi | None = None) -> tuple[list[DeviceNodeRecord], list[dict[str, str]]]:
+def walk_ancestors(instance_id: str, api: CfgMgrApi | None = None,
+                   known: set[str] | None = None) -> tuple[list[DeviceNodeRecord], list[dict[str, str]]]:
+    """The device and its ancestors up to the root, or up to (not including) the first one in ``known``."""
     errors: list[dict[str, str]] = []
     nodes: list[DeviceNodeRecord] = []
     try:
@@ -214,6 +216,9 @@ def walk_ancestors(instance_id: str, api: CfgMgrApi | None = None) -> tuple[list
         seen.add(current)
         try:
             node_id = api.device_id(current)
+            # Reading a node takes a dozen property calls; ancestors shared with devices already read are skipped.
+            if known is not None and node_id in known:
+                break
             props = api.properties(current)
             if props.get("errors"):
                 errors.extend({"scope": node_id, "property": key, "error": message} for key, message in props["errors"].items())

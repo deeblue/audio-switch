@@ -20,7 +20,7 @@ public sealed class WindowsDeviceTreeSource : IDeviceTreeSource
     private static readonly DevPropKey PhysicalDeviceLocationKey = new(new Guid("540B947E-8B40-45BC-A8A2-6A0B894CBDA2"), 9);
     private static readonly DevPropKey DeviceInterfaceInstanceIdKey = new(new Guid("78C34FC8-104A-4ACA-9EA4-524D52996E57"), 256);
 
-    public IReadOnlyList<DeviceNode> GetAncestors(string instanceId)
+    public IReadOnlyList<DeviceNode> GetAncestors(string instanceId, IReadOnlySet<string>? known = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(instanceId);
         var result = NativeMethods.CM_Locate_DevNodeW(out var current, instanceId, 0);
@@ -42,6 +42,8 @@ public sealed class WindowsDeviceTreeSource : IDeviceTreeSource
                 break;
             }
             var currentId = GetDeviceId(current);
+            // Reading a node takes a dozen property calls; ancestors shared with devices already read are skipped.
+            if (known?.Contains(currentId) == true) break;
             var node = ReadNode(currentId, current);
             nodes.Add(node);
             result = NativeMethods.CM_Get_Parent(out var parent, current, 0);

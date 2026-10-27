@@ -170,6 +170,9 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
                 ? Flatten(Roots).FirstOrDefault(node => string.Equals(node.DockKey, selectedDockKey, StringComparison.OrdinalIgnoreCase))
                 : Flatten(Roots).FirstOrDefault(node => node.EndpointId is null && node.Name == selectedName);
         SelectedNode = reselected;
+        // The selected device is gone, for example unplugged: release what was opened for it, such as the level-meter stream.
+        // The tree ignores the empty selection a rebuild produces, so this cannot be left to the view.
+        if (reselected is null && selectedEndpointId is not null) _ = Settings.ClearSelectionAsync();
         // Keep a name the user is typing when the tree refreshes after a device change.
         if (reselected?.DockKey is null || !string.Equals(reselected.DockKey, selectedDockKey, StringComparison.OrdinalIgnoreCase))
             DockNameText = reselected?.DockKey is not null ? reselected.Name : string.Empty;
@@ -264,20 +267,36 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     {
         if (SelectedNode?.DockKey is not { } key) return;
         var name = DockNameText.Trim();
+        var hadName = _dockNames.TryGetValue(key, out var previous);
         if (name.Length == 0 || name == Loc.T(TopologyBuilder.DefaultDockName)) _dockNames.Remove(key);
         else _dockNames[key] = name;
-        if (!TrySaveDockNames()) return;
+        if (!TrySaveDockNames())
+        {
+            RestoreDockNameEntry(key, hadName ? previous : null);
+            return;
+        }
         Refresh();
         ShowMessage(Loc.T("名稱已套用；同型號的 Dock／Hub 都會顯示這個名稱。"), isError: false);
     }
 
     public void RestoreDockName()
     {
-        if (SelectedNode?.DockKey is not { } key || !_dockNames.Remove(key)) return;
-        if (!TrySaveDockNames()) return;
+        if (SelectedNode?.DockKey is not { } key || !_dockNames.Remove(key, out var previous)) return;
+        if (!TrySaveDockNames())
+        {
+            RestoreDockNameEntry(key, previous);
+            return;
+        }
         DockNameText = Loc.T(TopologyBuilder.DefaultDockName);
         Refresh();
         ShowMessage(Loc.F("已改回「{0}」。", Loc.T(TopologyBuilder.DefaultDockName)), isError: false);
+    }
+
+    // Puts back the name that was there before an edit that could not be saved, so memory matches the file.
+    private void RestoreDockNameEntry(string key, string? previous)
+    {
+        if (previous is null) _dockNames.Remove(key);
+        else _dockNames[key] = previous;
     }
 
     private bool TrySaveDockNames()

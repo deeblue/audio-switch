@@ -145,11 +145,13 @@ public sealed class PortTable
         {
             // Screens on a dock arrive with its USB devices. Screens on a USB display adapter are placed through
             // the USB tree; the others run on the host GPU and are recorded as display connectors of this port.
-            var dockConnectors = addedPaths
-                .Where(path => path.AdapterInstanceId?.StartsWith("USB\\", StringComparison.OrdinalIgnoreCase) != true)
-                .Select(StableDisplayConnector)
-                .OfType<DisplayConnector>()
-                .ToArray();
+            var dockConnectors = CarriesScreens(port.Type)
+                ? addedPaths
+                    .Where(path => path.AdapterInstanceId?.StartsWith("USB\\", StringComparison.OrdinalIgnoreCase) != true)
+                    .Select(StableDisplayConnector)
+                    .OfType<DisplayConnector>()
+                    .ToArray()
+                : [];
             foreach (var connector in dockConnectors)
                 AddDisplayConnector(port, connector);
             var rows = new List<CalibratedAttachment>();
@@ -171,8 +173,8 @@ public sealed class PortTable
             return new CalibrationResult("calibrated", interfaceId, transports, rows.SelectMany(row => row.LocationPaths).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(), rows, [], dockConnectors);
         }
 
-        // An HDMI connector carries one screen; USB-C and DisplayPort can carry several through a dock or MST hub.
-        if (diff.Count == 0 && (addedPaths.Length == 1 || (addedPaths.Length > 1 && port.Type != "hdmi")))
+        // An HDMI connector carries one screen; USB-C and DisplayPort can carry several through a dock or MST hub; USB-A none.
+        if (diff.Count == 0 && CarriesScreens(port.Type) && (addedPaths.Length == 1 || (addedPaths.Length > 1 && port.Type != "hdmi")))
         {
             var connectors = addedPaths.Select(StableDisplayConnector).ToArray();
             if (connectors.Any(connector => connector is null))
@@ -185,13 +187,16 @@ public sealed class PortTable
             return new CalibrationResult("calibrated", interfaceId, [], [], [], addedPaths.Select(path => path.PathId).ToArray(), connectors!);
         }
 
-        if (diff.Count == 0 && addedPaths.Length > 0)
+        if (diff.Count == 0 && addedPaths.Length > 0 && CarriesScreens(port.Type))
         {
             return new CalibrationResult("ambiguous", null, [], [], [], addedPaths.Select(path => path.PathId).ToArray());
         }
 
         return new CalibrationResult(diff.Count > 0 ? "ambiguous" : "no_candidate", null, [], [], [], diff.Select(node => node.InstanceId).ToArray());
     }
+
+    // Types that can carry a screen; an unknown type keeps working as before.
+    private static bool CarriesScreens(string type) => type is not ("usb-a" or "audio-jack");
 
     private static DisplayConnector? StableDisplayConnector(DisplayPath path)
     {

@@ -86,7 +86,7 @@ def export_snapshot(name: str, ports: dict) -> dict:
         group_key = usb_node.instance_id if usb_node else None
         interface_id = device_locations.get(group_key or "", (None, None))[0]
         if interface_id is None:
-            interface_id = display_interface_id(path, port_map)
+            interface_id = display_interface_id(path, port_map, snapshot.display_paths)
         display_groups.append({
             "path_id": path.path_id,
             "interface_id": interface_id,

@@ -14,17 +14,21 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
   <Target Name="AddBuildInformation" BeforeTargets="GetAssemblyAttributes">
-    <Exec Command="git rev-parse --short HEAD" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
+    <!-- Without git or outside a repository the commands fail; their error text must not become the version text. -->
+    <Exec Command="git rev-parse --short HEAD 2&gt;nul" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
           IgnoreExitCode="true" StandardOutputImportance="low" StandardErrorImportance="low">
       <Output TaskParameter="ConsoleOutput" PropertyName="BuildCommit" />
+      <Output TaskParameter="ExitCode" PropertyName="BuildCommitExitCode" />
     </Exec>
-    <Exec Command="git status --porcelain" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
+    <Exec Command="git status --porcelain 2&gt;nul" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
           IgnoreExitCode="true" StandardOutputImportance="low" StandardErrorImportance="low">
       <Output TaskParameter="ConsoleOutput" PropertyName="BuildWorkingTreeChanges" />
+      <Output TaskParameter="ExitCode" PropertyName="BuildStatusExitCode" />
     </Exec>
     <ItemGroup>
-      <AssemblyMetadata Include="BuildCommit" Value="$(BuildCommit)" />
-      <AssemblyMetadata Include="BuildHasLocalChanges" Value="true" Condition="'$(BuildWorkingTreeChanges)' != ''" />
+      <AssemblyMetadata Include="BuildCommit" Value="$(BuildCommit)" Condition="'$(BuildCommitExitCode)' == '0'" />
+      <AssemblyMetadata Include="BuildHasLocalChanges" Value="true"
+                        Condition="'$(BuildStatusExitCode)' == '0' and '$(BuildWorkingTreeChanges)' != ''" />
       <AssemblyMetadata Include="BuildTime" Value="$([System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm'))" />
     </ItemGroup>
   </Target>

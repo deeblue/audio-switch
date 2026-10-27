@@ -163,7 +163,7 @@ public static class TopologyBuilder
                 }
             }
 
-            interfaceId ??= DisplayInterfaceId(path, portTable);
+            interfaceId ??= DisplayInterfaceId(path, snapshot.DisplayPaths, portTable);
             // A USB display adapter without audio, for example on a dock, is placed through its own USB path.
             if (interfaceId is null && usb is not null) interfaceId = UsbInterfaceId([usb], portTable);
             displayGroups.Add(new TopologyDisplayGroup(path.PathId, interfaceId, groupKey));
@@ -255,7 +255,8 @@ public static class TopologyBuilder
             var y = JsonValue.Integer(path.SourcePosition, "y") ?? 0;
             var primaryX = JsonValue.Integer(primary.SourcePosition, "x") ?? 0;
             var primaryY = JsonValue.Integer(primary.SourcePosition, "y") ?? 0;
-            details.Add(Loc.T(x < primaryX ? "左" : x > primaryX ? "右" : y < primaryY ? "上" : "下"));
+            // A screen at the primary's own position (for example a duplicate) has no direction.
+            if (x != primaryX || y != primaryY) details.Add(Loc.T(x < primaryX ? "左" : x > primaryX ? "右" : y < primaryY ? "上" : "下"));
         }
         var name = path.TargetName ?? Loc.T("顯示器");
         return details.Count == 0 ? name : Loc.F("{0}（{1}）", name, string.Join(Loc.T("，"), details));
@@ -293,7 +294,7 @@ public static class TopologyBuilder
         var sinkPath = jacks.Select(jack => MatchSink(jack.Sink, displayPaths)).FirstOrDefault(path => path is not null);
         if (sinkPath is not null)
         {
-            return new Classification("B", DisplayInterfaceId(sinkPath, ports), sinkPath.PathId);
+            return new Classification("B", DisplayInterfaceId(sinkPath, displayPaths, ports), sinkPath.PathId);
         }
 
         if (jacks.Any(jack => jack.Jack.Count > 0) || upperIds.Any(id => id.StartsWith("INTELAUDIO\\", StringComparison.Ordinal) || id.StartsWith("HDAUDIO\\", StringComparison.Ordinal)))
@@ -331,6 +332,9 @@ public static class TopologyBuilder
         }
         return category == "A" ? UnconfiguredUsbRootId : "未辨識";
     }
+
+    /// <summary>The EPxJackConnection a driver reports for a jack, if any: 0 a jack, 1 integrated, 2 both, 3 unknown.</summary>
+    public static int? PortConnection(JackRecord jack) => JsonValue.Integer(jack.Jack, "port_connection");
 
     public static bool IsPhysicalJack(JackRecord jack)
     {
@@ -379,27 +383,38 @@ public static class TopologyBuilder
         return matches.Length == 1 ? matches[0] : null;
     }
 
-    private static string? DisplayInterfaceId(DisplayPath path, PortTable ports)
+    /// <summary>The port a screen is on: a recorded display connector, or else the laptop's single HDMI port.</summary>
+    private static string? DisplayInterfaceId(DisplayPath path, IReadOnlyList<DisplayPath> allPaths, PortTable ports)
+    {
+        var matches = CalibratedDisplayPorts(path, ports);
+        if (matches.Length > 0) return matches.Length == 1 ? matches[0] : null;
+
+        // The laptop's own HDMI connector reports HDMI on the computer's GPU. Screens through a dock or a USB-C adapter report
+        // DisplayPort, and USB display devices also report HDMI but sit on a USB adapter, so they are left out. One connector
+        // carries one screen: if several uncalibrated screens qualify, the evidence does not say which one it is.
+        var hdmiPorts = ports.IsEnabled ? ports.Interfaces.Where(port => port.Type == "hdmi").Select(port => port.Id).ToArray() : [];
+        return hdmiPorts.Length == 1 && IsHdmiOnHostGpu(path) &&
+            allPaths.Count(other => IsHdmiOnHostGpu(other) && CalibratedDisplayPorts(other, ports).Length == 0) == 1
+                ? hdmiPorts[0]
+                : null;
+    }
+
+    private static string[] CalibratedDisplayPorts(DisplayPath path, PortTable ports)
     {
         var target = JsonValue.Integer(path.Properties, "target_id");
-        var matches = (ports.IsEnabled ? ports.Interfaces : []).Where(port => port.DisplayConnectors.Any(connector =>
+        return (ports.IsEnabled ? ports.Interfaces : []).Where(port => port.DisplayConnectors.Any(connector =>
             !string.IsNullOrWhiteSpace(path.AdapterName) && !string.IsNullOrWhiteSpace(connector.AdapterDevicePath) &&
             string.Equals(path.AdapterName, connector.AdapterDevicePath, StringComparison.OrdinalIgnoreCase) &&
             target.HasValue && connector.TargetId == target &&
             path.ConnectorInstance.HasValue && connector.ConnectorInstance == path.ConnectorInstance &&
             path.OutputTechnology.HasValue && connector.OutputTechnology == path.OutputTechnology)).Select(port => port.Id).Distinct(StringComparer.Ordinal).ToArray();
-        if (matches.Length > 0) return matches.Length == 1 ? matches[0] : null;
-
-        // The laptop's own HDMI connector reports HDMI on the computer's GPU. Screens through a dock or a USB-C adapter report
-        // DisplayPort, and USB display devices also report HDMI but sit on a USB adapter, so they are left out.
-        var hdmiPorts = ports.IsEnabled ? ports.Interfaces.Where(port => port.Type == "hdmi").Select(port => port.Id).ToArray() : [];
-        return hdmiPorts.Length == 1 && path.OutputTechnology == HdmiOutputTechnology && IsOnHostGpu(path) ? hdmiPorts[0] : null;
     }
 
     /// <summary>DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI.</summary>
     public const long HdmiOutputTechnology = 5;
 
-    private static bool IsOnHostGpu(DisplayPath path) => path.AdapterInstanceId?.StartsWith("PCI\\", StringComparison.OrdinalIgnoreCase) == true;
+    private static bool IsHdmiOnHostGpu(DisplayPath path) =>
+        path.OutputTechnology == HdmiOutputTechnology && path.AdapterInstanceId?.StartsWith("PCI\\", StringComparison.OrdinalIgnoreCase) == true;
 
     /// <summary>True when the only HDMI port on the drawing is matched to screens automatically, without calibration.</summary>
     public static bool IsAutomaticHdmiPort(PortTable ports, PortDefinition port) =>

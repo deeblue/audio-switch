@@ -14,13 +14,22 @@ class ClassificationRecord:
     evidence: list[str] = field(default_factory=list)
     unresolved: list[str] = field(default_factory=list)
 
+def _port_for_location_path(path: str, interfaces: list[dict[str, Any]]) -> str | None:
+    # The longest calibrated prefix wins; two ports with an equally long prefix leave the path unmatched.
+    matches = [(len(prefix), port["id"]) for port in interfaces for prefix in port.get("usb_location_path_prefixes", [])
+               if path.casefold().startswith(prefix.casefold())]
+    if not matches:
+        return None
+    longest = max(length for length, _ in matches)
+    ports = {port_id for length, port_id in matches if length == longest}
+    return next(iter(ports)) if len(ports) == 1 else None
+
 def usb_interface_id(usb_nodes: list[DeviceNodeRecord], port_map: PortMap) -> str | None:
-    for port in ([] if port_map.warning else port_map.data.get("interfaces", [])):
-        prefixes = port.get("usb_location_path_prefixes", [])
-        for node in usb_nodes:
-            if any(path.casefold().startswith(prefix.casefold()) for path in node.location_paths for prefix in prefixes):
-                return port["id"]
-    return None
+    """The single port the nodes' location paths lead to, as in the app; several ports mean the device is not placed."""
+    interfaces = [] if port_map.warning else port_map.data.get("interfaces", [])
+    ports = {port_id for node in usb_nodes for path in node.location_paths
+             if (port_id := _port_for_location_path(path, interfaces)) is not None}
+    return next(iter(ports)) if len(ports) == 1 else None
 
 def classify_endpoint(endpoint: EndpointRecord, nodes: list[DeviceNodeRecord], jacks: list[JackRecord], sink_match: dict[str, Any] | None, paths: list[DisplayPathRecord], port_map: PortMap) -> ClassificationRecord:
     # The endpoint's own software devnode is a transport wrapper, not its source class.
@@ -86,7 +95,7 @@ def build_tree(snapshot: SnapshotRecord, port_map: PortMap, include_empty: bool 
         sink_match = match_sink_to_display(sink_record, snapshot.display_paths) if sink_record else None
         if sink_match and sink_match.get("matched"):
             path = next((p for p in snapshot.display_paths if p.path_id in sink_match.get("candidate_ids", [])), None)
-            sink_match["interface_id"] = display_interface_id(path, port_map) if path else None
+            sink_match["interface_id"] = display_interface_id(path, port_map, snapshot.display_paths) if path else None
         match = classify_endpoint(endpoint, chain, endpoint_jacks, sink_match, snapshot.display_paths, port_map)
         source = "校準" if match.interface_id else ("Windows" if match.evidence else "未知")
         if match.category == "C" and any(is_physical_jack(j.jack) for j in endpoint_jacks):
@@ -145,7 +154,7 @@ def build_tree(snapshot: SnapshotRecord, port_map: PortMap, include_empty: bool 
             chain = all_chains[endpoint.endpoint_id]
             if usb_node and any(n.instance_id.casefold() == usb_node.instance_id.casefold() for n in chain):
                 related.append(endpoint)
-        calibrated_id = display_interface_id(path, port_map)
+        calibrated_id = display_interface_id(path, port_map, snapshot.display_paths)
         usb_root_id = next((endpoint_roots[e.endpoint_id] for e in related), None)
         interface_id = usb_root_id or calibrated_id
         if not interface_id and usb_node:

@@ -142,6 +142,24 @@ class CalibrationTests(unittest.TestCase):
         self.assertEqual([c["target_id"] for c in connectors], [8261, 12613])
         self.assertEqual(result["display_connectors"], connectors)
 
+    def test_two_uncalibrated_hdmi_screens_leave_the_hdmi_port_undecided(self):
+        from probes.audio_topology.calibration import display_interface_id
+        one = PortMap({"interfaces": [{"id": "hdmi", "name": "HDMI", "type": "hdmi"}]})
+        gpu = r"PCI\VEN_8086&DEV_7D51\GPU"
+        paths = [DisplayPathRecord("a", output_technology=5, adapter_instance_id=gpu), DisplayPathRecord("b", output_technology=5, adapter_instance_id=gpu)]
+        self.assertIsNone(display_interface_id(paths[0], one, paths))
+
+    def test_usb_a_ports_never_record_screens(self):
+        pm = PortMap({"interfaces": [{"id": "usb-a", "name": "USB-A", "type": "usb-a"}]})
+        hub = DeviceNodeRecord(r"USB\VID_1234&PID_5678\A", parent_id=r"USB\ROOT_HUB30\1", location_paths=["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)"])
+        with_usb = calibrate_port_map("usb-a", SnapshotRecord(1, "before", MachineRecord()),
+                                      SnapshotRecord(1, "after", MachineRecord(), devnodes=[hub], display_paths=[_gpu_path("screen", 4145, 0)]), pm)
+        screen_only = calibrate_port_map("usb-a", SnapshotRecord(1, "before", MachineRecord()),
+                                         SnapshotRecord(1, "after", MachineRecord(), display_paths=[_gpu_path("screen", 4145, 0)]), pm)
+        self.assertEqual(with_usb["status"], "calibrated")
+        self.assertEqual(screen_only["status"], "no_candidate")
+        self.assertEqual(pm.data["interfaces"][0].get("display_connectors", []), [])
+
     def test_only_hdmi_on_the_computers_gpu_matches_the_single_hdmi_port(self):
         from probes.audio_topology.calibration import display_interface_id
         one = PortMap({"interfaces": [{"id": "hdmi", "name": "HDMI", "type": "hdmi"}]})

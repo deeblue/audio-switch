@@ -147,6 +147,49 @@ public sealed class DockCalibrationTests
     }
 
     [Fact]
+    public void TwoUncalibratedHdmiScreensOnTheGpuLeaveTheHdmiPortUndecided()
+    {
+        var ports = PortTable.Read("""{"schema_version":1,"interfaces":[{"id":"hdmi","name":"HDMI","type":"hdmi"}]}""");
+        DisplayPath Hdmi(string id) => new() { PathId = id, AdapterInstanceId = @"PCI\VEN_8086&DEV_7D51\GPU", OutputTechnology = 5 };
+
+        var tree = TopologyBuilder.Build(new Snapshot { DisplayPaths = [Hdmi("a"), Hdmi("b")] }, ports);
+
+        Assert.All(tree.DisplayGroups, group => Assert.Null(group.InterfaceId));
+    }
+
+    [Fact]
+    public void UsbAPortsNeverRecordScreens()
+    {
+        var ports = PortTable.Read("""{"schema_version":1,"interfaces":[{"id":"usb-a","name":"USB-A","type":"usb-a"}]}""");
+        var hub = new DeviceNode { InstanceId = @"USB\VID_1234&PID_5678\A", ParentId = @"USB\ROOT_HUB30\1", LocationPaths = ["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(6)"] };
+
+        var withUsb = AttachmentDetector.Calibrate("usb-a", new Snapshot(), new Snapshot { Devnodes = [hub], DisplayPaths = [GpuPath("screen", 4145, 0)] }, ports);
+        var screenOnly = AttachmentDetector.Calibrate("usb-a", new Snapshot(), new Snapshot { DisplayPaths = [GpuPath("screen", 4145, 0)] }, ports);
+
+        Assert.Equal("calibrated", withUsb.Status);
+        Assert.Equal("no_candidate", screenOnly.Status);
+        Assert.Empty(ports.FindInterface("usb-a")!.DisplayConnectors);
+    }
+
+    [Fact]
+    public void ScreenAtThePrimaryPositionHasNoDirection()
+    {
+        var primary = new DisplayPath { PathId = "primary", SourceName = @"\\.\DISPLAY1", Primary = true, SourcePosition = Position(0, 0) };
+        var copy = GpuPath("copy", 8261, 0);
+        copy.TargetName = "Copy";
+        copy.SourceName = @"\\.\DISPLAY2";
+        copy.SourcePosition = Position(0, 0);
+        var ports = PortTable.Read($$"""
+            {"schema_version":1,"interfaces":[{"id":"usb-c-rear","name":"USB-C","type":"usb-c",
+             "display_connectors":[{"adapter_device_path":"{{GpuAdapter.Replace(@"\", @"\\", StringComparison.Ordinal)}}","target_id":8261,"connector_instance":0,"output_technology":10}]}]}
+            """);
+
+        var tree = TopologyBuilder.Build(new Snapshot { DisplayPaths = [primary, copy] }, ports);
+
+        Assert.Equal("Copy（螢幕 2）", Assert.Single(Assert.Single(tree.Roots).Children).Name);
+    }
+
+    [Fact]
     public void ScreensAreNumberedFromLeftToRightThenTopToBottom()
     {
         var numbers = ScreenNumbering.Number([(@"\\.\DISPLAY3", 1920, 0), (@"\\.\DISPLAY1", 0, 0), (@"\\.\DISPLAY69", 1920, -440), (@"\\.\DISPLAY2", -2560, 0)]);

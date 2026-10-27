@@ -51,7 +51,7 @@ def collect_snapshot():
             snapshot.errors.append({"scope": endpoint.endpoint_id, "property": "topology_instance_id", "error": "多個 adapter instance ID 不一致"})
         endpoint.devnode_id, endpoint.resolution_method = (topology_id, "device_topology") if topology_id else (mmdevapi_id, mmdevapi_method)
         if endpoint.devnode_id:
-            nodes, errs = walk_ancestors(endpoint.devnode_id, pnp_api)
+            nodes, errs = walk_ancestors(endpoint.devnode_id, pnp_api, seen)
             snapshot.devnodes.extend(n for n in nodes if n.instance_id not in seen)
             seen.update(n.instance_id for n in nodes)
             snapshot.errors.extend(errs)
@@ -64,7 +64,7 @@ def collect_snapshot():
             try:
                 path.adapter_instance_id = pnp_api.device_interface_instance_id(path.adapter_name)
                 if path.adapter_instance_id:
-                    nodes, node_errors = walk_ancestors(path.adapter_instance_id, pnp_api)
+                    nodes, node_errors = walk_ancestors(path.adapter_instance_id, pnp_api, seen)
                     snapshot.devnodes.extend(n for n in nodes if n.instance_id not in seen)
                     seen.update(n.instance_id for n in nodes)
                     snapshot.errors.extend(node_errors)
@@ -79,7 +79,7 @@ def collect_snapshot():
         for instance_id in usb_ids:
             if instance_id in seen:
                 continue
-            nodes, node_errors = walk_ancestors(instance_id, pnp_api)
+            nodes, node_errors = walk_ancestors(instance_id, pnp_api, seen)
             snapshot.devnodes.extend(n for n in nodes if n.instance_id not in seen)
             seen.update(n.instance_id for n in nodes)
             # A device unplugged after it was listed cannot be located; that is not an error.

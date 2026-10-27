@@ -37,19 +37,31 @@ def display_connector_matches(path, calibrated: dict[str, Any]) -> bool:
 HDMI_OUTPUT_TECHNOLOGY = 5
 
 
-def display_interface_id(path, port_map: PortMap) -> str | None:
+def _calibrated_display_ports(path, interfaces) -> list[str]:
+    return [port["id"] for port in interfaces
+            if any(display_connector_matches(path, item) for item in port.get("display_connectors", []))]
+
+
+def _is_hdmi_on_host_gpu(path) -> bool:
+    on_host_gpu = (getattr(path, "adapter_instance_id", None) or "").upper().startswith("PCI\\")
+    return getattr(path, "output_technology", None) == HDMI_OUTPUT_TECHNOLOGY and on_host_gpu
+
+
+def display_interface_id(path, port_map: PortMap, all_paths=None) -> str | None:
+    """The port a screen is on: a recorded display connector, or else the laptop's single HDMI port."""
     if port_map.warning:
         return None
     interfaces = port_map.data.get("interfaces", [])
-    matches = [port["id"] for port in interfaces
-               if any(display_connector_matches(path, item) for item in port.get("display_connectors", []))]
+    matches = _calibrated_display_ports(path, interfaces)
     if matches:
         return matches[0] if len(matches) == 1 else None
     # The laptop's own HDMI connector reports HDMI on the computer's GPU. Screens through a dock or a USB-C adapter report
-    # DisplayPort, and USB display devices also report HDMI but sit on a USB adapter, so they are left out.
+    # DisplayPort, and USB display devices also report HDMI but sit on a USB adapter, so they are left out. One connector
+    # carries one screen: if several uncalibrated screens qualify, the evidence does not say which one it is.
     hdmi_ports = [port["id"] for port in interfaces if port.get("type") == "hdmi"]
-    on_host_gpu = (getattr(path, "adapter_instance_id", None) or "").upper().startswith("PCI\\")
-    if len(hdmi_ports) == 1 and getattr(path, "output_technology", None) == HDMI_OUTPUT_TECHNOLOGY and on_host_gpu:
+    candidates = [other for other in (all_paths if all_paths is not None else [path])
+                  if _is_hdmi_on_host_gpu(other) and not _calibrated_display_ports(other, interfaces)]
+    if len(hdmi_ports) == 1 and _is_hdmi_on_host_gpu(path) and len(candidates) == 1:
         return hdmi_ports[0]
     return None
 
@@ -118,7 +130,7 @@ def calibrate_port_map(interface_id: str, before: SnapshotRecord, after: Snapsho
         # the USB tree; the others run on the host GPU and are recorded as display connectors of this port.
         dock_connectors = [connector for connector in (stable_display_connector(row) for row in diff.added_display_paths
                                                        if not str(row.get("adapter_instance_id") or "").upper().startswith("USB\\"))
-                           if all(connector.get(field) is not None for field in _STABLE_DISPLAY_FIELDS)]
+                           if all(connector.get(field) is not None for field in _STABLE_DISPLAY_FIELDS)] if _carries_screens(ports[interface_id]) else []
         for connector in dock_connectors:
             _add_display_connector(ports[interface_id], connector)
         current = ports[interface_id].setdefault("usb_location_path_prefixes", [])
@@ -134,16 +146,22 @@ def calibrate_port_map(interface_id: str, before: SnapshotRecord, after: Snapsho
                 "location_paths": sorted({p for a in attachments for p in a["location_paths"]}), "attachments": attachments,
                 "display_connectors": dock_connectors}
     added = diff.added_display_paths
-    # An HDMI connector carries one screen; USB-C and DisplayPort can carry several through a dock or MST hub.
-    if not candidates and (len(added) == 1 or (len(added) > 1 and ports[interface_id].get("type") != "hdmi")):
+    # An HDMI connector carries one screen; USB-C and DisplayPort can carry several through a dock or MST hub; USB-A none.
+    if not candidates and _carries_screens(ports[interface_id]) and (len(added) == 1 or (len(added) > 1 and ports[interface_id].get("type") != "hdmi")):
         connectors = [stable_display_connector(row) for row in added]
         if any(connector.get(field) is None for connector in connectors for field in _STABLE_DISPLAY_FIELDS):
             return {"status": "no_candidate", "reason": "顯示路徑缺少穩定校準欄位", "display_connectors": connectors}
         for connector in connectors:
             _add_display_connector(ports[interface_id], connector)
         return {"status": "calibrated", "interface_id": interface_id, "display_connectors": connectors}
-    return {"status": "ambiguous" if candidates or diff.added_display_paths else "no_candidate",
+    # A new screen is no evidence for a port that cannot carry one.
+    screens = diff.added_display_paths if _carries_screens(ports[interface_id]) else []
+    return {"status": "ambiguous" if candidates or screens else "no_candidate",
             "candidate_ids": [x["instance_id"] for x in candidates] + [x["path_id"] for x in diff.added_display_paths]}
+
+def _carries_screens(port: dict[str, Any]) -> bool:
+    # Types that can carry a screen; an unknown type keeps working as before.
+    return port.get("type") not in ("usb-a", "audio-jack")
 
 def _add_display_connector(port: dict[str, Any], connector: dict[str, Any]) -> None:
     current = port.setdefault("display_connectors", [])

@@ -15,6 +15,11 @@ class FakeApi:
 
 
 class PnpTests(unittest.TestCase):
+    def test_ancestor_walk_stops_at_a_device_already_read(self):
+        nodes, errors = walk_ancestors("child", FakeApi({"child": "hub", "hub": "root", "root": None}), known={"hub"})
+        self.assertEqual([n.instance_id for n in nodes], ["child"])
+        self.assertEqual(errors, [])
+
     def test_endpoint_resolution_keeps_both_strategies_explicit(self):
         self.assertEqual(resolve_endpoint_devnode("endpoint", "PCI\\A"), ("PCI\\A", "device_topology"))
         self.assertEqual(resolve_endpoint_devnode(r"\\?\SWD#MMDEVAPI#node#tail"), (r"SWD\MMDEVAPI\node", "mmdevapi_devnode"))
