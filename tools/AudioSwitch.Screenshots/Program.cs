@@ -29,6 +29,8 @@ static class ProgramEntry
         var outputRoot = Path.GetFullPath(args.FirstOrDefault(argument => !argument.StartsWith("--", StringComparison.Ordinal))
             ?? Path.Combine(repositoryRoot, "artifacts", "screenshots", "current"));
         var live = args.Contains("--live", StringComparer.OrdinalIgnoreCase);
+        // Fixtures stay in Chinese (they stand for what Windows reports); only the interface text changes.
+        Loc.SetLanguage(args.Contains("--english", StringComparer.OrdinalIgnoreCase) ? AppLanguage.English : AppLanguage.TraditionalChinese);
         var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         string? liveDirectory = null;
         try
@@ -169,6 +171,8 @@ static class ProgramEntry
             SelectNode(window, node => node.Kind == DeviceNodeKind.Playback), dataDirectory);
         shot.Settings("settings/devices/first-recording", fixture, 0, window =>
             SelectNode(window, node => node.Kind == DeviceNodeKind.Recording), dataDirectory);
+        shot.Settings("settings/devices/built-in-speaker", fixture, 0, window =>
+            SelectNode(window, node => node.Kind == DeviceNodeKind.Playback && node.GroupName == Loc.T("內建")), dataDirectory);
         if (TopologyBuilder.Build(fixture.Capture(), fixture.CreatePorts()).Roots.SelectMany(root => root.Children).Any(node => node.Kind == "dock-hub"))
             shot.Settings("settings/devices/dock-selected", fixture, 0, window =>
                 SelectNode(window, node => node.Kind == DeviceNodeKind.DockHub), dataDirectory);
@@ -270,7 +274,7 @@ sealed class Shot(Application app, string root, string theme, string scaleName, 
         model.Refresh();
         var window = new QuickSwitchPanelWindow(model, _ => { }, () => { });
         window.FitToContent();
-        CaptureTooltip(window, scenario, w => FindAll<Button>(w).First(button => Equals(button.ToolTip, "試音")));
+        CaptureTooltip(window, scenario, w => FindAll<Button>(w).First(button => Equals(button.ToolTip, Loc.T("試音"))));
     }
 
     public void PortTooltip(string scenario, IScreenshotFixture fixture, string portId)

@@ -1,4 +1,5 @@
 using System.Reflection;
+using AudioSwitch.Core;
 
 namespace AudioSwitch.App;
 
@@ -8,18 +9,18 @@ public static class AppVersion
     private static readonly Assembly Assembly = typeof(AppVersion).Assembly;
 
     public static string Version { get; } =
-        Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "未知";
+        Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
 
-    public static string BuildText { get; } = FormatBuild(Metadata("BuildCommit"), Metadata("BuildHasLocalChanges") == "true", Metadata("BuildTime"));
+    public static string BuildText => FormatBuild(Metadata("BuildCommit"), Metadata("BuildHasLocalChanges") == "true", Metadata("BuildTime"));
 
-    public static string DisplayText { get; } = string.IsNullOrEmpty(BuildText) ? $"版本 {Version}" : $"版本 {Version}（{BuildText}）";
+    public static string DisplayText => string.IsNullOrEmpty(BuildText) ? Loc.F("版本 {0}", Version) : Loc.F("版本 {0}（{1}）", Version, BuildText);
 
     internal static string FormatBuild(string? commit, bool hasLocalChanges, string? buildTime)
     {
         var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(commit)) parts.Add(hasLocalChanges ? $"{commit} 含未提交修改" : commit);
-        if (!string.IsNullOrWhiteSpace(buildTime)) parts.Add($"建置於 {buildTime}");
-        return string.Join("，", parts);
+        if (!string.IsNullOrWhiteSpace(commit)) parts.Add(hasLocalChanges ? Loc.F("{0} 含未提交修改", commit) : commit);
+        if (!string.IsNullOrWhiteSpace(buildTime)) parts.Add(Loc.F("建置於 {0}", buildTime));
+        return string.Join(Loc.T("，"), parts);
     }
 
     private static string? Metadata(string key) =>

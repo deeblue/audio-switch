@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
+using AudioSwitch.Core;
 using AudioSwitch.Presentation;
 
 namespace AudioSwitch.App.Views;
@@ -55,12 +56,12 @@ public static class Glyphs
         DeviceNodeKind.Display => Monitor,
         DeviceNodeKind.DockHub => Hub,
         DeviceNodeKind.Device => UsbDevice,
-        DeviceNodeKind.Category => node.Name switch
+        DeviceNodeKind.Category => node.CategoryId switch
         {
             "內建" => Laptop,
             "藍牙／無線" => Bluetooth,
             "虛擬" => Virtual,
-            "USB（未設定接口）" => UsbDevice,
+            TopologyBuilder.UnconfiguredUsbRootId => UsbDevice,
             _ => Unknown
         },
         _ => string.Empty
@@ -118,4 +119,34 @@ public sealed class LegendItem : System.Windows.Controls.StackPanel
         }
     }
     public string Text { get => _label.Text; set => _label.Text = value; }
+
+    /// <summary>Shows a filled badge with this glyph instead of a colour dot, matching the current-device badges on the drawing.</summary>
+    public string? Glyph
+    {
+        get => (_badge?.Child as System.Windows.Controls.TextBlock)?.Text;
+        set
+        {
+            if (_badge is null)
+            {
+                var icon = new System.Windows.Controls.TextBlock { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                icon.SetResourceReference(System.Windows.Controls.TextBlock.FontFamilyProperty, "IconFont");
+                icon.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "TextOnAccentFillColorPrimaryBrush");
+                _badge = new System.Windows.Controls.Border
+                {
+                    Width = 16,
+                    Height = 16,
+                    CornerRadius = new CornerRadius(8),
+                    Margin = new Thickness(0, 0, 6, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Child = icon
+                };
+                _badge.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "AccentFillColorDefaultBrush");
+                Children.Remove(_swatch);
+                Children.Insert(0, _badge);
+            }
+            ((System.Windows.Controls.TextBlock)_badge.Child).Text = value;
+        }
+    }
+
+    private System.Windows.Controls.Border? _badge;
 }

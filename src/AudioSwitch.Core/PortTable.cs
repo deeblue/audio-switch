@@ -32,9 +32,9 @@ public sealed class PortTable
         EnsureEnabled();
         ArgumentNullException.ThrowIfNull(port);
         if (string.IsNullOrWhiteSpace(port.Id) || string.IsNullOrWhiteSpace(port.Name) || string.IsNullOrWhiteSpace(port.Type))
-            throw new ArgumentException("接口 ID、名稱與類型不可為空。", nameof(port));
+            throw new ArgumentException(Loc.T("接口 ID、名稱與類型不可為空。"), nameof(port));
         if (FindInterface(port.Id) is not null)
-            throw new ArgumentException($"接口 ID 已存在：{port.Id}", nameof(port));
+            throw new ArgumentException(Loc.F("接口 ID 已存在：{0}", port.Id), nameof(port));
         _document.Interfaces.Add(port);
         MoveInterface(port.Id, port.Edge ?? "left", port.Order ?? int.MaxValue);
     }
@@ -43,7 +43,7 @@ public sealed class PortTable
     {
         EnsureEnabled();
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        var port = FindInterface(interfaceId) ?? throw new ArgumentException($"找不到接口 ID：{interfaceId}", nameof(interfaceId));
+        var port = FindInterface(interfaceId) ?? throw new ArgumentException(Loc.F("找不到接口 ID：{0}", interfaceId), nameof(interfaceId));
         port.Name = name.Trim();
     }
 
@@ -52,8 +52,8 @@ public sealed class PortTable
         EnsureEnabled();
         ArgumentException.ThrowIfNullOrWhiteSpace(edge);
         if (edge is not ("left" or "right" or "rear" or "front"))
-            throw new ArgumentOutOfRangeException(nameof(edge), "接口邊必須是 left、right、rear 或 front。");
-        var port = FindInterface(interfaceId) ?? throw new ArgumentException($"找不到接口 ID：{interfaceId}", nameof(interfaceId));
+            throw new ArgumentOutOfRangeException(nameof(edge), Loc.T("接口邊必須是 left、right、rear 或 front。"));
+        var port = FindInterface(interfaceId) ?? throw new ArgumentException(Loc.F("找不到接口 ID：{0}", interfaceId), nameof(interfaceId));
         var oldEdge = port.Edge;
         var oldEdgePorts = _document.Interfaces.Where(item => item.Edge == oldEdge && item.Id != interfaceId).OrderBy(item => item.Order).ToList();
         for (var index = 0; index < oldEdgePorts.Count; index++) oldEdgePorts[index].Order = index;
@@ -92,12 +92,12 @@ public sealed class PortTable
             !payload.RootElement.TryGetProperty("schema_version", out var schemaVersion) || !schemaVersion.TryGetInt32(out var version) || version != 1 ||
             !payload.RootElement.TryGetProperty("interfaces", out var interfaces) || interfaces.ValueKind != JsonValueKind.Array)
         {
-            throw new JsonException("接口表格式錯誤或 schema_version 不支援");
+            throw new JsonException(Loc.T("接口表格式錯誤或 schema_version 不支援"));
         }
         var document = JsonSerializer.Deserialize<PortTableDocument>(json, JsonOptions)
-            ?? throw new JsonException("接口表內容為空");
+            ?? throw new JsonException(Loc.T("接口表內容為空"));
         if (document.SchemaVersion != 1 || document.Interfaces is null)
-            throw new JsonException("接口表格式錯誤或 schema_version 不支援");
+            throw new JsonException(Loc.T("接口表格式錯誤或 schema_version 不支援"));
         return new PortTable(document, GetMachineMismatch(document.Machine, currentMachine));
     }
 
@@ -136,7 +136,7 @@ public sealed class PortTable
             throw new InvalidOperationException(Warning);
         }
 
-        var port = FindInterface(interfaceId) ?? throw new ArgumentException($"找不到接口 ID：{interfaceId}", nameof(interfaceId));
+        var port = FindInterface(interfaceId) ?? throw new ArgumentException(Loc.F("找不到接口 ID：{0}", interfaceId), nameof(interfaceId));
         var diff = AttachmentDetector.Detect(before, after);
         var transports = diff.Select(AttachmentDetector.Transport).ToArray();
         var beforePathIds = before.DisplayPaths.Select(path => path.PathId).ToHashSet(StringComparer.Ordinal);
@@ -225,7 +225,7 @@ public sealed class PortTable
     {
         EnsureEnabled();
         ArgumentNullException.ThrowIfNull(snapshot);
-        var port = FindInterface(interfaceId) ?? throw new ArgumentException($"找不到接口 ID：{interfaceId}", nameof(interfaceId));
+        var port = FindInterface(interfaceId) ?? throw new ArgumentException(Loc.F("找不到接口 ID：{0}", interfaceId), nameof(interfaceId));
         var attachment = AttachmentDetector.FindCurrentPathAttachment(snapshot, endpointId);
         if (attachment is null || attachment.LocationPaths.Count == 0)
             return new CalibrationResult("no_candidate", null, [], [], [], [endpointId]);
@@ -251,13 +251,13 @@ public sealed class PortTable
 
         if (HasDifferentValue(expected.Manufacturer, actual.Manufacturer) || HasDifferentValue(expected.Model, actual.Model))
         {
-            return "主機識別不符，已停用接口校準";
+            return Loc.T("主機識別不符，已停用接口校準");
         }
 
         if (!string.IsNullOrWhiteSpace(expected.MtM) && !string.IsNullOrWhiteSpace(actual.MtM) &&
             !actual.MtM.StartsWith(expected.MtM, StringComparison.OrdinalIgnoreCase))
         {
-            return "主機識別不符，已停用接口校準";
+            return Loc.T("主機識別不符，已停用接口校準");
         }
 
         return null;

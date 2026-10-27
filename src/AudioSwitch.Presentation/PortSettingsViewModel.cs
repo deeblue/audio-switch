@@ -18,6 +18,8 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
     private readonly PortTable _portTable;
     private readonly DeviceSettingsViewModel _devices;
     private readonly Action _save;
+    private readonly IDefaultEndpointWriter? _defaults;
+    private ActiveDevices _active = ActiveDevices.None;
     private string? _selectedId;
     private string _nameText = string.Empty;
     private string? _message;
@@ -27,9 +29,10 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
     private string _aliasText = string.Empty;
 
     public PortSettingsViewModel(IAudioTopologySnapshotSource snapshotSource, PortTable portTable, MachineIdentity? machine,
-        DeviceSettingsViewModel devices, Action save)
+        DeviceSettingsViewModel devices, Action save, IDefaultEndpointWriter? defaults = null)
     {
         _snapshotSource = snapshotSource;
+        _defaults = defaults;
         _portTable = portTable;
         _devices = devices;
         _save = save;
@@ -39,8 +42,29 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
 
     public PortDiagramViewModel Diagram { get; }
     public CalibrationWorkflowViewModel Calibration { get; }
+
+    /// <summary>Where the current default playback and recording devices are, shown on the laptop drawing.</summary>
+    public ActiveDevices Active { get => _active; private set { if (_active == value) return; _active = value; OnPropertyChanged(); } }
+
+    /// <summary>Reads the current defaults again, after a switch or a device change.</summary>
+    public void RefreshActiveDevices()
+    {
+        if (_defaults is null) return;
+        try
+        {
+            var snapshot = _snapshotSource.Capture();
+            Active = ActiveDevices.Find(snapshot, TopologyBuilder.Build(snapshot, _portTable),
+                _defaults.GetDefaultEndpointId(AudioEndpointFlow.Render, AudioEndpointRole.Multimedia),
+                _defaults.GetDefaultEndpointId(AudioEndpointFlow.Capture, AudioEndpointRole.Multimedia));
+        }
+        catch (Exception exception)
+        {
+            Active = ActiveDevices.None;
+            ShowMessage(exception.Message, isError: true);
+        }
+    }
     public bool IsEnabled => Diagram.IsEnabled;
-    public string? DisabledReason => Diagram.IsEnabled ? null : $"接口表屬於另一台電腦，無法在這台電腦上編輯。{Diagram.Warning}";
+    public string? DisabledReason => Diagram.IsEnabled ? null : Loc.F("接口表屬於另一台電腦，無法在這台電腦上編輯。{0}", Diagram.Warning);
 
     public PortDefinition? SelectedInterface => _selectedId is null ? null : _portTable.FindInterface(_selectedId);
     public bool HasSelection => SelectedInterface is not null;
@@ -64,7 +88,7 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
 
     public IReadOnlyList<AudioEndpoint> DetectedEndpoints { get => _detectedEndpoints; private set => Set(ref _detectedEndpoints, value); }
     public bool CanEnterAlias => Phase == PortCalibrationPhase.Idle && DetectedEndpoints.Count > 0;
-    public string DetectedEndpointNames => string.Join("、", DetectedEndpoints.Select(endpoint => endpoint.FriendlyName ?? "音訊裝置"));
+    public string DetectedEndpointNames => Loc.Join(DetectedEndpoints.Select(endpoint => endpoint.FriendlyName ?? Loc.T("音訊裝置")));
     public string AliasText { get => _aliasText; set => Set(ref _aliasText, value); }
 
     public string? Message { get => _message; private set => Set(ref _message, value); }
@@ -142,14 +166,14 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
         if (!Guard() || SelectedInterface is not { } port) return;
         if (string.IsNullOrWhiteSpace(NameText))
         {
-            ShowMessage("接口名稱不可空白。", isError: true);
+            ShowMessage(Loc.T("接口名稱不可空白。"), isError: true);
             return;
         }
         try
         {
             Diagram.RenameInterface(port.Id, NameText.Trim());
             Persist();
-            ShowMessage("名稱已儲存。");
+            ShowMessage(Loc.T("名稱已儲存。"));
             RaiseState();
             DiagramChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -167,7 +191,7 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
             Diagram.DeleteInterface(port.Id);
             Persist();
             Select(null);
-            ShowMessage($"已刪除「{port.Name}」。");
+            ShowMessage(Loc.F("已刪除「{0}」。", port.Name));
             DiagramChanged?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception exception)
@@ -266,7 +290,7 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
     {
         Calibration.Cancel();
         Phase = PortCalibrationPhase.Idle;
-        ShowMessage("已取消校準。");
+        ShowMessage(Loc.T("已取消校準。"));
         RaiseState();
     }
 
@@ -281,17 +305,17 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
                 .FirstOrDefault(endpoint => endpoint is not null);
             if (target is null)
             {
-                ShowMessage("找不到剛才偵測到的裝置，請確認仍插著。", isError: true);
+                ShowMessage(Loc.T("找不到剛才偵測到的裝置，請確認仍插著。"), isError: true);
                 return;
             }
             if (!_devices.ApplyAlias(target, tree.Endpoints, AliasText.Trim()))
             {
-                ShowMessage(_devices.ErrorMessage ?? "名稱套用失敗。", isError: true);
+                ShowMessage(_devices.ErrorMessage ?? Loc.T("名稱套用失敗。"), isError: true);
                 return;
             }
             DetectedEndpoints = [];
             AliasText = string.Empty;
-            ShowMessage("裝置名稱已套用。");
+            ShowMessage(Loc.T("裝置名稱已套用。"));
         }
         catch (Exception exception)
         {
@@ -313,20 +337,20 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
         {
             Phase = PortCalibrationPhase.Idle;
             DetectedEndpoints = Calibration.NewAudioEndpoints;
-            var name = result.InterfaceId is { } id ? _portTable.FindInterface(id)?.Name ?? id : "接口";
+            var name = result.InterfaceId is { } id ? _portTable.FindInterface(id)?.Name ?? id : Loc.T("接口");
             Persist();
             if (result.InterfaceId is not null) Select(result.InterfaceId);
             var displays = result.DisplayConnectors?.Count ?? 0;
-            var details = result.Transports.Concat(displays > 0 ? [$"{displays} 個螢幕輸出"] : Array.Empty<string>()).ToArray();
-            ShowMessage(details.Length > 0 ? $"已校準「{name}」：{string.Join("、", details)}。" : $"已校準「{name}」。");
+            var details = result.Transports.Select(Loc.T).Concat(displays > 0 ? [Loc.F("{0} 個螢幕輸出", displays)] : Array.Empty<string>()).ToArray();
+            ShowMessage(details.Length > 0 ? Loc.F("已校準「{0}」：{1}。", name, Loc.Join(details)) : Loc.F("已校準「{0}」。", name));
             DiagramChanged?.Invoke(this, EventArgs.Empty);
             return;
         }
         // The workflow stays active so the user can unplug extra devices and retry, or cancel.
         if (result?.Status == "ambiguous")
-            ShowMessage("偵測到不只一個裝置。請只插入一個裝置，再按「完成偵測」。", isError: true);
+            ShowMessage(Loc.T("偵測到不只一個裝置。請只插入一個裝置，再按「完成偵測」。"), isError: true);
         else
-            ShowMessage(Calibration.ErrorMessage ?? "沒有偵測到新插入的裝置。", isError: true);
+            ShowMessage(Calibration.ErrorMessage ?? Loc.T("沒有偵測到新插入的裝置。"), isError: true);
         if (Calibration.State == CalibrationWorkflowState.Idle) Phase = PortCalibrationPhase.Idle;
         else if (Calibration.State == CalibrationWorkflowState.AwaitingUnplug && Phase == PortCalibrationPhase.WaitingForPlacement)
             Phase = PortCalibrationPhase.WaitingForNewDevice;
@@ -341,24 +365,24 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
         {
             return
             [
-                isDisplay ? "1. 拔掉要校準的螢幕線。" : isUsbC ? "1. 拔掉要校準的 USB 裝置或 Dock。" : target is not null ? "1. 拔掉要校準的 USB 裝置。" : "1. 拔掉要校準的裝置。",
-                "2. 拔掉後（或本來就沒接）按「下一步」。"
+                Loc.T(isDisplay ? "1. 拔掉要校準的螢幕線。" : isUsbC ? "1. 拔掉要校準的 USB 裝置或 Dock。" : target is not null ? "1. 拔掉要校準的 USB 裝置。" : "1. 拔掉要校準的裝置。"),
+                Loc.T("2. 拔掉後（或本來就沒接）按「下一步」。")
             ];
         }
         if (CanCompleteDetection)
         {
             return
             [
-                isDisplay ? $"1. 把螢幕接上「{target!.Name}」。" : target is not null ? $"1. 把它插入「{target.Name}」。" : "1. 把它插入要定義的接口。",
-                isDisplay ? "2. 畫面出現後按「完成偵測」。" : isUsbC ? "2. 接著螢幕的話，等畫面出現後再按「完成偵測」。" : "2. 插好後按「完成偵測」。"
+                isDisplay ? Loc.F("1. 把螢幕接上「{0}」。", target!.Name) : target is not null ? Loc.F("1. 把它插入「{0}」。", target.Name) : Loc.T("1. 把它插入要定義的接口。"),
+                Loc.T(isDisplay ? "2. 畫面出現後按「完成偵測」。" : isUsbC ? "2. 接著螢幕的話，等畫面出現後再按「完成偵測」。" : "2. 插好後按「完成偵測」。")
             ];
         }
         return IsWaitingForPlacement
             ?
             [
-                "已偵測到裝置。",
-                "在示意圖上點選它插著的接口，再按「套用到這個接口」；",
-                "或從上方把接口類型拖到示意圖上的對應位置。"
+                Loc.T("已偵測到裝置。"),
+                Loc.T("在示意圖上點選它插著的接口，再按「套用到這個接口」；"),
+                Loc.T("或從上方把接口類型拖到示意圖上的對應位置。")
             ]
             : [];
     }
@@ -378,7 +402,7 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
         }
         catch (Exception exception)
         {
-            ShowMessage($"設定檔儲存失敗：{exception.Message}", isError: true);
+            ShowMessage(Loc.F("設定檔儲存失敗：{0}", exception.Message), isError: true);
         }
     }
 

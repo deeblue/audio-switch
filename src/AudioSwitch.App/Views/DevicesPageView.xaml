@@ -1,6 +1,7 @@
 <UserControl x:Class="AudioSwitch.App.Views.DevicesPageView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:AudioSwitch.App"
              xmlns:views="clr-namespace:AudioSwitch.App.Views"
              xmlns:presentation="clr-namespace:AudioSwitch.Presentation;assembly=AudioSwitch.Presentation">
   <UserControl.Resources>
@@ -21,16 +22,17 @@
         </Grid.RowDefinitions>
         <DockPanel Margin="8,0,0,4">
           <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Click="Refresh_Click"
-                  ToolTip="重新整理" AutomationProperties.Name="重新整理">
+                  ToolTip="{app:Loc '重新整理'}" AutomationProperties.Name="{app:Loc '重新整理'}">
             <TextBlock Style="{StaticResource IconGlyph}" Text="&#xE72C;"/>
           </Button>
-          <TextBlock Text="依接口排列" Style="{StaticResource SecondaryText}" VerticalAlignment="Center"/>
+          <TextBlock Text="{app:Loc '依接口排列'}" Style="{StaticResource SecondaryText}" VerticalAlignment="Center"/>
         </DockPanel>
-        <TextBlock Grid.Row="1" Text="目前沒有可用的音訊裝置。" Style="{StaticResource SecondaryText}" Margin="8"
+        <TextBlock Grid.Row="1" Text="{app:Loc '目前沒有可用的音訊裝置。'}" Style="{StaticResource SecondaryText}" Margin="8"
                    Visibility="{Binding HasDevices, Converter={StaticResource VisibleWhenFalse}}"/>
         <TreeView x:Name="DeviceTree" Grid.Row="1" ItemsSource="{Binding Roots}" BorderThickness="0" Background="Transparent"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" SelectedItemChanged="DeviceTree_SelectedItemChanged"
-                  AutomationProperties.Name="裝置">
+                  MouseDoubleClick="DeviceTree_MouseDoubleClick"
+                  AutomationProperties.Name="{app:Loc '裝置'}">
           <TreeView.ItemContainerStyle>
             <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
               <Setter Property="IsExpanded" Value="True"/>
@@ -46,7 +48,7 @@
                 </Grid>
                 <TextBlock x:Name="DefaultMark" DockPanel.Dock="Right" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="14"
                            Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="8,0,4,0" VerticalAlignment="Center"
-                           Visibility="Collapsed" ToolTip="目前預設" AutomationProperties.Name="目前預設"/>
+                           Visibility="Collapsed" ToolTip="{app:Loc '目前預設'}" AutomationProperties.Name="{app:Loc '目前預設'}"/>
                 <TextBlock x:Name="NodeName" Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
               </DockPanel>
               <HierarchicalDataTemplate.Triggers>
@@ -68,27 +70,33 @@
     <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
       <StackPanel>
         <Border Style="{StaticResource Card}" Visibility="{Binding HasSelection, Converter={StaticResource VisibleWhenFalse}}">
-          <TextBlock Style="{StaticResource SecondaryText}" Text="在左側選取裝置，就能看到它插在哪裡，並可試音或改名稱。"/>
+          <TextBlock Style="{StaticResource SecondaryText}" Text="{app:Loc '在左側選取裝置，就能看到它插在哪裡，並可試音或改名稱。'}"/>
         </Border>
 
         <Border Style="{StaticResource Card}" Visibility="{Binding HasSelection, Converter={StaticResource VisibleWhenTrue}}">
           <StackPanel>
             <DockPanel>
               <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top" Margin="12,0,0,0">
+                <ToggleButton x:Name="DefaultButton" Style="{StaticResource IconToggleButton}" Click="SetDefault_Click" Margin="4,0,0,0"
+                              IsChecked="{Binding IsSelectedDefault, Mode=OneWay}"
+                              Visibility="{Binding CanSetDefault, Converter={StaticResource VisibleWhenTrue}}"
+                              ToolTip="{app:Loc '設為預設（也可以在左側按兩下）'}" AutomationProperties.Name="{app:Loc '設為預設'}">
+                  <TextBlock Style="{StaticResource IconGlyph}" Text="&#xE73E;"/>
+                </ToggleButton>
                 <Button Style="{StaticResource IconButton}" Click="TestTone_Click" Margin="4,0,0,0"
                         Visibility="{Binding CanTestTone, Converter={StaticResource VisibleWhenTrue}}"
-                        ToolTip="試音" AutomationProperties.Name="試音">
+                        ToolTip="{app:Loc '試音'}" AutomationProperties.Name="{app:Loc '試音'}">
                   <TextBlock Style="{StaticResource IconGlyph}" Text="&#xE767;"/>
                 </Button>
                 <ToggleButton x:Name="ListenButton" Style="{StaticResource IconToggleButton}" Click="Listen_Click" Margin="4,0,0,0"
                               IsChecked="{Binding IsListening, Mode=OneWay}"
                               Visibility="{Binding CanListen, Converter={StaticResource VisibleWhenTrue}}"
-                              ToolTip="聽：顯示這支麥克風的音量" AutomationProperties.Name="聽">
+                              ToolTip="{app:Loc '聽：顯示這支麥克風的音量'}" AutomationProperties.Name="{app:Loc '聽'}">
                   <TextBlock Style="{StaticResource IconGlyph}" Text="&#xE720;"/>
                 </ToggleButton>
                 <Button Style="{StaticResource IconButton}" Click="IdentifyScreen_Click" Margin="4,0,0,0"
                         Visibility="{Binding CanIdentifyScreen, Converter={StaticResource VisibleWhenTrue}}"
-                        ToolTip="識別螢幕" AutomationProperties.Name="識別螢幕">
+                        ToolTip="{app:Loc '識別螢幕'}" AutomationProperties.Name="{app:Loc '識別螢幕'}">
                   <TextBlock Style="{StaticResource IconGlyph}" Text="&#xE7F4;"/>
                 </Button>
               </StackPanel>
@@ -96,7 +104,7 @@
                 <TextBlock Text="{Binding Title}" Style="{StaticResource SubtitleTextBlockStyle}" TextTrimming="CharacterEllipsis"
                            ToolTip="{Binding Title}"/>
                 <TextBlock Style="{StaticResource SecondaryText}" Margin="0,4,0,0">
-                  <Run Text="{Binding KindText, Mode=OneWay}"/><Run Text="　"/><Run Text="{Binding StateText, Mode=OneWay}"/>
+                  <Run Text="{Binding KindText, Mode=OneWay}"/><Run Text="{app:Loc '　'}"/><Run Text="{Binding StateText, Mode=OneWay}"/>
                 </TextBlock>
               </StackPanel>
             </DockPanel>
@@ -107,64 +115,64 @@
                 <ColumnDefinition Width="48"/>
               </Grid.ColumnDefinitions>
               <ProgressBar Minimum="0" Maximum="1" Height="8" VerticalAlignment="Center" Value="{Binding Settings.PeakLevel, Mode=OneWay}"
-                           AutomationProperties.Name="麥克風音量"/>
+                           AutomationProperties.Name="{app:Loc '麥克風音量'}"/>
               <TextBlock Grid.Column="1" Text="{Binding Settings.PeakLevel, StringFormat={}{0:P0}}" HorizontalAlignment="Right"
                          Style="{StaticResource SecondaryText}"/>
             </Grid>
 
-            <TextBlock Text="位置" Style="{StaticResource CaptionText}" Margin="0,16,0,4"/>
+            <TextBlock Text="{app:Loc '位置'}" Style="{StaticResource CaptionText}" Margin="0,16,0,4"/>
             <TextBlock Text="{Binding LocationText}" TextWrapping="Wrap"/>
-            <views:LaptopDiagramView x:Name="MiniDiagram" IsInteractive="False" HighlightedId="{Binding SelectedInterfaceId}" HorizontalAlignment="Left" Width="260" Margin="0,8,0,0"
+            <views:LaptopDiagramView x:Name="MiniDiagram" IsInteractive="False" HighlightedId="{Binding SelectedInterfaceId}" Active="{Binding Active}" HorizontalAlignment="Left" Width="260" Margin="0,8,0,0"
                                      Visibility="{Binding SelectedInterfaceId, Converter={StaticResource VisibleWhenNotNull}}"/>
           </StackPanel>
         </Border>
 
         <Border Style="{StaticResource Card}" Visibility="{Binding IsEndpointSelected, Converter={StaticResource VisibleWhenTrue}}">
           <StackPanel>
-            <TextBlock Text="名稱" Style="{StaticResource SectionTitle}" Margin="0"/>
-            <TextBlock Text="Windows 設定、Teams、Zoom 都會顯示這個名稱。" Style="{StaticResource CaptionText}" Margin="0,4,0,8"/>
+            <TextBlock Text="{app:Loc '名稱'}" Style="{StaticResource SectionTitle}" Margin="0"/>
+            <TextBlock Text="{app:Loc 'Windows 設定、Teams、Zoom 都會顯示這個名稱。'}" Style="{StaticResource CaptionText}" Margin="0,4,0,8"/>
             <DockPanel>
               <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="8,0,0,0">
-                <Button Content="套用" Style="{StaticResource TextButton}" Click="ApplyName_Click"/>
-                <Button Content="還原原名" Style="{StaticResource TextButton}" Click="RestoreName_Click" Margin="8,0,0,0"
+                <Button Content="{app:Loc '套用'}" Style="{StaticResource TextButton}" Click="ApplyName_Click"/>
+                <Button Content="{app:Loc '還原原名'}" Style="{StaticResource TextButton}" Click="RestoreName_Click" Margin="8,0,0,0"
                         IsEnabled="{Binding CanRestoreName}"/>
               </StackPanel>
-              <TextBox Text="{Binding Settings.AliasText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="名稱"/>
+              <TextBox Text="{Binding Settings.AliasText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{app:Loc '名稱'}"/>
             </DockPanel>
           </StackPanel>
         </Border>
 
         <Border Style="{StaticResource Card}" Visibility="{Binding IsDockSelected, Converter={StaticResource VisibleWhenTrue}}">
           <StackPanel>
-            <TextBlock Text="名稱" Style="{StaticResource SectionTitle}" Margin="0"/>
-            <TextBlock Text="只在 AudioSwitch 顯示；同型號的 Dock／Hub 共用這個名稱。" Style="{StaticResource CaptionText}" Margin="0,4,0,8"
+            <TextBlock Text="{app:Loc '名稱'}" Style="{StaticResource SectionTitle}" Margin="0"/>
+            <TextBlock Text="{app:Loc '只在 AudioSwitch 顯示；同型號的 Dock／Hub 共用這個名稱。'}" Style="{StaticResource CaptionText}" Margin="0,4,0,8"
                        TextWrapping="Wrap"/>
             <DockPanel>
               <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="8,0,0,0">
-                <Button Content="套用" Style="{StaticResource TextButton}" Click="ApplyDockName_Click"/>
-                <Button Content="還原預設" Style="{StaticResource TextButton}" Click="RestoreDockName_Click" Margin="8,0,0,0"
+                <Button Content="{app:Loc '套用'}" Style="{StaticResource TextButton}" Click="ApplyDockName_Click"/>
+                <Button Content="{app:Loc '還原預設'}" Style="{StaticResource TextButton}" Click="RestoreDockName_Click" Margin="8,0,0,0"
                         IsEnabled="{Binding CanRestoreDockName}"/>
               </StackPanel>
-              <TextBox Text="{Binding DockNameText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Dock／Hub 名稱"/>
+              <TextBox Text="{Binding DockNameText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{app:Loc 'Dock／Hub 名稱'}"/>
             </DockPanel>
           </StackPanel>
         </Border>
 
         <Border Style="{StaticResource Card}" Visibility="{Binding NeedsPortAssignment, Converter={StaticResource VisibleWhenTrue}}">
           <StackPanel>
-            <TextBlock Text="這個裝置插在…" Style="{StaticResource SectionTitle}" Margin="0"/>
-            <TextBlock Text="選擇它目前插著的接口，之後同一個接口上的裝置都會歸在那裡。" Style="{StaticResource CaptionText}" Margin="0,4,0,8"/>
+            <TextBlock Text="{app:Loc '這個裝置插在…'}" Style="{StaticResource SectionTitle}" Margin="0"/>
+            <TextBlock Text="{app:Loc '選擇它目前插著的接口，之後同一個接口上的裝置都會歸在那裡。'}" Style="{StaticResource CaptionText}" Margin="0,4,0,8"/>
             <DockPanel>
-              <Button DockPanel.Dock="Right" Content="確定" Style="{StaticResource TextButton}" Click="AssignPort_Click" Margin="8,0,0,0"/>
+              <Button DockPanel.Dock="Right" Content="{app:Loc '確定'}" Style="{StaticResource TextButton}" Click="AssignPort_Click" Margin="8,0,0,0"/>
               <ComboBox x:Name="PortChoice" ItemsSource="{Binding UsbPorts}" DisplayMemberPath="Name" SelectedValuePath="Id"
-                        AutomationProperties.Name="接口"/>
+                        AutomationProperties.Name="{app:Loc '接口'}"/>
             </DockPanel>
           </StackPanel>
         </Border>
 
-        <Expander Header="技術細節" Visibility="{Binding IsEndpointSelected, Converter={StaticResource VisibleWhenTrue}}" Margin="0,0,0,12">
+        <Expander Header="{app:Loc '技術細節'}" Visibility="{Binding IsEndpointSelected, Converter={StaticResource VisibleWhenTrue}}" Margin="0,0,0,12">
           <TextBox Text="{Binding TechnicalDetails, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0"
-                   Background="Transparent" FontFamily="Consolas" FontSize="12" AutomationProperties.Name="技術細節"/>
+                   Background="Transparent" FontFamily="Consolas" FontSize="12" AutomationProperties.Name="{app:Loc '技術細節'}"/>
         </Expander>
 
         <TextBlock Text="{Binding Message}" Style="{StaticResource StatusMessage}"

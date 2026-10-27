@@ -23,7 +23,7 @@ public sealed class WindowsAudioProbe : IAudioProbe
 
         using var device = _enumerator.GetDevice(endpointId);
         if (device.DataFlow != DataFlow.Render || device.State != DeviceState.Active)
-            throw new ArgumentException("試音只能指定作用中的播放端點。", nameof(endpointId));
+            throw new ArgumentException(Loc.T("試音只能指定作用中的播放端點。"), nameof(endpointId));
 
         using var output = new WasapiPlayerBuilder().WithDevice(device).WithSharedMode().WithEventSync().WithLatency(100).Build();
         var provider = new SineWaveProvider(duration);
@@ -56,7 +56,7 @@ public sealed class WindowsAudioProbe : IAudioProbe
         if (captureDevice.DataFlow != DataFlow.Capture || captureDevice.State != DeviceState.Active)
         {
             captureDevice.Dispose();
-            throw new ArgumentException("峰值只能讀取作用中的錄音端點。", nameof(endpointId));
+            throw new ArgumentException(Loc.T("峰值只能讀取作用中的錄音端點。"), nameof(endpointId));
         }
 
         WasapiRecorder? capture = null;

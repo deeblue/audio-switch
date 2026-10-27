@@ -19,12 +19,12 @@ public sealed class WindowsHotkeyService : IHotkeyService
         foreach (var (id, value) in bindings)
         {
             if (string.IsNullOrWhiteSpace(value)) continue;
-            if (!HotkeyBindingParser.TryParse(value, out var binding)) { Unregister(); return new(false, $"無法辨識快捷鍵：{value}"); }
+            if (!HotkeyBindingParser.TryParse(value, out var binding)) { Unregister(); return new(false, Loc.F("無法辨識快捷鍵：{0}", value)); }
             if (!RegisterHotKey(targetWindow, id, (uint)binding.Modifiers | ModNoRepeat, binding.VirtualKey))
             {
                 var error = Marshal.GetLastWin32Error();
                 Unregister();
-                return new(false, $"快捷鍵 {value} 無法註冊（錯誤碼 {error}，可能已被其他程式使用）。");
+                return new(false, Loc.F("快捷鍵 {0} 無法註冊（錯誤碼 {1}，可能已被其他程式使用）。", value, error));
             }
             _registered.Add(id);
         }

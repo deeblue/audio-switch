@@ -30,20 +30,24 @@ public enum PortCalibrationState
 public sealed record PortDiagramItem(string Id, string Name, string Type, PortEdge Edge, int Order, PortCalibrationState State, string StatusText)
 {
     public string TypeLabel => PortDiagramViewModel.ConnectorLabel(Type);
-    public string ShortStatus => State switch
+    public string ShortStatus => Loc.T(State switch
     {
         PortCalibrationState.Calibrated => "已校準",
         PortCalibrationState.Partial => "缺部分路徑",
         PortCalibrationState.Automatic => "自動對應",
         _ => "未校準"
-    };
+    });
     public string Description => Name.Contains(TypeLabel, StringComparison.OrdinalIgnoreCase)
-        ? $"{Name}：{StatusText}"
-        : $"{Name}（{TypeLabel}）：{StatusText}";
+        ? Loc.F("{0}：{1}", Name, StatusText)
+        : Loc.F("{0}（{1}）：{2}", Name, TypeLabel, StatusText);
 }
 
 public sealed class PortDiagramViewModel
 {
+    /// <summary>Fixed markers drawn on the laptop for the built-in speakers and microphone.</summary>
+    public const string BuiltInSpeakerId = "builtin-speaker";
+    public const string BuiltInMicrophoneId = "builtin-microphone";
+
     private readonly PortTable _portTable;
 
     public ObservableCollection<PortDefinition> Interfaces { get; } = [];
@@ -127,20 +131,20 @@ public sealed class PortDiagramViewModel
 
     public string GetCalibrationStatus(PortDefinition port)
     {
-        if (port.Type == "audio-jack") return "自動對應，不需校準";
+        if (port.Type == "audio-jack") return Loc.T("自動對應，不需校準");
         if (port.Type is "hdmi" or "displayport")
-            return port.DisplayConnectors.Count > 0 ? "已校準（顯示輸出）" : "未校準";
+            return Loc.T(port.DisplayConnectors.Count > 0 ? "已校準（顯示輸出）" : "未校準");
 
         var transports = CalibratedTransports(port);
-        if (transports.Count == 0) return port.DisplayConnectors.Count > 0 ? "只校準了顯示輸出，缺 USB 路徑" : "未校準";
+        if (transports.Count == 0) return Loc.T(port.DisplayConnectors.Count > 0 ? "只校準了顯示輸出，缺 USB 路徑" : "未校準");
         var expected = ExpectedTransports;
         var present = expected.Where(transports.Contains).ToArray();
         var unknown = transports.Where(transport => !expected.Contains(transport, StringComparer.OrdinalIgnoreCase)).Order(StringComparer.Ordinal).ToArray();
         var details = present.Concat(unknown).Concat(port.DisplayConnectors.Count > 0 ? ["顯示輸出"] : Array.Empty<string>()).ToArray();
         var missing = expected.Where(transport => !transports.Contains(transport)).ToArray();
         return missing.Length == 0
-            ? $"已校準（{string.Join("、", details)}）"
-            : $"缺部分路徑（{string.Join("、", missing.Select(item => "缺 " + item))}）";
+            ? Loc.F("已校準（{0}）", Loc.Join(details.Select(Loc.T)))
+            : Loc.F("缺部分路徑（{0}）", Loc.Join(missing.Select(item => Loc.F("缺 {0}", item))));
     }
 
     public static PortEdge ParseEdge(string? edge) => edge switch
@@ -151,14 +155,14 @@ public sealed class PortDiagramViewModel
         _ => PortEdge.Left
     };
 
-    public static string EdgeLabel(PortEdge edge) => edge switch
+    public static string EdgeLabel(PortEdge edge) => Loc.T(edge switch
     {
         PortEdge.Left => "左側",
         PortEdge.Right => "右側",
         PortEdge.Rear => "後側",
         PortEdge.Front => "前側",
         _ => throw new ArgumentOutOfRangeException(nameof(edge))
-    };
+    });
 
     public static string ConnectorLabel(string type) => type switch
     {
@@ -184,7 +188,7 @@ public sealed class PortDiagramViewModel
             for (var index = 0; index < ordered.Length; index++)
             {
                 var suffix = PositionSuffix(group.Key.Edge, index, ordered.Length);
-                names[ordered[index].Id] = suffix is null ? $"{side} {connector}" : $"{side} {connector}（{suffix}）";
+                names[ordered[index].Id] = suffix is null ? $"{side} {connector}" : Loc.F("{0} {1}（{2}）", side, connector, suffix);
             }
         }
         return names;
@@ -196,25 +200,41 @@ public sealed class PortDiagramViewModel
         return count switch
         {
             1 => null,
-            2 => vertical ? (index == 0 ? "後" : "前") : (index == 0 ? "左" : "右"),
-            3 => vertical ? new[] { "後", "中", "前" }[index] : new[] { "左", "中", "右" }[index],
-            _ => $"第 {index + 1} 個"
+            2 => Loc.T(vertical ? (index == 0 ? "後" : "前") : (index == 0 ? "左" : "右")),
+            3 => Loc.T(vertical ? new[] { "後", "中", "前" }[index] : new[] { "左", "中", "右" }[index]),
+            _ => Loc.F("第 {0} 個", index + 1)
         };
     }
 
     // Names written by earlier versions: "左側 HDMI（前）" from edge and order only, which could repeat.
     private static bool IsLegacyAutoName(PortDefinition port)
     {
+        using var chinese = Loc.Use(AppLanguage.TraditionalChinese);
         var edge = port.Edge ?? "left";
-        var legacy = $"{EdgeLabel(ParseEdge(edge))} {ConnectorLabel(port.Type)}（{PositionName(edge, port.Order ?? 0)}）";
+        var legacy = Loc.F("{0} {1}（{2}）", EdgeLabel(ParseEdge(edge)), ConnectorLabel(port.Type), PositionName(edge, port.Order ?? 0));
         return string.IsNullOrWhiteSpace(port.Name) || string.Equals(port.Name, legacy, StringComparison.Ordinal);
     }
 
+    // A name that matches the suggestion in any language was not chosen by the user, so it follows moves and the language.
     private Dictionary<string, bool> CaptureAutoNames()
     {
-        var suggested = SuggestNames(_portTable.Interfaces);
+        var suggestions = Enum.GetValues<AppLanguage>().Select(language =>
+        {
+            using var scope = Loc.Use(language);
+            return SuggestNames(_portTable.Interfaces);
+        }).ToArray();
         return _portTable.Interfaces.ToDictionary(port => port.Id,
-            port => string.Equals(port.Name, suggested[port.Id], StringComparison.Ordinal) || IsLegacyAutoName(port));
+            port => suggestions.Any(names => string.Equals(port.Name, names[port.Id], StringComparison.Ordinal)) || IsLegacyAutoName(port));
+    }
+
+    /// <summary>Renames ports that still carry a suggested name to the suggestion in the current language; true when a name changed.</summary>
+    public bool RelabelAutoNames()
+    {
+        if (!_portTable.IsEnabled) return false;
+        var before = _portTable.Interfaces.Select(port => port.Name).ToArray();
+        ApplyAutoNames(CaptureAutoNames());
+        Reload();
+        return !before.SequenceEqual(_portTable.Interfaces.Select(port => port.Name), StringComparer.Ordinal);
     }
 
     private void ApplyAutoNames(IReadOnlyDictionary<string, bool> autoNamed)

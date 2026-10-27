@@ -11,7 +11,7 @@ public sealed class WindowsMonitorDpiSource : IMonitorDpiSource
     public MonitorDpi GetDpiForPoint(int x, int y)
     {
         var monitor = NativeMethods.MonitorFromPoint(new NativeMethods.Point(x, y), MonitorDefaultToNearest);
-        if (monitor == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error(), "找不到游標所在螢幕。");
+        if (monitor == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error(), Loc.T("找不到游標所在螢幕。"));
         var result = NativeMethods.GetDpiForMonitor(monitor, 0, out var dpiX, out var dpiY);
         Marshal.ThrowExceptionForHR(result);
         return new MonitorDpi((int)dpiX, (int)dpiY);

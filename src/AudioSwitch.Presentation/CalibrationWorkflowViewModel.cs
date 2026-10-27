@@ -33,7 +33,7 @@ public sealed class CalibrationWorkflowViewModel
     public void BeginAtPort(string interfaceId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(interfaceId);
-        if (_portTable.FindInterface(interfaceId) is null) throw new ArgumentException($"找不到接口 ID：{interfaceId}", nameof(interfaceId));
+        if (_portTable.FindInterface(interfaceId) is null) throw new ArgumentException(Loc.F("找不到接口 ID：{0}", interfaceId), nameof(interfaceId));
         Reset();
         _interfaceId = interfaceId;
         State = CalibrationWorkflowState.AwaitingUnplug;
@@ -49,7 +49,7 @@ public sealed class CalibrationWorkflowViewModel
     public void ConfirmUnplugged()
     {
         if (State != CalibrationWorkflowState.AwaitingUnplug)
-            throw new InvalidOperationException("目前沒有等待拔除裝置的校準流程。");
+            throw new InvalidOperationException(Loc.T("目前沒有等待拔除裝置的校準流程。"));
         _before = _snapshotSource.Capture();
         ErrorMessage = null;
         State = CalibrationWorkflowState.AwaitingDevice;
@@ -58,7 +58,7 @@ public sealed class CalibrationWorkflowViewModel
     public CalibrationResult? CompleteDeviceStep()
     {
         if (State != CalibrationWorkflowState.AwaitingDevice || _before is null)
-            throw new InvalidOperationException("目前沒有等待裝置接入的校準流程。");
+            throw new InvalidOperationException(Loc.T("目前沒有等待裝置接入的校準流程。"));
         try
         {
             _after = _snapshotSource.Capture();
@@ -67,7 +67,7 @@ public sealed class CalibrationWorkflowViewModel
             if (_interfaceId is null)
             {
                 State = CalibrationWorkflowState.AwaitingPortPlacement;
-                ErrorMessage = NewAudioEndpoints.Count > 0 ? "已偵測新音訊端點，請選擇或新增對應接口。" : "已偵測裝置，請選擇或新增對應接口。";
+                ErrorMessage = Loc.T(NewAudioEndpoints.Count > 0 ? "已偵測新音訊端點，請選擇或新增對應接口。" : "已偵測裝置，請選擇或新增對應接口。");
                 return null;
             }
             return ApplyCalibration(_interfaceId, _before, _after);
@@ -82,8 +82,8 @@ public sealed class CalibrationWorkflowViewModel
     public CalibrationResult? SelectPort(string interfaceId)
     {
         if (State != CalibrationWorkflowState.AwaitingPortPlacement || _before is null || _after is null)
-            throw new InvalidOperationException("請先完成裝置接入偵測，再選擇接口位置。");
-        if (_portTable.FindInterface(interfaceId) is null) throw new ArgumentException($"找不到接口 ID：{interfaceId}", nameof(interfaceId));
+            throw new InvalidOperationException(Loc.T("請先完成裝置接入偵測，再選擇接口位置。"));
+        if (_portTable.FindInterface(interfaceId) is null) throw new ArgumentException(Loc.F("找不到接口 ID：{0}", interfaceId), nameof(interfaceId));
         return ApplyCalibration(interfaceId, _before, _after);
     }
 
@@ -101,7 +101,7 @@ public sealed class CalibrationWorkflowViewModel
             }
             else if (Result.Status == "ambiguous")
             {
-                ErrorMessage = "請只插入一個裝置後重試。";
+                ErrorMessage = Loc.T("請只插入一個裝置後重試。");
             }
             else
             {
@@ -109,7 +109,7 @@ public sealed class CalibrationWorkflowViewModel
                 _before = null;
                 _after = null;
                 State = CalibrationWorkflowState.AwaitingUnplug;
-                ErrorMessage = "沒有偵測到新插入的裝置。請再拔掉一次，按「下一步」後再插入。";
+                ErrorMessage = Loc.T("沒有偵測到新插入的裝置。請再拔掉一次，按「下一步」後再插入。");
             }
             return Result;
         }

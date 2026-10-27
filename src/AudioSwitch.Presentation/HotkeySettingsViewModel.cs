@@ -37,14 +37,14 @@ public sealed class HotkeySettingsViewModel : INotifyPropertyChanged
         var result = _hotkeyService.Register(targetWindow, EmptyToNull(PlaybackHotkey), EmptyToNull(RecordingHotkey));
         if (!result.Success)
         {
-            var error = result.Error ?? "無法註冊快捷鍵。";
+            var error = result.Error ?? Loc.T("無法註冊快捷鍵。");
             var restore = _hotkeyService.Register(targetWindow, _settings.PlaybackHotkey, _settings.RecordingHotkey);
             if (restore.Success)
-                ErrorMessage = _settings.PlaybackHotkey is null && _settings.RecordingHotkey is null ? error : $"{error} 已保留原本的快捷鍵。";
+                ErrorMessage = _settings.PlaybackHotkey is null && _settings.RecordingHotkey is null ? error : Loc.F("{0} 已保留原本的快捷鍵。", error);
             else if (string.IsNullOrWhiteSpace(restore.Error) || string.Equals(restore.Error, result.Error, StringComparison.Ordinal))
-                ErrorMessage = $"{error} 原本的快捷鍵也無法重新註冊。";
+                ErrorMessage = Loc.F("{0} 原本的快捷鍵也無法重新註冊。", error);
             else
-                ErrorMessage = $"{error} 原本的快捷鍵也無法重新註冊：{restore.Error}";
+                ErrorMessage = Loc.F("{0} 原本的快捷鍵也無法重新註冊：{1}", error, restore.Error);
             return false;
         }
         _settings.PlaybackHotkey = EmptyToNull(PlaybackHotkey);
@@ -62,7 +62,7 @@ public sealed class HotkeySettingsViewModel : INotifyPropertyChanged
                 IsActive(endpoint) && endpoint.Flow.Equals(expectedFlow, StringComparison.OrdinalIgnoreCase)).ToArray();
             if (endpoints.Length == 0)
             {
-                ErrorMessage = flow == AudioEndpointFlow.Render ? "目前沒有可用的播放端點。" : "目前沒有可用的錄音端點。";
+                ErrorMessage = Loc.T(flow == AudioEndpointFlow.Render ? "目前沒有可用的播放端點。" : "目前沒有可用的錄音端點。");
                 return new HotkeyCycleResult(false, Error: ErrorMessage);
             }
             var currentId = _endpointWriter.GetDefaultEndpointId(flow, AudioEndpointRole.Multimedia);
@@ -73,7 +73,7 @@ public sealed class HotkeySettingsViewModel : INotifyPropertyChanged
             if (!result.Success || !target.EndpointId.Equals(readback, StringComparison.OrdinalIgnoreCase))
             {
                 ErrorMessage = string.Join(" ", result.Roles.Where(role => !role.Success).Select(role => role.Error).Where(message => !string.IsNullOrWhiteSpace(message)));
-                if (string.IsNullOrWhiteSpace(ErrorMessage)) ErrorMessage = "Windows 未確認快捷鍵切換結果。";
+                if (string.IsNullOrWhiteSpace(ErrorMessage)) ErrorMessage = Loc.T("Windows 未確認快捷鍵切換結果。");
                 return new HotkeyCycleResult(false, Error: ErrorMessage);
             }
             ErrorMessage = null;
@@ -100,11 +100,36 @@ public sealed class HotkeySettingsViewModel : INotifyPropertyChanged
     }
 }
 
+public sealed record LanguageOption(string? Setting, string Label);
+
 public sealed class GeneralSettingsViewModel : INotifyPropertyChanged
 {
     private readonly IAutostartService _autostartService;
     private readonly AudioSwitchSettings _settings;
     private string? _errorMessage;
+
+    /// <summary>Following Windows is listed first; the two languages are always shown in their own script.</summary>
+    public IReadOnlyList<LanguageOption> LanguageOptions { get; } =
+    [
+        new(null, Loc.T("跟隨 Windows")),
+        new(Loc.TraditionalChineseSetting, "繁體中文"),
+        new(Loc.EnglishSetting, "English")
+    ];
+
+    public LanguageOption SelectedLanguage
+    {
+        get => LanguageOptions.FirstOrDefault(option => option.Setting == _settings.Language) ?? LanguageOptions[0];
+        set
+        {
+            if (value is null || value.Setting == _settings.Language) return;
+            _settings.Language = value.Setting;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedLanguage)));
+            LanguageChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Raised after the stored language setting changes; the app then switches the interface language.</summary>
+    public event EventHandler? LanguageChanged;
 
     public bool AutostartEnabled
     {

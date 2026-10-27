@@ -20,6 +20,9 @@ public sealed class AudioSwitchSettings
     public bool AutostartEnabled { get; set; }
     public bool FirstRunNotificationShown { get; set; }
 
+    /// <summary><see cref="Loc.TraditionalChineseSetting"/>, <see cref="Loc.EnglishSetting"/>, or <c>null</c> to follow Windows.</summary>
+    public string? Language { get; set; }
+
     /// <summary>User-given dock and hub names, keyed by <see cref="TopologyNode.DockKey"/>; docks of the same model share one name.</summary>
     public Dictionary<string, string> DockNames { get; set => field = value ?? []; } = [];
 }
@@ -132,7 +135,7 @@ public static class ConfigurationStore
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(content);
         var fullPath = Path.GetFullPath(path);
-        var directory = Path.GetDirectoryName(fullPath) ?? throw new ArgumentException("設定檔路徑必須包含資料夾", nameof(path));
+        var directory = Path.GetDirectoryName(fullPath) ?? throw new ArgumentException(Loc.T("設定檔路徑必須包含資料夾"), nameof(path));
         Directory.CreateDirectory(directory);
         var temporaryPath = Path.Combine(directory, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
         try
@@ -176,12 +179,12 @@ public static class ConfigurationStore
             try
             {
                 File.Move(path, archivePath);
-                errors.Add($"{fileName}：{exception.Message}；原始檔已保留為 {Path.GetFileName(archivePath)}。");
+                errors.Add(Loc.F("{0}：{1}；原始檔已保留為 {2}。", fileName, exception.Message, Path.GetFileName(archivePath)));
             }
             catch (Exception archiveException) when (archiveException is IOException or UnauthorizedAccessException)
             {
                 protectedFiles.Add(fileName);
-                errors.Add($"{fileName}：{exception.Message}；無法封存原始檔（{archiveException.Message}），本次執行期間不會覆寫此檔。");
+                errors.Add(Loc.F("{0}：{1}；無法封存原始檔（{2}），本次執行期間不會覆寫此檔。", fileName, exception.Message, archiveException.Message));
             }
             return empty();
         }
@@ -193,13 +196,13 @@ public static class ConfigurationStore
         using var payload = JsonDocument.Parse(json);
         if (!payload.RootElement.TryGetProperty("original_device_descriptions", out var originals) || originals.ValueKind != JsonValueKind.Object)
         {
-            throw new JsonException("別名設定缺少原始端點名稱對照");
+            throw new JsonException(Loc.T("別名設定缺少原始端點名稱對照"));
         }
         var document = JsonSerializer.Deserialize<AliasDocument>(json, JsonOptions)
-            ?? throw new JsonException("別名設定內容為空");
+            ?? throw new JsonException(Loc.T("別名設定內容為空"));
         if (document.SchemaVersion != 1 || document.OriginalDeviceDescriptions is null)
         {
-            throw new JsonException("別名設定格式錯誤或 schema_version 不支援");
+            throw new JsonException(Loc.T("別名設定格式錯誤或 schema_version 不支援"));
         }
         return new AliasStore(new Dictionary<string, string>(document.OriginalDeviceDescriptions, StringComparer.OrdinalIgnoreCase));
     }
@@ -208,10 +211,10 @@ public static class ConfigurationStore
     {
         EnsureSchemaVersion(json);
         var settings = JsonSerializer.Deserialize<AudioSwitchSettings>(json, JsonOptions)
-            ?? throw new JsonException("一般設定內容為空");
+            ?? throw new JsonException(Loc.T("一般設定內容為空"));
         if (settings.SchemaVersion != 1)
         {
-            throw new JsonException("一般設定格式錯誤或 schema_version 不支援");
+            throw new JsonException(Loc.T("一般設定格式錯誤或 schema_version 不支援"));
         }
         return settings;
     }
@@ -223,7 +226,7 @@ public static class ConfigurationStore
             !payload.RootElement.TryGetProperty("schema_version", out var schemaVersion) ||
             !schemaVersion.TryGetInt32(out var version) || version != 1)
         {
-            throw new JsonException("設定檔格式錯誤或 schema_version 不支援");
+            throw new JsonException(Loc.T("設定檔格式錯誤或 schema_version 不支援"));
         }
     }
 

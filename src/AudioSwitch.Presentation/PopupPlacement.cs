@@ -1,3 +1,5 @@
+using AudioSwitch.Core;
+
 namespace AudioSwitch.Presentation;
 
 public readonly record struct PhysicalPoint(int X, int Y);
@@ -34,8 +36,8 @@ public static class PopupPlacement
     private static void Validate(PhysicalRect area, DpiScale dpi, double widthDip, double heightDip)
     {
         if (area.Width <= 0 || area.Height <= 0 || dpi.X <= 0 || dpi.Y <= 0 || widthDip <= 0 || heightDip <= 0)
-            throw new ArgumentOutOfRangeException(nameof(area), "工作區、DPI 與面板尺寸必須大於零。");
+            throw new ArgumentOutOfRangeException(nameof(area), Loc.T("工作區、DPI 與面板尺寸必須大於零。"));
         if (widthDip * dpi.X > area.Width || heightDip * dpi.Y > area.Height)
-            throw new ArgumentOutOfRangeException(nameof(widthDip), "面板尺寸不能大於螢幕工作區。");
+            throw new ArgumentOutOfRangeException(nameof(widthDip), Loc.T("面板尺寸不能大於螢幕工作區。"));
     }
 }

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
+using AudioSwitch.Core;
 using AudioSwitch.Presentation;
 
 namespace AudioSwitch.App.Views;
@@ -91,8 +92,8 @@ public partial class PortsPageView : UserControl
             var edge = PortDiagramViewModel.ParseEdge(selected?.Edge);
             EdgeChoice.SelectedIndex = selected is null ? -1 : Array.IndexOf(Edges, edge);
             var vertical = edge is PortEdge.Left or PortEdge.Right;
-            SetMoveButton(MoveEarlierButton, MoveEarlierGlyph, vertical ? Glyphs.ChevronUp : Glyphs.ChevronLeft, vertical ? "往後移" : "往左移");
-            SetMoveButton(MoveLaterButton, MoveLaterGlyph, vertical ? Glyphs.ChevronDown : Glyphs.ChevronRight, vertical ? "往前移" : "往右移");
+            SetMoveButton(MoveEarlierButton, MoveEarlierGlyph, vertical ? Glyphs.ChevronUp : Glyphs.ChevronLeft, Loc.T(vertical ? "往後移" : "往左移"));
+            SetMoveButton(MoveLaterButton, MoveLaterGlyph, vertical ? Glyphs.ChevronDown : Glyphs.ChevronRight, Loc.T(vertical ? "往前移" : "往右移"));
         }
         finally
         {
@@ -110,7 +111,7 @@ public partial class PortsPageView : UserControl
     private Button CreatePaletteButton(PortConnectorType type, string name)
     {
         var label = PortDiagramViewModel.ConnectorLabel(type);
-        var description = $"{label}：拖到機身邊緣新增";
+        var description = Loc.F("{0}：拖到機身邊緣新增", label);
         var button = new Button
         {
             Width = 48,
@@ -197,8 +198,8 @@ public partial class PortsPageView : UserControl
         if (Model?.SelectedInterface is not { } port) return;
         var owner = Window.GetWindow(this);
         var answer = owner is null
-            ? MessageBox.Show($"刪除「{port.Name}」？已記錄的校準資料也會一併刪除。", "刪除接口", MessageBoxButton.YesNo, MessageBoxImage.Question)
-            : MessageBox.Show(owner, $"刪除「{port.Name}」？已記錄的校準資料也會一併刪除。", "刪除接口", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            ? MessageBox.Show(Loc.F("刪除「{0}」？已記錄的校準資料也會一併刪除。", port.Name), Loc.T("刪除接口"), MessageBoxButton.YesNo, MessageBoxImage.Question)
+            : MessageBox.Show(owner, Loc.F("刪除「{0}」？已記錄的校準資料也會一併刪除。", port.Name), Loc.T("刪除接口"), MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer == MessageBoxResult.Yes) Model.DeleteSelected();
     }
 

@@ -24,11 +24,13 @@ public sealed class DeviceNodeViewModel
     public string? ConnectorType { get; init; }
     public string? InterfaceId { get; init; }
     public string? DockKey { get; init; }
+    /// <summary>For a category root such as 內建, its stable ID; the name is translated.</summary>
+    public string? CategoryId { get; init; }
     public string GroupName { get; init; } = string.Empty;
     public bool IsDefault { get; init; }
     public IReadOnlyList<string> PhysicalDeviceLocationRaw { get; init; } = [];
     public ObservableCollection<DeviceNodeViewModel> Children { get; } = [];
-    public string KindLabel => Kind switch
+    public string KindLabel => Loc.T(Kind switch
     {
         DeviceNodeKind.Port => "接口",
         DeviceNodeKind.Category => "分類",
@@ -38,7 +40,7 @@ public sealed class DeviceNodeViewModel
         DeviceNodeKind.Playback => IsDefault ? "播放裝置（目前預設）" : "播放裝置",
         DeviceNodeKind.Recording => IsDefault ? "錄音裝置（目前預設）" : "錄音裝置",
         _ => string.Empty
-    };
+    });
 }
 
 public sealed class DevicePageViewModel : INotifyPropertyChanged
@@ -56,6 +58,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     private bool _isError;
     private bool _isPlayingTone;
     private string _dockNameText = string.Empty;
+    private ActiveDevices _active = ActiveDevices.None;
 
     public DevicePageViewModel(IAudioTopologySnapshotSource snapshotSource, IDefaultEndpointWriter endpointWriter,
         IAudioProbe probe, PortTable portTable, DeviceSettingsViewModel settings,
@@ -93,6 +96,8 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     public bool CanRestoreDockName => SelectedNode?.DockKey is { } key && _dockNames.ContainsKey(key);
     public string DockNameText { get => _dockNameText; set => Set(ref _dockNameText, value); }
     public bool CanTestTone => SelectedNode?.Kind == DeviceNodeKind.Playback && IsActive(SelectedEndpoint);
+    public bool CanSetDefault => IsEndpointSelected && IsActive(SelectedEndpoint);
+    public bool IsSelectedDefault => SelectedNode is { IsDefault: true, Kind: DeviceNodeKind.Playback or DeviceNodeKind.Recording };
     public bool CanListen => SelectedNode?.Kind == DeviceNodeKind.Recording && IsActive(SelectedEndpoint);
     public bool CanIdentifyScreen => SelectedNode?.Kind == DeviceNodeKind.Display || SelectedTopologyEndpoint?.Category == "B";
     public bool CanRestoreName => SelectedNode?.EndpointId is { } id && Settings.HasStoredOriginalName(id);
@@ -104,7 +109,12 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     public string Title => SelectedNode?.Name ?? string.Empty;
     public string KindText => SelectedNode?.KindLabel ?? string.Empty;
     public string LocationText => SelectedNode?.GroupName ?? string.Empty;
-    public string? SelectedInterfaceId => SelectedNode?.InterfaceId;
+    // Built-in speakers and microphones light up their fixed marker on the laptop drawing; a headphone jack does not.
+    public string? SelectedInterfaceId => SelectedNode?.InterfaceId ??
+        (SelectedTopologyEndpoint is { } endpoint && _snapshot is { } snapshot ? ActiveDevices.DiagramId(snapshot, endpoint) : null);
+
+    /// <summary>Where the current default playback and recording devices are on the laptop drawing.</summary>
+    public ActiveDevices Active { get => _active; private set => Set(ref _active, value); }
     public string StateText => SelectedEndpoint is { } endpoint ? StateLabel(endpoint.State) : string.Empty;
     public string TechnicalDetails => BuildTechnicalDetails();
 
@@ -129,6 +139,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
             _tree = TopologyBuilder.Build(_snapshot, _portTable, _dockNames);
             var renderDefault = _endpointWriter.GetDefaultEndpointId(AudioEndpointFlow.Render, AudioEndpointRole.Multimedia);
             var captureDefault = _endpointWriter.GetDefaultEndpointId(AudioEndpointFlow.Capture, AudioEndpointRole.Multimedia);
+            Active = ActiveDevices.Find(_snapshot, _tree, renderDefault, captureDefault);
             Roots.Clear();
             foreach (var root in _tree.Roots)
             {
@@ -139,6 +150,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
                     Kind = port is null ? DeviceNodeKind.Category : DeviceNodeKind.Port,
                     ConnectorType = port?.Type,
                     InterfaceId = port?.Id,
+                    CategoryId = port is null ? root.Id : null,
                     GroupName = root.Name
                 };
                 foreach (var child in root.Children)
@@ -146,7 +158,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
                 if (rootNode.Children.Count > 0) Roots.Add(rootNode);
             }
             if (_snapshot.Errors.Count > 0)
-                ShowMessage(string.Join("；", _snapshot.Errors.SelectMany(error => error.Values)), isError: true);
+                ShowMessage(string.Join(Loc.T("；"), _snapshot.Errors.SelectMany(error => error.Values)), isError: true);
         }
         catch (Exception exception)
         {
@@ -182,6 +194,30 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     public DeviceNodeViewModel? FindEndpoint(string endpointId) =>
         Flatten(Roots).FirstOrDefault(node => string.Equals(node.EndpointId, endpointId, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>Makes the selected endpoint the default for all three roles, like choosing it in the quick-switch panel.</summary>
+    public void SetAsDefault()
+    {
+        if (!CanSetDefault || SelectedNode?.EndpointId is not { } endpointId) return;
+        var flow = SelectedNode.Kind == DeviceNodeKind.Recording ? AudioEndpointFlow.Capture : AudioEndpointFlow.Render;
+        try
+        {
+            var result = _endpointWriter.SetDefaultEndpoint(endpointId, flow);
+            var readback = _endpointWriter.GetDefaultEndpointId(flow, AudioEndpointRole.Multimedia);
+            Refresh();
+            if (result.Success && string.Equals(readback, endpointId, StringComparison.OrdinalIgnoreCase))
+            {
+                ShowMessage(Loc.T(flow == AudioEndpointFlow.Render ? "已設為預設播放裝置。" : "已設為預設錄音裝置。"), isError: false);
+                return;
+            }
+            var error = string.Join(" ", result.Roles.Where(role => !role.Success).Select(role => role.Error).Where(message => !string.IsNullOrWhiteSpace(message)));
+            ShowMessage(string.IsNullOrWhiteSpace(error) ? Loc.T("Windows 未確認切換結果，請重試。") : error, isError: true);
+        }
+        catch (Exception exception)
+        {
+            ShowMessage(exception.Message, isError: true);
+        }
+    }
+
     public async Task PlayTestToneAsync()
     {
         if (!CanTestTone || SelectedNode?.EndpointId is not { } endpointId) return;
@@ -189,7 +225,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
         try
         {
             await _probe.PlayTestToneAsync(endpointId, TimeSpan.FromSeconds(2)).ConfigureAwait(true);
-            ShowMessage("試音完成。", isError: false);
+            ShowMessage(Loc.T("試音完成。"), isError: false);
         }
         catch (Exception exception)
         {
@@ -212,7 +248,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     {
         if (_tree is null) return;
         if (!Settings.ApplyAlias(_tree.Endpoints)) return;
-        ShowMessage("名稱已套用；Windows 設定與其他程式會顯示新名稱。", isError: false);
+        ShowMessage(Loc.T("名稱已套用；Windows 設定與其他程式會顯示新名稱。"), isError: false);
         Refresh();
     }
 
@@ -220,7 +256,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     {
         if (_tree is null) return;
         if (!Settings.ClearAlias(_tree.Endpoints)) return;
-        ShowMessage("已還原原名。", isError: false);
+        ShowMessage(Loc.T("已還原原名。"), isError: false);
         Refresh();
     }
 
@@ -228,20 +264,20 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     {
         if (SelectedNode?.DockKey is not { } key) return;
         var name = DockNameText.Trim();
-        if (name.Length == 0 || name == TopologyBuilder.DefaultDockName) _dockNames.Remove(key);
+        if (name.Length == 0 || name == Loc.T(TopologyBuilder.DefaultDockName)) _dockNames.Remove(key);
         else _dockNames[key] = name;
         if (!TrySaveDockNames()) return;
         Refresh();
-        ShowMessage("名稱已套用；同型號的 Dock／Hub 都會顯示這個名稱。", isError: false);
+        ShowMessage(Loc.T("名稱已套用；同型號的 Dock／Hub 都會顯示這個名稱。"), isError: false);
     }
 
     public void RestoreDockName()
     {
         if (SelectedNode?.DockKey is not { } key || !_dockNames.Remove(key)) return;
         if (!TrySaveDockNames()) return;
-        DockNameText = TopologyBuilder.DefaultDockName;
+        DockNameText = Loc.T(TopologyBuilder.DefaultDockName);
         Refresh();
-        ShowMessage($"已改回「{TopologyBuilder.DefaultDockName}」。", isError: false);
+        ShowMessage(Loc.F("已改回「{0}」。", Loc.T(TopologyBuilder.DefaultDockName)), isError: false);
     }
 
     private bool TrySaveDockNames()
@@ -253,7 +289,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
         }
         catch (Exception exception)
         {
-            ShowMessage($"名稱儲存失敗：{exception.Message}", isError: true);
+            ShowMessage(Loc.F("名稱儲存失敗：{0}", exception.Message), isError: true);
             return false;
         }
     }
@@ -264,7 +300,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
         if (result?.Status != "calibrated") return;
         var name = _portTable.FindInterface(interfaceId)?.Name ?? interfaceId;
         Refresh();
-        ShowMessage($"已記錄：這個裝置插在「{name}」。", isError: false);
+        ShowMessage(Loc.F("已記錄：這個裝置插在「{0}」。", name), isError: false);
     }
 
     private DeviceNodeViewModel CreateNode(TopologyNode node, string groupName, string? interfaceId, string? renderDefault, string? captureDefault)
@@ -302,12 +338,12 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
         if (SelectedEndpoint is not { } endpoint) return string.Empty;
         var lines = new List<string>
         {
-            $"端點 ID：{endpoint.EndpointId}",
-            $"裝置節點：{endpoint.DevnodeId ?? "未解析"}",
-            $"分類：{SelectedTopologyEndpoint?.Category ?? "未知"}"
+            Loc.F("端點 ID：{0}", endpoint.EndpointId),
+            Loc.F("裝置節點：{0}", endpoint.DevnodeId ?? Loc.T("未解析")),
+            Loc.F("分類：{0}", SelectedTopologyEndpoint?.Category ?? Loc.T("未知"))
         };
         var pld = SelectedNode?.PhysicalDeviceLocationRaw ?? [];
-        lines.Add(pld.Count > 0 ? $"_PLD：{string.Join(Environment.NewLine, pld)}" : "_PLD：不可用");
+        lines.Add(pld.Count > 0 ? Loc.F("_PLD：{0}", string.Join(Environment.NewLine, pld)) : Loc.T("_PLD：不可用"));
         return string.Join(Environment.NewLine, lines);
     }
 
@@ -315,7 +351,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     {
         foreach (var name in new[]
         {
-            nameof(HasSelection), nameof(IsEndpointSelected), nameof(IsDockSelected), nameof(CanRestoreDockName), nameof(CanTestTone), nameof(CanListen), nameof(CanIdentifyScreen),
+            nameof(HasSelection), nameof(IsEndpointSelected), nameof(IsDockSelected), nameof(CanRestoreDockName), nameof(CanSetDefault), nameof(IsSelectedDefault), nameof(CanTestTone), nameof(CanListen), nameof(CanIdentifyScreen),
             nameof(CanRestoreName), nameof(NeedsPortAssignment), nameof(UsbPorts), nameof(Title), nameof(KindText),
             nameof(LocationText), nameof(SelectedInterfaceId), nameof(StateText), nameof(TechnicalDetails), nameof(IsListening)
         })
@@ -334,14 +370,14 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     private static bool IsActive(AudioEndpoint? endpoint) => endpoint is not null &&
         (endpoint.State.Equals("active", StringComparison.OrdinalIgnoreCase) || endpoint.State.EndsWith(".active", StringComparison.OrdinalIgnoreCase));
 
-    internal static string StateLabel(string state) => state.ToLowerInvariant() switch
+    internal static string StateLabel(string state) => Loc.T(state.ToLowerInvariant() switch
     {
         "active" or "audiodevicestate.active" => "使用中",
         "disabled" or "audiodevicestate.disabled" => "已停用",
         "notpresent" or "audiodevicestate.notpresent" => "未連接",
         "unplugged" or "audiodevicestate.unplugged" => "已拔除",
         _ => "狀態未知"
-    };
+    });
 
     private bool Set<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {

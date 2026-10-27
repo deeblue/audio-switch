@@ -42,6 +42,61 @@ public sealed class DevicePageViewModelTests
     }
 
     [Fact]
+    public async Task BuiltInEndpointsHighlightTheirMarkerOnTheLaptopDrawing()
+    {
+        var model = CreateModel(out _);
+        model.Refresh();
+
+        await model.SelectAsync(model.FindEndpoint("speaker"));
+        Assert.Equal(PortDiagramViewModel.BuiltInSpeakerId, model.SelectedInterfaceId);
+
+        await model.SelectAsync(model.FindEndpoint("microphone"));
+        Assert.Equal(PortDiagramViewModel.BuiltInMicrophoneId, model.SelectedInterfaceId);
+
+        await model.SelectAsync(model.Roots[0]);
+        Assert.Null(model.SelectedInterfaceId);
+    }
+
+    [Fact]
+    public void CurrentDefaultsAreLocatedOnTheLaptopDrawing()
+    {
+        var model = CreateModel(out _);
+
+        model.Refresh();
+
+        Assert.Equal(PortDiagramViewModel.BuiltInSpeakerId, model.Active.Playback?.DiagramId);
+        Assert.Equal("喇叭", model.Active.Playback?.Name);
+        Assert.Null(model.Active.Recording);
+    }
+
+    [Fact]
+    public void HeadphoneJackWithoutAPortAndUnmatchedUsbHaveNoPlaceOnTheDrawing()
+    {
+        var snapshot = new Snapshot
+        {
+            Endpoints =
+            [
+                new AudioEndpoint { EndpointId = "headphones", Flow = "render", State = "active", DevnodeId = @"SWD\MMDEVAPI\headphones" },
+                new AudioEndpoint { EndpointId = "usb", Flow = "capture", State = "active", DevnodeId = @"SWD\MMDEVAPI\usb" }
+            ],
+            Devnodes =
+            [
+                new DeviceNode { InstanceId = @"HDAUDIO\CODEC" },
+                new DeviceNode { InstanceId = @"SWD\MMDEVAPI\headphones", ParentId = @"HDAUDIO\CODEC" },
+                new DeviceNode { InstanceId = @"USB\VID_1234&PID_0001\1", LocationPaths = ["PCIROOT(0)#USBROOT(0)#USB(1)"] },
+                new DeviceNode { InstanceId = @"SWD\MMDEVAPI\usb", ParentId = @"USB\VID_1234&PID_0001\1" }
+            ],
+            Jacks = [new JackRecord { EndpointId = "headphones", Jack = new() { ["connection_type"] = Number(1), ["port_connection"] = Number(0) } }]
+        };
+
+        var active = ActiveDevices.Find(snapshot, TopologyBuilder.Build(snapshot, PortTable.Empty()), "headphones", "usb");
+
+        Assert.Equal(ActiveDevices.None, active);
+    }
+
+    private static System.Text.Json.JsonElement Number(int value) => System.Text.Json.JsonDocument.Parse(value.ToString(System.Globalization.CultureInfo.InvariantCulture)).RootElement.Clone();
+
+    [Fact]
     public async Task ListeningStopsWhenAnotherNodeIsSelected()
     {
         var model = CreateModel(out var probe);

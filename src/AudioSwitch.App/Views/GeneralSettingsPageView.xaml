@@ -9,20 +9,32 @@
     <StackPanel Width="560" HorizontalAlignment="Left">
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <CheckBox Content="登入 Windows 時啟動 AudioSwitch" IsChecked="{Binding AutostartEnabled, UpdateSourceTrigger=PropertyChanged}"/>
+          <CheckBox Content="{app:Loc '登入 Windows 時啟動 AudioSwitch'}" IsChecked="{Binding AutostartEnabled, UpdateSourceTrigger=PropertyChanged}"/>
           <TextBlock Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}"
                      Visibility="{Binding ErrorMessage, Converter={StaticResource VisibleWhenNotNull}}"/>
         </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}">
         <DockPanel>
+          <ComboBox DockPanel.Dock="Right" Width="180" VerticalAlignment="Center" Margin="16,0,0,0"
+                    ItemsSource="{Binding LanguageOptions}" DisplayMemberPath="Label" SelectedItem="{Binding SelectedLanguage}"
+                    AutomationProperties.Name="{app:Loc '語言'}"/>
+          <StackPanel>
+            <TextBlock Text="{app:Loc '語言'}"/>
+            <TextBlock Text="{app:Loc '跟隨 Windows 時，中文 Windows 顯示繁體中文，其他語言顯示英文。'}" Style="{StaticResource CaptionText}"
+                       TextWrapping="Wrap" Margin="0,4,0,0"/>
+          </StackPanel>
+        </DockPanel>
+      </Border>
+      <Border Style="{StaticResource Card}">
+        <DockPanel>
           <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Click="IdentifyScreens_Click" VerticalAlignment="Center" Margin="16,0,0,0"
-                  ToolTip="識別螢幕" AutomationProperties.Name="識別螢幕">
+                  ToolTip="{app:Loc '識別螢幕'}" AutomationProperties.Name="{app:Loc '識別螢幕'}">
             <TextBlock Style="{StaticResource IconGlyph}" Text="&#xE7F4;"/>
           </Button>
           <StackPanel>
-            <TextBlock Text="識別螢幕"/>
-            <TextBlock Text="在每個螢幕上顯示編號，方便對照裝置頁的螢幕。" Style="{StaticResource CaptionText}" Margin="0,4,0,0"/>
+            <TextBlock Text="{app:Loc '識別螢幕'}"/>
+            <TextBlock Text="{app:Loc '在每個螢幕上顯示編號，方便對照裝置頁的螢幕。'}" Style="{StaticResource CaptionText}" Margin="0,4,0,0"/>
           </StackPanel>
         </DockPanel>
       </Border>

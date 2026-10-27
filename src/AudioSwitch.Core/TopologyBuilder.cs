@@ -43,7 +43,10 @@ public static class TopologyBuilder
     private static readonly HashSet<int> PhysicalJackConnectionTypes = [1, 2, 11];
     private static readonly HashSet<int> PhysicalJackPortConnections = [0, 2];
     private static readonly string[] RootCategories = ["內建", "藍牙／無線", "虛擬", "未辨識"];
+    // Root IDs and the default dock name are stable keys; their visible text goes through Loc.T.
+    public const string UnconfiguredUsbRootId = "USB（未設定接口）";
     public const string DefaultDockName = "Dock／Hub";
+    private const string UnknownSource = "未知";
 
     public static TopologyTree Build(Snapshot snapshot, PortTable portTable, IReadOnlyDictionary<string, string>? dockNames = null)
     {
@@ -51,10 +54,10 @@ public static class TopologyBuilder
         ArgumentNullException.ThrowIfNull(portTable);
 
         var roots = portTable.IsEnabled
-            ? portTable.Interfaces.Select(port => new TopologyRoot { Id = port.Id, Name = port.Name, Source = port.PositionSource ?? "未知" }).ToList()
+            ? portTable.Interfaces.Select(port => new TopologyRoot { Id = port.Id, Name = port.Name, Source = port.PositionSource ?? UnknownSource }).ToList()
             : [];
-        roots.Add(new TopologyRoot { Id = "USB（未設定接口）", Name = "USB（未設定接口）", Source = "未知" });
-        roots.AddRange(RootCategories.Select(category => new TopologyRoot { Id = category, Name = category, Source = "未知" }));
+        roots.Add(new TopologyRoot { Id = UnconfiguredUsbRootId, Name = Loc.T(UnconfiguredUsbRootId), Source = UnknownSource });
+        roots.AddRange(RootCategories.Select(category => new TopologyRoot { Id = category, Name = Loc.T(category), Source = UnknownSource }));
         var rootsById = roots.ToDictionary(root => root.Id, StringComparer.Ordinal);
         var nodesById = snapshot.Devnodes.ToDictionary(node => node.InstanceId, StringComparer.OrdinalIgnoreCase);
         var chains = new Dictionary<string, List<DeviceNode>>(StringComparer.Ordinal);
@@ -80,7 +83,7 @@ public static class TopologyBuilder
             var dockKey = string.Join("+", members.Select(HardwareKey).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
             var name = dockNames is not null && dockNames.TryGetValue(dockKey, out var stored) && !string.IsNullOrWhiteSpace(stored)
                 ? stored
-                : DefaultDockName;
+                : Loc.T(DefaultDockName);
             dock = new TopologyNode { Name = name, Kind = "dock-hub", GroupKey = topHub.InstanceId, DockKey = dockKey };
             root.Children.Add(dock);
             docks[key] = dock;
@@ -106,7 +109,7 @@ public static class TopologyBuilder
             var groupKey = endpointUsbDevice?.InstanceId;
             var leaf = new TopologyNode
             {
-                Name = endpoint.FriendlyName ?? "（無名稱）",
+                Name = endpoint.FriendlyName ?? Loc.T("（無名稱）"),
                 Kind = "endpoint",
                 EndpointId = endpoint.EndpointId,
                 Category = classification.Category,
@@ -224,9 +227,9 @@ public static class TopologyBuilder
             !node.Name.StartsWith("36fc", StringComparison.OrdinalIgnoreCase) &&
             !node.Name.StartsWith("4d36", StringComparison.OrdinalIgnoreCase))?.Name;
         var label = isHub
-            ? DefaultDockName
+            ? Loc.T(DefaultDockName)
             : functionName ?? (usb.Name is not null && !usb.Name.StartsWith("36fc", StringComparison.OrdinalIgnoreCase) &&
-                !usb.Name.StartsWith("4d36", StringComparison.OrdinalIgnoreCase) ? usb.Name : "USB 裝置");
+                !usb.Name.StartsWith("4d36", StringComparison.OrdinalIgnoreCase) ? usb.Name : Loc.T("USB 裝置"));
         return new TopologyNode { Name = label, Kind = isHub ? "dock-hub" : "device", GroupKey = usb.InstanceId };
     }
 
@@ -240,11 +243,11 @@ public static class TopologyBuilder
     private static string ScreenLabel(DisplayPath path, IReadOnlyList<DisplayPath> allPaths, IReadOnlyDictionary<string, int> numbers)
     {
         var details = new List<string>();
-        if (path.SourceName is not null && numbers.TryGetValue(path.SourceName, out var number)) details.Add($"螢幕 {number}");
+        if (path.SourceName is not null && numbers.TryGetValue(path.SourceName, out var number)) details.Add(Loc.F("螢幕 {0}", number));
         var primary = allPaths.FirstOrDefault(item => item.Primary == true);
         if (path.Primary == true)
         {
-            details.Add("主螢幕");
+            details.Add(Loc.T("主螢幕"));
         }
         else if (primary?.SourcePosition is not null && path.SourcePosition is not null)
         {
@@ -252,10 +255,10 @@ public static class TopologyBuilder
             var y = JsonValue.Integer(path.SourcePosition, "y") ?? 0;
             var primaryX = JsonValue.Integer(primary.SourcePosition, "x") ?? 0;
             var primaryY = JsonValue.Integer(primary.SourcePosition, "y") ?? 0;
-            details.Add(x < primaryX ? "左" : x > primaryX ? "右" : y < primaryY ? "上" : "下");
+            details.Add(Loc.T(x < primaryX ? "左" : x > primaryX ? "右" : y < primaryY ? "上" : "下"));
         }
-        var name = path.TargetName ?? "顯示器";
-        return details.Count == 0 ? name : $"{name}（{string.Join("，", details)}）";
+        var name = path.TargetName ?? Loc.T("顯示器");
+        return details.Count == 0 ? name : Loc.F("{0}（{1}）", name, string.Join(Loc.T("，"), details));
     }
 
     private static List<DeviceNode> BuildChain(string? startId, IReadOnlyDictionary<string, DeviceNode> nodes)
@@ -326,7 +329,7 @@ public static class TopologyBuilder
                 return "虛擬";
             }
         }
-        return category == "A" ? "USB（未設定接口）" : "未辨識";
+        return category == "A" ? UnconfiguredUsbRootId : "未辨識";
     }
 
     public static bool IsPhysicalJack(JackRecord jack)

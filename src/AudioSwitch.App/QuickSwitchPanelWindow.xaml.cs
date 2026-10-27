@@ -16,6 +16,7 @@ public partial class QuickSwitchPanelWindow : Window
     private readonly PropertyChangedEventHandler _viewModelChanged;
     private readonly NotifyCollectionChangedEventHandler _groupsChanged;
     private bool _loading;
+    private bool _closing;
 
     public QuickSwitchPanelWindow(QuickSwitchPanelViewModel viewModel, Action<int> settings, Action exit)
     {
@@ -43,8 +44,11 @@ public partial class QuickSwitchPanelWindow : Window
         UpdateStatus();
         UpdateUnconfiguredNotice();
         UpdateEmptyState();
+        // Closing the panel takes its focus away too; that deactivation must not close it a second time.
+        Closing += (_, _) => _closing = true;
         Deactivated += (_, _) =>
         {
+            if (_closing) return;
             FocusLossClosed?.Invoke(this, EventArgs.Empty);
             Close();
         };
@@ -53,6 +57,12 @@ public partial class QuickSwitchPanelWindow : Window
     public AudioEndpointFlow CurrentFlow => FlowTabs.SelectedIndex == 1 ? AudioEndpointFlow.Capture : AudioEndpointFlow.Render;
 
     public event EventHandler? FocusLossClosed;
+
+    /// <summary>Closes the panel unless it is already closing, which a fast second tray click can catch.</summary>
+    public void CloseIfOpen()
+    {
+        if (!_closing) Close();
+    }
 
     /// <summary>Sizes the panel to its content, up to <see cref="Window.MaxHeight"/>, before it is placed near the tray.</summary>
     public void FitToContent()

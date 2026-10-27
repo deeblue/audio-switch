@@ -88,7 +88,7 @@ public static class SnapshotJson
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(json);
         return JsonSerializer.Deserialize<Snapshot>(json, Options)
-            ?? throw new JsonException("快照內容為空");
+            ?? throw new JsonException(Loc.T("快照內容為空"));
     }
 }
 

@@ -43,7 +43,7 @@ public sealed class QuickSwitchPanelViewModel : INotifyPropertyChanged
             var snapshot = _snapshotSource.Capture();
             Refresh(TopologyBuilder.Build(snapshot, _portTable), _flow);
             if (snapshot.Errors.Count > 0)
-                ReportError(new InvalidOperationException(string.Join("；", snapshot.Errors.SelectMany(error => error.Values))));
+                ReportError(new InvalidOperationException(string.Join(Loc.T("；"), snapshot.Errors.SelectMany(error => error.Values))));
         }
         catch (Exception exception)
         {
@@ -66,7 +66,7 @@ public sealed class QuickSwitchPanelViewModel : INotifyPropertyChanged
             if (rows.Count > 0)
             {
                 Groups.Add(new EndpointGroupViewModel(root.Name, rows));
-                if (root.Id == "USB（未設定接口）") HasUnconfiguredUsbEndpoints = true;
+                if (root.Id == TopologyBuilder.UnconfiguredUsbRootId) HasUnconfiguredUsbEndpoints = true;
             }
         }
     }
@@ -81,7 +81,7 @@ public sealed class QuickSwitchPanelViewModel : INotifyPropertyChanged
             if (!result.Success || !string.Equals(readback, endpointId, StringComparison.OrdinalIgnoreCase))
             {
                 ErrorMessage = string.Join(" ", result.Roles.Where(role => !role.Success).Select(role => role.Error).Where(message => !string.IsNullOrWhiteSpace(message)));
-                if (string.IsNullOrWhiteSpace(ErrorMessage)) ErrorMessage = "Windows 未確認切換結果，請重試。";
+                if (string.IsNullOrWhiteSpace(ErrorMessage)) ErrorMessage = Loc.T("Windows 未確認切換結果，請重試。");
             }
             foreach (var endpoint in Groups.SelectMany(group => group.Endpoints))
                 endpoint.IsDefault = string.Equals(endpoint.EndpointId, readback, StringComparison.OrdinalIgnoreCase);

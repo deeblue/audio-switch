@@ -2,20 +2,21 @@
         x:ClassModifier="internal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:AudioSwitch.App"
         xmlns:views="clr-namespace:AudioSwitch.App.Views"
-        Title="AudioSwitch 設定" Width="960" Height="680" MinWidth="800" MinHeight="560"
+        Title="{app:Loc 'AudioSwitch 設定'}" Width="960" Height="680" MinWidth="800" MinHeight="560"
         WindowStartupLocation="CenterScreen">
   <TabControl x:Name="Tabs" Margin="16,8,16,16" SelectionChanged="Tabs_SelectionChanged">
-    <TabItem Header="裝置">
+    <TabItem Header="{app:Loc '裝置'}">
       <views:DevicesPageView x:Name="DevicesPage"/>
     </TabItem>
-    <TabItem Header="接口定義">
+    <TabItem Header="{app:Loc '接口定義'}">
       <views:PortsPageView x:Name="PortsPage"/>
     </TabItem>
-    <TabItem Header="快捷鍵">
+    <TabItem Header="{app:Loc '快捷鍵'}">
       <views:HotkeySettingsPageView x:Name="HotkeysPage"/>
     </TabItem>
-    <TabItem Header="一般">
+    <TabItem Header="{app:Loc '一般'}">
       <views:GeneralSettingsPageView x:Name="GeneralPage"/>
     </TabItem>
   </TabControl>

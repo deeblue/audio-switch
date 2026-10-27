@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -32,7 +33,9 @@ public partial class App : System.Windows.Application
     private DispatcherTimer? _refreshDebounce;
     private DispatcherTimer? _signalPoll;
     private bool _settingsRefreshPending;
-    private readonly PanelToggleBehavior _panelToggle = new(TimeSpan.FromMilliseconds(250));
+    // Tray clicks closer together than the Windows double-click time count as one click.
+    private readonly PanelToggleBehavior _panelToggle = new(TimeSpan.FromMilliseconds(250),
+        TimeSpan.FromMilliseconds(Forms.SystemInformation.DoubleClickTime));
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -51,6 +54,9 @@ public partial class App : System.Windows.Application
             Directory.CreateDirectory(_dataDirectory);
             _machine = new WindowsMachineIdentitySource().ReadIdentity();
             _configuration = ConfigurationStore.Load(_dataDirectory, _machine);
+            Loc.SetLanguage(Loc.Resolve(_configuration.Settings.Language, CultureInfo.CurrentUICulture));
+            RelabelPorts();
+            Loc.LanguageChanged += OnLanguageChanged;
             _endpointSource = new WindowsAudioEndpointSource();
             _snapshotSource = new WindowsAudioTopologySnapshotSource(endpoints: _endpointSource);
             _defaultWriter = new WindowsDefaultEndpointWriter();
@@ -61,7 +67,7 @@ public partial class App : System.Windows.Application
             _hotkeyWindow.AddHook(OnHotkeyMessage);
             _hotkeyViewModel = new HotkeySettingsViewModel(_hotkeyService, _endpointSource, _defaultWriter, _configuration.Settings);
             var hotkeyResult = _hotkeyService.Register(_hotkeyWindow.Handle, _configuration.Settings.PlaybackHotkey, _configuration.Settings.RecordingHotkey);
-            if (!hotkeyResult.Success) Log(hotkeyResult.Error ?? "快捷鍵註冊失敗");
+            if (!hotkeyResult.Success) Log(hotkeyResult.Error ?? Loc.T("快捷鍵註冊失敗"));
             _viewModel = new QuickSwitchPanelViewModel(_snapshotSource, _configuration.Ports, _defaultWriter, _probe);
             _viewModel.PropertyChanged += (_, args) =>
             {
@@ -90,7 +96,7 @@ public partial class App : System.Windows.Application
             if (_viewModel.TryMarkFirstRunNotice(_configuration.Settings))
             {
                 ConfigurationStore.Save(_dataDirectory, _configuration);
-                _trayIconHost.ShowNotice("AudioSwitch", "首次使用可在設定中定義電腦接口。", Forms.ToolTipIcon.Info);
+                _trayIconHost.ShowNotice("AudioSwitch", Loc.T("首次使用可在設定中定義電腦接口。"), Forms.ToolTipIcon.Info);
             }
             if (_configuration.Errors.Count > 0)
                 Log(string.Join(Environment.NewLine, _configuration.Errors));
@@ -98,13 +104,33 @@ public partial class App : System.Windows.Application
         catch (Exception exception)
         {
             Log(exception.ToString());
-            System.Windows.MessageBox.Show("AudioSwitch 啟動失敗，詳細資訊已寫入記錄檔。", "AudioSwitch", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(Loc.T("AudioSwitch 啟動失敗，詳細資訊已寫入記錄檔。"), "AudioSwitch", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
     }
 
+    // Ports that still carry a suggested name follow the interface language; names the user typed are kept.
+    private void RelabelPorts()
+    {
+        if (_configuration is null || !new PortDiagramViewModel(_configuration.Ports).RelabelAutoNames()) return;
+        try { ConfigurationStore.Save(_dataDirectory, _configuration); }
+        catch (Exception exception) { Log(exception.ToString()); }
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e) => Dispatcher.BeginInvoke(() =>
+    {
+        RelabelPorts();
+        _panel?.CloseIfOpen();
+        if (_settingsWindow is not { IsVisible: true } settings) return;
+        // Windows read their text when they are built, so the settings window is rebuilt on the same page.
+        var tab = settings.Tabs.SelectedIndex;
+        settings.Close();
+        ShowSettings(tab);
+    });
+
     protected override void OnExit(ExitEventArgs e)
     {
+        Loc.LanguageChanged -= OnLanguageChanged;
         if (_endpointSource is not null)
         {
             _endpointSource.EndpointChanged -= OnEndpointNotification;
@@ -113,7 +139,7 @@ public partial class App : System.Windows.Application
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         _refreshDebounce?.Stop();
         _signalPoll?.Stop();
-        _panel?.Close();
+        _panel?.CloseIfOpen();
         _settingsWindow?.Close();
         _trayIconHost?.Dispose();
         _probe?.Dispose();
@@ -146,7 +172,7 @@ public partial class App : System.Windows.Application
         switch (_panelToggle.OnTrayClick(_panel?.IsVisible == true, DateTimeOffset.UtcNow))
         {
             case PanelToggleAction.Open: ShowPanel(); break;
-            case PanelToggleAction.Close: _panel?.Close(); break;
+            case PanelToggleAction.Close: _panel?.CloseIfOpen(); break;
         }
     }
 
@@ -159,16 +185,22 @@ public partial class App : System.Windows.Application
         }
         try
         {
-            _panel = new QuickSwitchPanelWindow(_viewModel!, ShowSettings, Shutdown);
-            _panel.FocusLossClosed += (_, _) => _panelToggle.RecordFocusLoss(DateTimeOffset.UtcNow);
-            _panel.Closed += (_, _) => _panel = null;
+            // Rapid tray clicks can close a panel while it is still being shown, so this method works on its own panel
+            // and a closing panel only clears the field while it is still the current one.
+            var panel = new QuickSwitchPanelWindow(_viewModel!, ShowSettings, Shutdown);
+            _panel = panel;
+            panel.FocusLossClosed += (_, _) => _panelToggle.RecordFocusLoss(DateTimeOffset.UtcNow);
+            panel.Closed += (_, _) =>
+            {
+                if (ReferenceEquals(_panel, panel)) _panel = null;
+            };
             _viewModel!.Refresh();
-            _panel.FitToContent();
-            var bounds = new WindowsTrayAnchor(new WindowsMonitorDpiSource()).PlacePopup(_panel.Width, _panel.Height);
-            _panel.Left = bounds.Left;
-            _panel.Top = bounds.Top;
-            _panel.Show();
-            _panel.Activate();
+            panel.FitToContent();
+            var bounds = new WindowsTrayAnchor(new WindowsMonitorDpiSource()).PlacePopup(panel.Width, panel.Height);
+            panel.Left = bounds.Left;
+            panel.Top = bounds.Top;
+            panel.Show();
+            if (panel.IsVisible) panel.Activate();
         }
         catch (Exception exception)
         {
@@ -222,12 +254,12 @@ public partial class App : System.Windows.Application
         var result = _hotkeyViewModel.Cycle(flow.Value);
         if (result.Success)
         {
-            _trayIconHost?.ShowNotice("AudioSwitch", result.EndpointName ?? "已切換音訊端點。", Forms.ToolTipIcon.Info);
+            _trayIconHost?.ShowNotice("AudioSwitch", result.EndpointName ?? Loc.T("已切換音訊端點。"), Forms.ToolTipIcon.Info);
         }
         else
         {
-            Log(result.Error ?? "快捷鍵切換失敗。");
-            _trayIconHost?.ShowNotice("AudioSwitch", result.Error ?? "快捷鍵切換失敗。", Forms.ToolTipIcon.Error);
+            Log(result.Error ?? Loc.T("快捷鍵切換失敗。"));
+            _trayIconHost?.ShowNotice("AudioSwitch", result.Error ?? Loc.T("快捷鍵切換失敗。"), Forms.ToolTipIcon.Error);
         }
         if (_panel?.IsVisible == true) _viewModel?.Refresh();
         handled = true;
@@ -237,7 +269,7 @@ public partial class App : System.Windows.Application
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         Log(e.Exception.ToString());
-        _trayIconHost?.ShowNotice("AudioSwitch", "發生錯誤，詳細資訊已寫入記錄檔。", Forms.ToolTipIcon.Error);
+        _trayIconHost?.ShowNotice("AudioSwitch", Loc.T("發生錯誤，詳細資訊已寫入記錄檔。"), Forms.ToolTipIcon.Error);
         _viewModel?.ReportError(e.Exception);
         e.Handled = true;
     }
@@ -246,7 +278,7 @@ public partial class App : System.Windows.Application
     {
         Log(exception.ToString());
         _viewModel?.ReportError(exception);
-        _trayIconHost?.ShowNotice("AudioSwitch", "操作失敗，詳細資訊已寫入記錄檔。", Forms.ToolTipIcon.Error);
+        _trayIconHost?.ShowNotice("AudioSwitch", Loc.T("操作失敗，詳細資訊已寫入記錄檔。"), Forms.ToolTipIcon.Error);
     }
 
     private void Log(string message)

@@ -86,6 +86,15 @@ public sealed class WindowSmokeTests
                 Assert.Equal(1, probe.StartCount);
                 Assert.Equal(1, probe.StopCount);
 
+                window.DevicesPage.DefaultButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                Pump();
+                Assert.Equal(1, writer.SwitchCount);
+                Assert.Equal("capture-1", window.Devices.SelectedNode?.EndpointId);
+                Assert.True(window.Devices.IsSelectedDefault);
+                Assert.True(window.DevicesPage.DefaultButton.IsChecked);
+                Assert.Same(window.Devices.SelectedNode, window.DevicesPage.DeviceTree.SelectedItem);
+                Assert.Equal("capture-1", window.Devices.Settings.AliasText);
+
                 window.Tabs.SelectedIndex = 1;
                 Pump();
                 Assert.True(window.Ports.ShowIdleHint);
@@ -122,7 +131,40 @@ public sealed class WindowSmokeTests
                 Pump();
                 var marks = FindVisualElements<TextBlock>(panel).Where(block => block.Name == "DefaultMark").ToArray();
                 Assert.Single(marks, mark => mark.IsVisible);
+                // Windows deactivates a window while it closes; that must not close the panel a second time.
+                var deactivate = typeof(Window).GetMethod("OnDeactivated", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+                panel.Closing += (_, _) =>
+                {
+                    deactivate.Invoke(panel, [EventArgs.Empty]);
+                    panel.CloseIfOpen();
+                };
                 panel.Close();
+
+                // The same windows built in English show English text throughout.
+                using (Loc.Use(AppLanguage.English))
+                {
+                    var english = new SettingsWindow(snapshot, new FakeEndpointSource(), probe, writer, new FakeEndpointNameWriter(), new FakeHotkeyService(),
+                        IntPtr.Zero, new AudioSwitchConfiguration
+                        {
+                            Ports = PortTable.Empty(),
+                            Aliases = new AliasStore(),
+                            Settings = new AudioSwitchSettings { Language = Loc.EnglishSetting },
+                            Errors = []
+                        }, new MachineIdentity(), dataDirectory, () => { }, autostart, 3)
+                    {
+                        ShowActivated = false,
+                        WindowStartupLocation = WindowStartupLocation.Manual,
+                        Left = -20000,
+                        Top = -20000
+                    };
+                    english.Show();
+                    Pump();
+                    Assert.Equal("AudioSwitch Settings", english.Title);
+                    Assert.Equal(["Devices", "Ports", "Shortcuts", "General"], english.Tabs.Items.OfType<TabItem>().Select(tab => (string)tab.Header));
+                    Assert.Equal("Follow Windows", english.General.LanguageOptions[0].Label);
+                    Assert.Equal("English", english.General.SelectedLanguage.Label);
+                    english.Close();
+                }
 
                 var screen = new ScreenIdentificationWindow(1, -10000, -10000, 800, 600);
                 screen.Show();
@@ -240,8 +282,16 @@ public sealed class WindowSmokeTests
 
     private sealed class FakeDefaultEndpointWriter : IDefaultEndpointWriter
     {
+        public int SwitchCount { get; private set; }
         public string? GetDefaultEndpointId(AudioEndpointFlow flow, AudioEndpointRole role) => flow == AudioEndpointFlow.Render ? "render-1" : "capture-1";
-        public EndpointSwitchResult SetDefaultEndpoint(string endpointId, AudioEndpointFlow flow) => throw new InvalidOperationException("Smoke tests must not change default endpoints.");
+
+        // Only records the request; nothing reaches Windows.
+        public EndpointSwitchResult SetDefaultEndpoint(string endpointId, AudioEndpointFlow flow)
+        {
+            SwitchCount++;
+            return new EndpointSwitchResult(endpointId, flow,
+                Enum.GetValues<AudioEndpointRole>().Select(role => new EndpointRoleChangeResult(endpointId, flow, role, true, endpointId, null)).ToArray());
+        }
         public EndpointRoleChangeResult SetDefaultEndpointRole(string endpointId, AudioEndpointFlow flow, AudioEndpointRole role) => throw new InvalidOperationException("Smoke tests must not change default endpoints.");
         public void Dispose() { }
     }

@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using AudioSwitch.Core;
 using AudioSwitch.Presentation;
 
 namespace AudioSwitch.App.Views;
@@ -35,6 +36,8 @@ public sealed class LaptopDiagramView : UserControl
         typeof(string), typeof(LaptopDiagramView), new PropertyMetadata(null, OnVisualPropertyChanged));
     public static readonly DependencyProperty IsInteractiveProperty = DependencyProperty.Register(nameof(IsInteractive),
         typeof(bool), typeof(LaptopDiagramView), new PropertyMetadata(true, OnVisualPropertyChanged));
+    public static readonly DependencyProperty ActiveProperty = DependencyProperty.Register(nameof(Active),
+        typeof(ActiveDevices), typeof(LaptopDiagramView), new PropertyMetadata(null, OnVisualPropertyChanged));
 
     private readonly Canvas _canvas = new() { Width = CanvasWidth, Height = CanvasHeight, Background = Brushes.Transparent };
     private readonly Canvas _portLayer = new() { Width = CanvasWidth, Height = CanvasHeight };
@@ -53,13 +56,16 @@ public sealed class LaptopDiagramView : UserControl
         DragOver += OnDragOver;
         DragLeave += (_, _) => _dropIndicator.Visibility = Visibility.Collapsed;
         Drop += OnDrop;
-        AutomationProperties.SetName(this, "筆電接口示意圖");
+        AutomationProperties.SetName(this, Loc.T("筆電接口示意圖"));
     }
 
     public IReadOnlyList<PortDiagramItem>? Items { get => (IReadOnlyList<PortDiagramItem>?)GetValue(ItemsProperty); set => SetValue(ItemsProperty, value); }
     public string? SelectedId { get => (string?)GetValue(SelectedIdProperty); set => SetValue(SelectedIdProperty, value); }
     public string? HighlightedId { get => (string?)GetValue(HighlightedIdProperty); set => SetValue(HighlightedIdProperty, value); }
     public bool IsInteractive { get => (bool)GetValue(IsInteractiveProperty); set => SetValue(IsInteractiveProperty, value); }
+
+    /// <summary>The current default playback and recording devices, marked on their port or built-in marker.</summary>
+    public ActiveDevices? Active { get => (ActiveDevices?)GetValue(ActiveProperty); set => SetValue(ActiveProperty, value); }
 
     public event EventHandler<string>? PortSelected;
     public event EventHandler<PortDropEventArgs>? PortDropped;
@@ -125,6 +131,13 @@ public sealed class LaptopDiagramView : UserControl
     private void RenderPorts()
     {
         _portLayer.Children.Clear();
+        // Built-in speakers and microphone never move: they sit at fixed places in the colour of an automatically matched port.
+        var automatic = Loc.T("自動對應，不需校準");
+        var microphone = Loc.F("{0}：{1}", Loc.T("內建麥克風"), automatic);
+        var speakers = Loc.F("{0}：{1}", Loc.T("內建喇叭"), automatic);
+        AddBuiltIn(PortDiagramViewModel.BuiltInMicrophoneId, Glyphs.Microphone, Body.Left + Body.Width / 2 + 14, Body.Top - 18, microphone, Active?.Recording);
+        AddBuiltIn(PortDiagramViewModel.BuiltInSpeakerId, Glyphs.Speaker, Body.Left + 52, Body.Bottom - 41, speakers, Active?.Playback);
+        AddBuiltIn(PortDiagramViewModel.BuiltInSpeakerId, Glyphs.Speaker, Body.Right - 52, Body.Bottom - 41, speakers, Active?.Playback);
         if (Items is null) return;
         foreach (var group in Items.GroupBy(item => item.Edge))
         {
@@ -134,6 +147,73 @@ public sealed class LaptopDiagramView : UserControl
             for (var index = 0; index < ports.Length; index++)
                 AddPort(ports[index], start + index * step, scale);
         }
+    }
+
+    private void AddBuiltIn(string id, string glyph, double centerX, double centerY, string description, ActiveDevice? active)
+    {
+        var emphasized = id == SelectedId || id == HighlightedId;
+        // A built-in device that is the current default is filled like the badges on ports.
+        var isActive = active?.DiagramId == id;
+        if (isActive) description += Environment.NewLine + ActiveText(id == PortDiagramViewModel.BuiltInMicrophoneId ? AudioEndpointFlow.Capture : AudioEndpointFlow.Render, active!);
+        var icon = new TextBlock { Text = glyph, FontSize = 14, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        icon.SetResourceReference(TextBlock.FontFamilyProperty, "IconFont");
+        icon.SetResourceReference(TextBlock.ForegroundProperty, isActive ? "TextOnAccentFillColorPrimaryBrush"
+            : emphasized ? "AccentTextFillColorPrimaryBrush" : PortShapes.BrushKeyFor(PortCalibrationState.Automatic));
+        var target = new Border
+        {
+            Width = 22,
+            Height = 22,
+            CornerRadius = new CornerRadius(4),
+            BorderThickness = new Thickness(2),
+            Background = Brushes.Transparent,
+            Child = icon,
+            ToolTip = description
+        };
+        target.SetResourceReference(Border.BorderBrushProperty, emphasized ? "AccentFillColorDefaultBrush" : "SubtleFillColorTransparentBrush");
+        if (isActive) target.SetResourceReference(Border.BackgroundProperty, "AccentFillColorDefaultBrush");
+        else if (emphasized) target.SetResourceReference(Border.BackgroundProperty, "SubtleFillColorSecondaryBrush");
+        AutomationProperties.SetName(target, description);
+        ToolTipService.SetInitialShowDelay(target, 200);
+        Canvas.SetLeft(target, centerX - target.Width / 2);
+        Canvas.SetTop(target, centerY - target.Height / 2);
+        _portLayer.Children.Add(target);
+    }
+
+    private static string ActiveText(AudioEndpointFlow flow, ActiveDevice device) =>
+        Loc.F(flow == AudioEndpointFlow.Capture ? "目前錄音：{0}" : "目前播放：{0}", device.Name);
+
+    /// <summary>Small filled badges beside a port that carries the current default playback or recording device.</summary>
+    private void AddActiveBadges(PortDiagramItem item, Point center)
+    {
+        var badges = new List<(string Glyph, string Text)>();
+        if (Active?.Playback is { } playback && playback.DiagramId == item.Id) badges.Add((Glyphs.Speaker, ActiveText(AudioEndpointFlow.Render, playback)));
+        if (Active?.Recording is { } recording && recording.DiagramId == item.Id) badges.Add((Glyphs.Microphone, ActiveText(AudioEndpointFlow.Capture, recording)));
+        // Badges sit outside the chassis, except on the rear edge where the screen is, and side by side when both apply.
+        var (outward, along) = item.Edge switch
+        {
+            PortEdge.Left => (new Vector(-1, 0), new Vector(0, 1)),
+            PortEdge.Right => (new Vector(1, 0), new Vector(0, 1)),
+            _ => (new Vector(0, 1), new Vector(1, 0))
+        };
+        for (var index = 0; index < badges.Count; index++)
+        {
+            var position = center + outward * 24 + along * (badges.Count == 1 ? 0 : index == 0 ? -10 : 10);
+            AddBadge(badges[index].Glyph, badges[index].Text, position);
+        }
+    }
+
+    private void AddBadge(string glyph, string description, Point center)
+    {
+        var icon = new TextBlock { Text = glyph, FontSize = 10, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        icon.SetResourceReference(TextBlock.FontFamilyProperty, "IconFont");
+        icon.SetResourceReference(TextBlock.ForegroundProperty, "TextOnAccentFillColorPrimaryBrush");
+        var badge = new Border { Width = 18, Height = 18, CornerRadius = new CornerRadius(9), Child = icon, ToolTip = description };
+        badge.SetResourceReference(Border.BackgroundProperty, "AccentFillColorDefaultBrush");
+        AutomationProperties.SetName(badge, description);
+        ToolTipService.SetInitialShowDelay(badge, 200);
+        Canvas.SetLeft(badge, center.X - badge.Width / 2);
+        Canvas.SetTop(badge, center.Y - badge.Height / 2);
+        _portLayer.Children.Add(badge);
     }
 
     private static (double Step, double Scale) Spacing(PortEdge edge, int count)
@@ -173,6 +253,7 @@ public sealed class LaptopDiagramView : UserControl
         var center = EdgePoint(item.Edge, along);
         Canvas.SetLeft(target, center.X - target.Width / 2);
         Canvas.SetTop(target, center.Y - target.Height / 2);
+        AddActiveBadges(item, center);
         if (IsInteractive)
         {
             target.MouseLeftButtonDown += (_, e) =>

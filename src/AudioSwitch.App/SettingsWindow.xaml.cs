@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using AudioSwitch.Core;
@@ -24,7 +25,7 @@ internal sealed partial class SettingsWindow : Window
 
         var deviceSettings = new DeviceSettingsViewModel(probe, nameWriter, snapshots, configuration.Ports, configuration.Aliases, Save);
         Devices = new DevicePageViewModel(snapshots, writer, probe, configuration.Ports, deviceSettings, configuration.Settings.DockNames, Save);
-        Ports = new PortSettingsViewModel(snapshots, configuration.Ports, machine, deviceSettings, Save);
+        Ports = new PortSettingsViewModel(snapshots, configuration.Ports, machine, deviceSettings, Save, writer);
         Hotkeys = new HotkeySettingsViewModel(hotkeyService, endpoints, writer, configuration.Settings);
         General = new GeneralSettingsViewModel(autostartService, configuration.Settings);
 
@@ -39,6 +40,12 @@ internal sealed partial class SettingsWindow : Window
         General.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(GeneralSettingsViewModel.AutostartEnabled)) TrySave();
+        };
+        // The app rebuilds this window in the new language, so the choice is saved before the language changes.
+        General.LanguageChanged += (_, _) =>
+        {
+            TrySave();
+            Loc.SetLanguage(Loc.Resolve(configuration.Settings.Language, CultureInfo.CurrentUICulture));
         };
 
         Tabs.SelectedIndex = selectedTab;
@@ -67,6 +74,7 @@ internal sealed partial class SettingsWindow : Window
     public void RefreshDevices()
     {
         if (_activeTabIndex == 0) Devices.Refresh();
+        if (_activeTabIndex == 1) Ports.RefreshActiveDevices();
     }
 
     private async void Tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -75,11 +83,13 @@ internal sealed partial class SettingsWindow : Window
         _activeTabIndex = Tabs.SelectedIndex;
         await Devices.Settings.SetDevicePageActiveAsync(_activeTabIndex == 0);
         if (_activeTabIndex == 0) Devices.Refresh();
+        if (_activeTabIndex == 1) Ports.RefreshActiveDevices();
     }
 
     private void RefreshAfterPortChange()
     {
         Devices.Refresh();
+        Ports.RefreshActiveDevices();
         DevicesPage.MiniDiagram.Items = Ports.Diagram.GetItems();
     }
 
@@ -99,7 +109,7 @@ internal sealed partial class SettingsWindow : Window
         catch (Exception exception)
         {
             System.Diagnostics.Trace.WriteLine(exception);
-            MessageBox.Show(this, $"設定檔儲存失敗：{exception.Message}", "AudioSwitch", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, Loc.F("設定檔儲存失敗：{0}", exception.Message), "AudioSwitch", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

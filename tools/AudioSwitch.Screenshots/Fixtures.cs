@@ -1,6 +1,7 @@
 using System.Text.Json;
 using AudioSwitch.Core;
 using AudioSwitch.Platform.Windows;
+using AudioSwitch.Presentation;
 
 interface IScreenshotFixture : IAudioTopologySnapshotSource, IAudioEndpointSource, IDisposable
 {
@@ -19,7 +20,7 @@ sealed class Fixture(Snapshot snapshot, Func<PortTable> ports) : IScreenshotFixt
     public event EventHandler<EndpointNotificationEventArgs>? DefaultEndpointChanged { add { } remove { } }
     public Snapshot Capture() => Clone(Snapshot);
     public IReadOnlyList<AudioEndpoint> EnumerateActiveEndpoints() => Capture().Endpoints;
-    public PortTable CreatePorts() => ports();
+    public PortTable CreatePorts() => Fixtures.InCurrentLanguage(ports());
     public AudioSwitchConfiguration LoadConfiguration(string dataDirectory) =>
         new() { Ports = CreatePorts(), Aliases = new AliasStore(), Settings = new AudioSwitchSettings(), Errors = [] };
     public void Dispose() { }
@@ -49,13 +50,25 @@ sealed class LiveFixture : IScreenshotFixture
     public event EventHandler<EndpointNotificationEventArgs>? DefaultEndpointChanged { add { } remove { } }
     public Snapshot Capture() => _snapshots.Capture();
     public IReadOnlyList<AudioEndpoint> EnumerateActiveEndpoints() => _endpoints.EnumerateActiveEndpoints();
-    public PortTable CreatePorts() => ConfigurationStore.Load(_dataDirectory, Machine).Ports;
-    public AudioSwitchConfiguration LoadConfiguration(string dataDirectory) => ConfigurationStore.Load(dataDirectory, Machine);
+    public PortTable CreatePorts() => Fixtures.InCurrentLanguage(ConfigurationStore.Load(_dataDirectory, Machine).Ports);
+    public AudioSwitchConfiguration LoadConfiguration(string dataDirectory)
+    {
+        var configuration = ConfigurationStore.Load(dataDirectory, Machine);
+        Fixtures.InCurrentLanguage(configuration.Ports);
+        return configuration;
+    }
     public void Dispose() => _endpoints.Dispose();
 }
 
 static class Fixtures
 {
+    /// <summary>Suggested port names follow the interface language, as the app does when it starts.</summary>
+    public static PortTable InCurrentLanguage(PortTable ports)
+    {
+        new PortDiagramViewModel(ports).RelabelAutoNames();
+        return ports;
+    }
+
     const string Codec = "HDAUDIO\\CODEC\\INTERNAL";
 
     public static Fixture Standard() => new(StandardSnapshot(), StandardPorts);

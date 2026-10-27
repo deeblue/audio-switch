@@ -36,6 +36,8 @@ dotnet test src/AudioSwitch.sln -c Release
 dotnet run --project tools/AudioSwitch.Screenshots -c Release
 ```
 
+加上 `--english` 以英文介面產生同一組截圖（假資料中的裝置名稱維持原樣），用來檢查英文版排版。
+
 也可指定輸出目錄：
 
 ```powershell
@@ -47,6 +49,10 @@ dotnet run --project tools/AudioSwitch.Screenshots -c Release -- artifacts/scree
 ```powershell
 dotnet run --project tools/AudioSwitch.Screenshots -c Release -- artifacts/screenshots/live --live
 ```
+
+## 介面語言
+
+介面文字在程式碼與 XAML 中以繁體中文撰寫：C# 經 `Loc.T`／`Loc.F` 取用，XAML 寫成 `{app:Loc '…'}`。英文對照表在 `src/AudioSwitch.Core/EnglishText.cs`。新增或修改介面文字時一併更新對照表；`LocalizationTests` 會掃描 `src/` 的所有中文字串，缺少英文、含中文的插值字串、XAML 中未經 `app:Loc` 的中文、未使用的對照項目或 `{0}` 佔位符不一致都會讓測試失敗。
 
 ## 應用程式圖示
 
@@ -84,6 +90,6 @@ dotnet publish src/AudioSwitch.App -c Release -r win-x64 --self-contained -o dis
 
 - `ports.json`：本機實體接口示意圖與校準路徑。
 - `aliases.json`：還原端點原始描述所需的資料。
-- `settings.json`：快捷鍵、自動啟動偏好、首次通知狀態與 Dock／Hub 名稱。
+- `settings.json`：快捷鍵、自動啟動偏好、介面語言、首次通知狀態與 Dock／Hub 名稱。
 
 程式記錄存放於 `%LOCALAPPDATA%\AudioSwitch\logs\`。

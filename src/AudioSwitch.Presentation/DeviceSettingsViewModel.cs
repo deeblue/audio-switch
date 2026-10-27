@@ -74,8 +74,8 @@ public sealed class DeviceSettingsViewModel : INotifyPropertyChanged
 
     public bool ApplyAlias(TopologyEndpoint? selectedEndpoint, IEnumerable<TopologyEndpoint> endpoints, string aliasText)
     {
-        if (selectedEndpoint is null) return Fail("請先選擇一個音訊端點。");
-        if (string.IsNullOrWhiteSpace(aliasText)) return Fail("名稱不可空白；要改回原名請按「還原原名」。");
+        if (selectedEndpoint is null) return Fail(Loc.T("請先選擇一個音訊端點。"));
+        if (string.IsNullOrWhiteSpace(aliasText)) return Fail(Loc.T("名稱不可空白；要改回原名請按「還原原名」。"));
         var members = AliasEndpointGrouping.GetMembers(selectedEndpoint, endpoints);
         var current = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try
@@ -103,7 +103,7 @@ public sealed class DeviceSettingsViewModel : INotifyPropertyChanged
             catch (Exception writeError)
             {
                 var rollbackErrors = RestoreInReverse(changed, current);
-                return Fail(ComposeFailure("寫入別名失敗。", writeError, rollbackErrors));
+                return Fail(ComposeFailure(Loc.T("寫入別名失敗。"), writeError, rollbackErrors));
             }
 
             _aliases.SetAlias(members, originals);
@@ -120,7 +120,7 @@ public sealed class DeviceSettingsViewModel : INotifyPropertyChanged
 
     public bool ClearAlias(IEnumerable<TopologyEndpoint> endpoints)
     {
-        if (SelectedEndpoint is null) return Fail("請先選擇一個音訊端點。");
+        if (SelectedEndpoint is null) return Fail(Loc.T("請先選擇一個音訊端點。"));
         var members = AliasEndpointGrouping.GetMembers(SelectedEndpoint, endpoints)
             .Where(endpointId => _aliases.OriginalDescriptions.ContainsKey(endpointId)).ToArray();
         if (members.Length == 0)
@@ -147,7 +147,7 @@ public sealed class DeviceSettingsViewModel : INotifyPropertyChanged
             catch (Exception writeError)
             {
                 var rollbackErrors = RestoreInReverse(changed, current);
-                return Fail(ComposeFailure("還原端點名稱失敗。", writeError, rollbackErrors));
+                return Fail(ComposeFailure(Loc.T("還原端點名稱失敗。"), writeError, rollbackErrors));
             }
 
             _aliases.ClearAlias(members);
@@ -166,7 +166,7 @@ public sealed class DeviceSettingsViewModel : INotifyPropertyChanged
     {
         if (SelectedEndpoint is null)
         {
-            ErrorMessage = "請先選擇一個音訊端點。";
+            ErrorMessage = Loc.T("請先選擇一個音訊端點。");
             return null;
         }
 
@@ -178,8 +178,8 @@ public sealed class DeviceSettingsViewModel : INotifyPropertyChanged
                 _save();
                 ErrorMessage = null;
             }
-            else if (result.Status == "ambiguous") ErrorMessage = "此接口已有相同傳輸類型的另一條路徑，請選擇其他接口。";
-            else ErrorMessage = "目前裝置沒有可校準的連接路徑。";
+            else if (result.Status == "ambiguous") ErrorMessage = Loc.T("此接口已有相同傳輸類型的另一條路徑，請選擇其他接口。");
+            else ErrorMessage = Loc.T("目前裝置沒有可校準的連接路徑。");
             return result;
         }
         catch (Exception exception)
@@ -263,7 +263,7 @@ public sealed class DeviceSettingsViewModel : INotifyPropertyChanged
     private static string ComposeFailure(string message, Exception exception, IReadOnlyList<Exception> rollbackErrors) =>
         rollbackErrors.Count == 0
             ? $"{message} {exception.Message}"
-            : $"{message} {exception.Message} 還原失敗：{string.Join("；", rollbackErrors.Select(error => error.Message))}";
+            : Loc.F("{0} {1} 還原失敗：{2}", message, exception.Message, string.Join(Loc.T("；"), rollbackErrors.Select(error => error.Message)));
 
     private bool Fail(string message)
     {
