@@ -31,6 +31,7 @@ public partial class App : System.Windows.Application
     private QuickSwitchPanelWindow? _panel;
     private DispatcherTimer? _refreshDebounce;
     private DispatcherTimer? _signalPoll;
+    private bool _settingsRefreshPending;
     private readonly PanelToggleBehavior _panelToggle = new(TimeSpan.FromMilliseconds(250));
 
     protected override void OnStartup(StartupEventArgs e)
@@ -68,17 +69,20 @@ public partial class App : System.Windows.Application
                     Log(message);
             };
             _trayIconHost = new TrayIconHost();
-            _trayIconHost.ExitRequested += ExitApplication;
             _trayIconHost.TogglePanelRequested += (_, _) => TogglePanel();
-            _trayIconHost.SettingsRequested += (_, _) => ShowSettings(0);
-            _trayIconHost.IdentifyScreensRequested += (_, _) => IdentifyScreens();
             _endpointSource.EndpointChanged += OnEndpointNotification;
             _endpointSource.DefaultEndpointChanged += OnEndpointNotification;
+            Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
             _refreshDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
             _refreshDebounce.Tick += (_, _) =>
             {
                 _refreshDebounce.Stop();
                 if (_panel?.IsVisible == true) _viewModel.Refresh();
+                if (_settingsRefreshPending)
+                {
+                    _settingsRefreshPending = false;
+                    _settingsWindow?.RefreshDevices();
+                }
             };
             _signalPoll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
             _signalPoll.Tick += (_, _) => { if (_instance?.ConsumeWakeSignal() == true) ShowPanel(); };
@@ -106,6 +110,7 @@ public partial class App : System.Windows.Application
             _endpointSource.EndpointChanged -= OnEndpointNotification;
             _endpointSource.DefaultEndpointChanged -= OnEndpointNotification;
         }
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         _refreshDebounce?.Stop();
         _signalPoll?.Stop();
         _panel?.Close();
@@ -122,9 +127,16 @@ public partial class App : System.Windows.Application
         base.OnExit(e);
     }
 
-    private void OnEndpointNotification(object? sender, EndpointNotificationEventArgs e) => Dispatcher.BeginInvoke(() =>
+    // Property changes (renames included) only refresh the panel; the settings tree is rebuilt when devices, defaults or screens change.
+    private void OnEndpointNotification(object? sender, EndpointNotificationEventArgs e) =>
+        ScheduleRefresh(refreshSettings: e.ChangeKind != "property_changed");
+
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e) => ScheduleRefresh(refreshSettings: true);
+
+    private void ScheduleRefresh(bool refreshSettings) => Dispatcher.BeginInvoke(() =>
     {
         if (_refreshDebounce is null) return;
+        _settingsRefreshPending |= refreshSettings;
         _refreshDebounce.Stop();
         _refreshDebounce.Start();
     });
@@ -147,7 +159,7 @@ public partial class App : System.Windows.Application
         }
         try
         {
-            _panel = new QuickSwitchPanelWindow(_viewModel!, ShowSettings);
+            _panel = new QuickSwitchPanelWindow(_viewModel!, ShowSettings, Shutdown);
             _panel.FocusLossClosed += (_, _) => _panelToggle.RecordFocusLoss(DateTimeOffset.UtcNow);
             _panel.Closed += (_, _) => _panel = null;
             _viewModel!.Refresh();
@@ -244,5 +256,4 @@ public partial class App : System.Windows.Application
         catch (Exception loggingException) { System.Diagnostics.Trace.WriteLine(loggingException); }
     }
 
-    private void ExitApplication(object? sender, EventArgs e) => Shutdown();
 }

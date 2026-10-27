@@ -19,6 +19,9 @@ public interface IAudioEndpointSource : IDisposable
 public interface IDeviceTreeSource
 {
     IReadOnlyList<DeviceNode> GetAncestors(string instanceId);
+
+    /// <summary>Instance IDs of the present devices that the given bus enumerator (for example "USB") created.</summary>
+    IReadOnlyList<string> GetPresentDeviceIds(string enumerator);
 }
 
 public interface IJackInfoSource

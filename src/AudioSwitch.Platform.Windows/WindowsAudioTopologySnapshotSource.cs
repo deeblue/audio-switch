@@ -4,6 +4,7 @@ namespace AudioSwitch.Platform.Windows;
 
 public sealed class WindowsAudioTopologySnapshotSource : IAudioTopologySnapshotSource
 {
+    private const int CrNoSuchDevnode = 0x0D;
     private readonly IAudioEndpointSource _endpoints;
     private readonly IDeviceTreeSource _deviceTree;
     private readonly IJackInfoSource _jacks;
@@ -47,17 +48,7 @@ public sealed class WindowsAudioTopologySnapshotSource : IAudioTopologySnapshotS
             }
             else
             {
-                try
-                {
-                    foreach (var node in _deviceTree.GetAncestors(endpoint.DevnodeId))
-                    {
-                        if (seen.Add(node.InstanceId)) snapshot.Devnodes.Add(node);
-                    }
-                }
-                catch (Exception exception)
-                {
-                    AddError(snapshot, "device_tree", endpoint.EndpointId, exception);
-                }
+                AddAncestors(snapshot, seen, endpoint.DevnodeId, endpoint.EndpointId);
             }
 
             try
@@ -78,7 +69,43 @@ public sealed class WindowsAudioTopologySnapshotSource : IAudioTopologySnapshotS
         {
             AddError(snapshot, "display_paths", "active", exception);
         }
+        foreach (var path in snapshot.DisplayPaths.Where(path => !string.IsNullOrWhiteSpace(path.AdapterInstanceId)))
+        {
+            AddAncestors(snapshot, seen, path.AdapterInstanceId!, path.PathId);
+        }
+
+        // Every present USB device is recorded so calibration also sees docks and hubs that carry no audio endpoint.
+        try
+        {
+            foreach (var instanceId in _deviceTree.GetPresentDeviceIds("USB").Where(id => !seen.Contains(id)))
+            {
+                AddAncestors(snapshot, seen, instanceId, instanceId, ignoreRemoved: true);
+            }
+        }
+        catch (Exception exception)
+        {
+            AddError(snapshot, "device_tree", "present_usb_devices", exception);
+        }
         return snapshot;
+    }
+
+    private void AddAncestors(Snapshot snapshot, HashSet<string> seen, string instanceId, string scope, bool ignoreRemoved = false)
+    {
+        try
+        {
+            foreach (var node in _deviceTree.GetAncestors(instanceId))
+            {
+                if (seen.Add(node.InstanceId)) snapshot.Devnodes.Add(node);
+            }
+        }
+        catch (System.ComponentModel.Win32Exception exception) when (ignoreRemoved && exception.NativeErrorCode == CrNoSuchDevnode)
+        {
+            // The device was unplugged after it was listed.
+        }
+        catch (Exception exception)
+        {
+            AddError(snapshot, "device_tree", scope, exception);
+        }
     }
 
     private static void Try(string scope, string property, Action action, Snapshot snapshot)

@@ -77,6 +77,17 @@ class ClassifyTests(unittest.TestCase):
         self.assertEqual(unknown["children"][0]["name"], "speaker")
         self.assertEqual(unknown["children"][0]["children"][1]["kind"], "display")
 
+    def test_usb_display_adapter_without_audio_is_placed_through_its_usb_path(self):
+        from probes.audio_topology.models import DisplayPathRecord
+        nodes = [DeviceNodeRecord(r"USB\VID_34C7&PID_2114\ADAPTER", parent_id=r"USB\VID_03F0&PID_3BAF\DOCK",
+                                  location_paths=["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)#USB(4)"])]
+        display = DisplayPathRecord("usb-screen", target_name="ANW0000", adapter_name=r"\\?\USB#VID_34C7&PID_2114#ADAPTER",
+                                    adapter_instance_id=r"USB\VID_34C7&PID_2114\ADAPTER", properties={"target_id": 256})
+        pm = PortMap({"interfaces": [{"id": "usb-c-rear", "name": "USB-C", "usb_location_path_prefixes": ["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)"]}]})
+        tree = build_tree(SnapshotRecord(1, "now", MachineRecord(), [], nodes, [display]), pm)
+        port = next(x for x in tree["roots"] if x["id"] == "usb-c-rear")
+        self.assertEqual(port["children"][0]["children"][0]["name"], "ANW0000")
+
 class HostJackAndUsbDisplayTests(unittest.TestCase):
     def _tree(self, endpoints, nodes, jacks=(), displays=()):
         pm = PortMap({"interfaces": [{"id": "jack", "name": "3.5mm", "type": "audio-jack"}]})

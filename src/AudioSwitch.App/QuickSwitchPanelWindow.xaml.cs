@@ -12,15 +12,17 @@ public partial class QuickSwitchPanelWindow : Window
     private const double MinimumPanelHeight = 220;
     private readonly QuickSwitchPanelViewModel _viewModel;
     private readonly Action<int> _settings;
+    private readonly Action _exit;
     private readonly PropertyChangedEventHandler _viewModelChanged;
     private readonly NotifyCollectionChangedEventHandler _groupsChanged;
     private bool _loading;
 
-    public QuickSwitchPanelWindow(QuickSwitchPanelViewModel viewModel, Action<int> settings)
+    public QuickSwitchPanelWindow(QuickSwitchPanelViewModel viewModel, Action<int> settings, Action exit)
     {
         InitializeComponent();
         _viewModel = viewModel;
         _settings = settings;
+        _exit = exit;
         GroupsList.ItemsSource = _viewModel.Groups;
         _loading = true;
         FlowTabs.SelectedIndex = _viewModel.Flow == AudioEndpointFlow.Capture ? 1 : 0;
@@ -95,4 +97,5 @@ public partial class QuickSwitchPanelWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e) => _settings(0);
     private void Configure_Click(object sender, RoutedEventArgs e) => _settings(1);
+    private void Exit_Click(object sender, RoutedEventArgs e) => _exit();
 }

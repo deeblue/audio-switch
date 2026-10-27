@@ -21,6 +21,10 @@ public sealed class TopologySnapshotLiveTests
         Assert.Equal(expected.DisplayPaths.Select(item => item.PathId).Order(StringComparer.Ordinal),
             actual.DisplayPaths.Select(item => item.PathId).Order(StringComparer.Ordinal));
 
+        Assert.Equal(expected.Devnodes.Select(item => item.InstanceId.ToUpperInvariant()).Order(StringComparer.Ordinal),
+            actual.Devnodes.Select(item => item.InstanceId.ToUpperInvariant()).Order(StringComparer.Ordinal));
+        Assert.Contains(actual.Devnodes, node => node.InstanceId.StartsWith("USB\\ROOT_HUB", StringComparison.OrdinalIgnoreCase));
+
         foreach (var endpoint in actual.Endpoints.Where(item => item.DevnodeId is not null))
         {
             Assert.Contains(actual.Devnodes, node => node.InstanceId.Equals(endpoint.DevnodeId, StringComparison.OrdinalIgnoreCase));

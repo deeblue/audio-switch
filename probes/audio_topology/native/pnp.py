@@ -117,6 +117,22 @@ class CfgMgrApi:
             raise OSError(f"CM_Get_Device_IDW returned CR 0x{result:04X}")
         return buf.value
 
+    def present_device_ids(self, enumerator: str) -> list[str]:
+        """Instance IDs of present devices created by a bus enumerator such as "USB"."""
+        flags = 0x00000001 | 0x00000100  # CM_GETIDLIST_FILTER_ENUMERATOR | CM_GETIDLIST_FILTER_PRESENT
+        while True:
+            length = wintypes.ULONG()
+            result = self.dll.CM_Get_Device_ID_List_SizeW(ctypes.byref(length), ctypes.c_wchar_p(enumerator), flags)
+            if result != 0:
+                raise OSError(f"CM_Get_Device_ID_List_SizeW returned CR 0x{result:04X}")
+            buf = ctypes.create_unicode_buffer(length.value)
+            result = self.dll.CM_Get_Device_ID_ListW(ctypes.c_wchar_p(enumerator), buf, length.value, flags)
+            if result == 0x1A:  # CR_BUFFER_SMALL: a device arrived between the two calls
+                continue
+            if result != 0:
+                raise OSError(f"CM_Get_Device_ID_ListW returned CR 0x{result:04X}")
+            return [item for item in ctypes.wstring_at(buf, length.value).split("\0") if item]
+
     def parent(self, devinst: int) -> int | None:
         parent = wintypes.ULONG()
         result = self.dll.CM_Get_Parent(ctypes.byref(parent), devinst, 0)

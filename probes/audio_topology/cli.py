@@ -70,6 +70,20 @@ def collect_snapshot():
                     snapshot.errors.extend(node_errors)
             except Exception as exc:
                 path.errors.append(f"adapter PnP resolution: {type(exc).__name__}: {exc}")
+        # Every present USB device is recorded so calibration also sees docks and hubs that carry no audio endpoint.
+        try:
+            usb_ids = pnp_api.present_device_ids("USB")
+        except Exception as exc:
+            usb_ids = []
+            snapshot.errors.append({"scope": "device_tree", "property": "present_usb_devices", "error": f"{type(exc).__name__}: {exc}"})
+        for instance_id in usb_ids:
+            if instance_id in seen:
+                continue
+            nodes, node_errors = walk_ancestors(instance_id, pnp_api)
+            snapshot.devnodes.extend(n for n in nodes if n.instance_id not in seen)
+            seen.update(n.instance_id for n in nodes)
+            # A device unplugged after it was listed cannot be located; that is not an error.
+            snapshot.errors.extend(e for e in node_errors if not (e["property"] == "locate" and "0x000D" in e["error"]))
     return snapshot
 
 

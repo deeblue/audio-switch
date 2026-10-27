@@ -63,6 +63,12 @@ internal sealed partial class SettingsWindow : Window
         Activate();
     }
 
+    // The device page is rebuilt whenever it is shown, so other pages need no refresh here.
+    public void RefreshDevices()
+    {
+        if (_activeTabIndex == 0) Devices.Refresh();
+    }
+
     private async void Tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!ReferenceEquals(e.OriginalSource, Tabs) || Tabs.SelectedIndex == _activeTabIndex) return;

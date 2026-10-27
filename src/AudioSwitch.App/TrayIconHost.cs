@@ -8,25 +8,15 @@ public sealed class TrayIconHost : IDisposable
     private readonly WinForms.NotifyIcon _notifyIcon;
     private Icon? _currentIcon;
 
-    public WinForms.ContextMenuStrip Menu { get; }
-
-    public event EventHandler? ExitRequested;
     public event EventHandler? TogglePanelRequested;
-    public event EventHandler? SettingsRequested;
-    public event EventHandler? IdentifyScreensRequested;
 
     public void ShowNotice(string title, string message, WinForms.ToolTipIcon icon) =>
         _notifyIcon.ShowBalloonTip(3000, title, message, icon);
 
     public TrayIconHost()
     {
-        Menu = new WinForms.ContextMenuStrip();
-        Menu.Items.Add("設定", null, (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty));
-        Menu.Items.Add("識別螢幕", null, (_, _) => IdentifyScreensRequested?.Invoke(this, EventArgs.Empty));
-        Menu.Items.Add("結束", null, RequestExit);
         _notifyIcon = new WinForms.NotifyIcon
         {
-            ContextMenuStrip = Menu,
             Text = $"AudioSwitch {AppVersion.Version}",
             Visible = true
         };
@@ -44,14 +34,12 @@ public sealed class TrayIconHost : IDisposable
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         _notifyIcon.Dispose();
         _currentIcon?.Dispose();
-        Menu.Dispose();
     }
 
-    private void RequestExit(object? sender, EventArgs e) => ExitRequested?.Invoke(this, EventArgs.Empty);
-
+    // Either button opens the panel; settings and exit live in the panel itself.
     private void OnMouseClick(object? sender, WinForms.MouseEventArgs e)
     {
-        if (e.Button == WinForms.MouseButtons.Left)
+        if (e.Button is WinForms.MouseButtons.Left or WinForms.MouseButtons.Right)
             TogglePanelRequested?.Invoke(this, EventArgs.Empty);
     }
 

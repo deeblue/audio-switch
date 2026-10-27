@@ -69,6 +69,32 @@ public sealed class WindowsDeviceTreeSource : IDeviceTreeSource
         return nodes;
     }
 
+    public IReadOnlyList<string> GetPresentDeviceIds(string enumerator)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(enumerator);
+        const uint flags = CmGetIdListFilterEnumerator | CmGetIdListFilterPresent;
+        while (true)
+        {
+            var status = NativeMethods.CM_Get_Device_ID_List_SizeW(out var length, enumerator, flags);
+            if (status != 0)
+            {
+                throw ConfigManagerError("CM_Get_Device_ID_List_SizeW", status);
+            }
+
+            var buffer = new char[length];
+            status = NativeMethods.CM_Get_Device_ID_ListW(enumerator, buffer, length, flags);
+            if (status == CrBufferSmall)
+            {
+                continue; // A device arrived between the two calls.
+            }
+            if (status != 0)
+            {
+                throw ConfigManagerError("CM_Get_Device_ID_ListW", status);
+            }
+            return new string(buffer).Split('\0', StringSplitOptions.RemoveEmptyEntries);
+        }
+    }
+
     public string GetDeviceInterfaceInstanceId(string interfacePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(interfacePath);
@@ -234,6 +260,8 @@ public sealed class WindowsDeviceTreeSource : IDeviceTreeSource
         new(status, $"{operation} returned CR 0x{status:X4}");
 
     private const int CrBufferSmall = 0x1A;
+    private const uint CmGetIdListFilterEnumerator = 0x00000001;
+    private const uint CmGetIdListFilterPresent = 0x00000100;
     private const uint DevPropTypeMask = 0x0FFF;
     private const uint DevPropTypeInt32 = 0x0006;
     private const uint DevPropTypeUInt32 = 0x0007;
@@ -262,6 +290,12 @@ public sealed class WindowsDeviceTreeSource : IDeviceTreeSource
 
         [DllImport("CfgMgr32.dll", CharSet = CharSet.Unicode)]
         internal static extern int CM_Get_Device_IDW(uint devinst, StringBuilder buffer, uint bufferLength, uint flags);
+
+        [DllImport("CfgMgr32.dll", CharSet = CharSet.Unicode)]
+        internal static extern int CM_Get_Device_ID_List_SizeW(out uint length, string filter, uint flags);
+
+        [DllImport("CfgMgr32.dll", CharSet = CharSet.Unicode)]
+        internal static extern int CM_Get_Device_ID_ListW(string filter, [Out] char[] buffer, uint bufferLength, uint flags);
 
         [DllImport("CfgMgr32.dll")]
         internal static extern int CM_Get_Parent(out uint parent, uint devinst, uint flags);

@@ -56,6 +56,21 @@ public sealed class DockCalibrationTests
     }
 
     [Fact]
+    public void ScreenOnAUsbDisplayAdapterWithoutAudioIsPlacedThroughTheDockUsbPath()
+    {
+        var ports = UsbCPort();
+        var dockHub = new DeviceNode { InstanceId = @"USB\VID_03F0&PID_3BAF\DOCK", ParentId = @"USB\ROOT_HUB30\1", LocationPaths = ["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)"] };
+        var usbDisplay = new DeviceNode { InstanceId = @"USB\VID_34C7&PID_2114\ADAPTER", ParentId = dockHub.InstanceId, LocationPaths = ["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)#USB(4)"] };
+        var after = new Snapshot { Devnodes = [dockHub, usbDisplay], DisplayPaths = [UsbAdapterPath(usbDisplay.InstanceId)] };
+        AttachmentDetector.Calibrate("usb-c-rear", new Snapshot(), after, ports);
+        Assert.Empty(ports.FindInterface("usb-c-rear")!.DisplayConnectors);
+
+        var tree = TopologyBuilder.Build(after, ports);
+
+        Assert.Equal("usb-c-rear", Assert.Single(tree.DisplayGroups).InterfaceId);
+    }
+
+    [Fact]
     public void SeveralScreensWithoutUsbChangesCalibrateAUsbCPortButNotAnHdmiPort()
     {
         var after = new Snapshot { DisplayPaths = [GpuPath("first", 8261, 0), GpuPath("second", 12613, 1)] };

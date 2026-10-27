@@ -122,7 +122,7 @@ public sealed class PortDiagramViewModel
         var transports = CalibratedTransports(port);
         if (transports.Count == 0)
             return port.DisplayConnectors.Count > 0 ? PortCalibrationState.Partial : PortCalibrationState.Uncalibrated;
-        return ExpectedTransports(port).All(transports.Contains) ? PortCalibrationState.Calibrated : PortCalibrationState.Partial;
+        return ExpectedTransports.All(transports.Contains) ? PortCalibrationState.Calibrated : PortCalibrationState.Partial;
     }
 
     public string GetCalibrationStatus(PortDefinition port)
@@ -133,7 +133,7 @@ public sealed class PortDiagramViewModel
 
         var transports = CalibratedTransports(port);
         if (transports.Count == 0) return port.DisplayConnectors.Count > 0 ? "只校準了顯示輸出，缺 USB 路徑" : "未校準";
-        var expected = ExpectedTransports(port);
+        var expected = ExpectedTransports;
         var present = expected.Where(transports.Contains).ToArray();
         var unknown = transports.Where(transport => !expected.Contains(transport, StringComparer.OrdinalIgnoreCase)).Order(StringComparer.Ordinal).ToArray();
         var details = present.Concat(unknown).Concat(port.DisplayConnectors.Count > 0 ? ["顯示輸出"] : Array.Empty<string>()).ToArray();
@@ -239,8 +239,8 @@ public sealed class PortDiagramViewModel
         .Where(source => !string.IsNullOrWhiteSpace(source.Transport))
         .Select(source => source.Transport!).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-    private static string[] ExpectedTransports(PortDefinition port) =>
-        port.Type == "usb-c" ? ["USB 2", "USB 3", "PCIe 隧道"] : ["USB 2", "USB 3"];
+    // A PCIe tunnel only appears with Thunderbolt/USB4 devices, so it is shown when recorded but never required.
+    private static readonly string[] ExpectedTransports = ["USB 2", "USB 3"];
 
     private static string TypeName(PortConnectorType type) => type switch
     {

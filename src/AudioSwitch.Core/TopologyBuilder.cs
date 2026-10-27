@@ -123,6 +123,8 @@ public static class TopologyBuilder
             }
 
             interfaceId ??= DisplayInterfaceId(path, portTable);
+            // A USB display adapter without audio, for example on a dock, is placed through its own USB path.
+            if (interfaceId is null && usb is not null) interfaceId = UsbInterfaceId([usb], portTable);
             displayGroups.Add(new TopologyDisplayGroup(path.PathId, interfaceId, groupKey));
 
             if (interfaceId is null || !rootsById.TryGetValue(interfaceId, out var root))
@@ -197,13 +199,7 @@ public static class TopologyBuilder
         var usbNodes = effectiveChain.Where(node => node.InstanceId.StartsWith("USB\\", StringComparison.OrdinalIgnoreCase)).ToArray();
         if (usbNodes.Length > 0)
         {
-            var matches = usbNodes.SelectMany(node => node.LocationPaths)
-                .Select(ports.FindForLocationPath)
-                .Where(port => port is not null)
-                .Select(port => port!.Id)
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
-            return new Classification("A", matches.Length == 1 ? matches[0] : null);
+            return new Classification("A", UsbInterfaceId(usbNodes, ports));
         }
 
         var sinkPath = jacks.Select(jack => MatchSink(jack.Sink, displayPaths)).FirstOrDefault(path => path is not null);
@@ -282,6 +278,17 @@ public static class TopologyBuilder
             return edidMatches.Length == 1 ? edidMatches[0] : null;
         }
         return null;
+    }
+
+    private static string? UsbInterfaceId(IEnumerable<DeviceNode> usbNodes, PortTable ports)
+    {
+        var matches = usbNodes.SelectMany(node => node.LocationPaths)
+            .Select(ports.FindForLocationPath)
+            .Where(port => port is not null)
+            .Select(port => port!.Id)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        return matches.Length == 1 ? matches[0] : null;
     }
 
     private static string? DisplayInterfaceId(DisplayPath path, PortTable ports)

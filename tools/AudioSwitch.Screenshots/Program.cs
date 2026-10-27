@@ -235,7 +235,7 @@ sealed class Shot(Application app, string root, string theme, string scaleName, 
         var model = new QuickSwitchPanelViewModel(fixture, fixture.CreatePorts(), new SafeEndpointWriter(fixture), new SafeProbe());
         model.SelectFlow(flow);
         configure?.Invoke(model);
-        var window = new QuickSwitchPanelWindow(model, _ => { });
+        var window = new QuickSwitchPanelWindow(model, _ => { }, () => { });
         window.FitToContent();
         Capture(window, scenario);
     }
@@ -264,7 +264,7 @@ sealed class Shot(Application app, string root, string theme, string scaleName, 
     {
         var model = new QuickSwitchPanelViewModel(fixture, fixture.CreatePorts(), new SafeEndpointWriter(fixture), new SafeProbe());
         model.Refresh();
-        var window = new QuickSwitchPanelWindow(model, _ => { });
+        var window = new QuickSwitchPanelWindow(model, _ => { }, () => { });
         window.FitToContent();
         CaptureTooltip(window, scenario, w => FindAll<Button>(w).First(button => Equals(button.ToolTip, "試音")));
     }

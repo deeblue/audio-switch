@@ -14,6 +14,14 @@ class ClassificationRecord:
     evidence: list[str] = field(default_factory=list)
     unresolved: list[str] = field(default_factory=list)
 
+def usb_interface_id(usb_nodes: list[DeviceNodeRecord], port_map: PortMap) -> str | None:
+    for port in ([] if port_map.warning else port_map.data.get("interfaces", [])):
+        prefixes = port.get("usb_location_path_prefixes", [])
+        for node in usb_nodes:
+            if any(path.casefold().startswith(prefix.casefold()) for path in node.location_paths for prefix in prefixes):
+                return port["id"]
+    return None
+
 def classify_endpoint(endpoint: EndpointRecord, nodes: list[DeviceNodeRecord], jacks: list[JackRecord], sink_match: dict[str, Any] | None, paths: list[DisplayPathRecord], port_map: PortMap) -> ClassificationRecord:
     # The endpoint's own software devnode is a transport wrapper, not its source class.
     ids = [n.instance_id.upper() for n in nodes if not n.instance_id.upper().startswith("SWD\\MMDEVAPI\\")]
@@ -22,11 +30,9 @@ def classify_endpoint(endpoint: EndpointRecord, nodes: list[DeviceNodeRecord], j
         return ClassificationRecord(endpoint.endpoint_id, "D", ancestors=ancestors, evidence=["Windows PnP instance ID"])
     usb_nodes = [n for n in nodes if n.instance_id.upper().startswith("USB\\")]
     if usb_nodes:
-        for port in ([] if port_map.warning else port_map.data.get("interfaces", [])):
-            prefixes = port.get("usb_location_path_prefixes", [])
-            for node in usb_nodes:
-                if any(path.casefold().startswith(prefix.casefold()) for path in node.location_paths for prefix in prefixes):
-                    return ClassificationRecord(endpoint.endpoint_id, "A", port["id"], ancestors, ["USB PnP ancestor", "校準 LocationPaths"])
+        interface_id = usb_interface_id(usb_nodes, port_map)
+        if interface_id:
+            return ClassificationRecord(endpoint.endpoint_id, "A", interface_id, ancestors, ["USB PnP ancestor", "校準 LocationPaths"])
         return ClassificationRecord(endpoint.endpoint_id, "A", ancestors=ancestors, evidence=["USB PnP ancestor"], unresolved=["此 USB 裝置尚未校準到機身接口"])
     if sink_match and sink_match.get("matched"):
         interface_id = sink_match.get("interface_id")
@@ -143,7 +149,8 @@ def build_tree(snapshot: SnapshotRecord, port_map: PortMap, include_empty: bool 
         usb_root_id = next((endpoint_roots[e.endpoint_id] for e in related), None)
         interface_id = usb_root_id or calibrated_id
         if not interface_id and usb_node:
-            interface_id = usb_root_id
+            # A USB display adapter without audio, for example on a dock, is placed through its own USB path.
+            interface_id = usb_interface_id([usb_node], port_map)
         if not interface_id: continue
         root = by_id.get(interface_id)
         if not root:

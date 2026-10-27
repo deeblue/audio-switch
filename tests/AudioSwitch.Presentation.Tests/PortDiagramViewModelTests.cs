@@ -125,7 +125,7 @@ public sealed class PortDiagramViewModelTests
         Assert.Equal("未校準", model.GetCalibrationStatus(port));
 
         port.CalibrationSources.Add(new PortCalibrationSource { Source = "校準", Transport = "USB 2" });
-        Assert.Equal("缺部分路徑（缺 USB 3、缺 PCIe 隧道）", model.GetCalibrationStatus(port));
+        Assert.Equal("缺部分路徑（缺 USB 3）", model.GetCalibrationStatus(port));
     }
 
     [Fact]
@@ -137,9 +137,12 @@ public sealed class PortDiagramViewModelTests
         Assert.Equal(PortCalibrationState.Partial, model.GetCalibrationState(port));
         Assert.Equal("只校準了顯示輸出，缺 USB 路徑", model.GetCalibrationStatus(port));
 
-        foreach (var transport in new[] { "USB 2", "USB 3", "PCIe 隧道" })
+        foreach (var transport in new[] { "USB 2", "USB 3" })
             port.CalibrationSources.Add(new PortCalibrationSource { Source = "校準", Transport = transport });
         Assert.Equal(PortCalibrationState.Calibrated, model.GetCalibrationState(port));
+        Assert.Equal("已校準（USB 2、USB 3、顯示輸出）", model.GetCalibrationStatus(port));
+
+        port.CalibrationSources.Add(new PortCalibrationSource { Source = "校準", Transport = "PCIe 隧道" });
         Assert.Equal("已校準（USB 2、USB 3、PCIe 隧道、顯示輸出）", model.GetCalibrationStatus(port));
     }
 }

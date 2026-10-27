@@ -11,6 +11,10 @@
   <Border x:Name="RootBorder" BorderBrush="{DynamicResource SurfaceStrokeColorFlyoutBrush}" BorderThickness="1" Padding="12,12,4,12">
     <DockPanel>
       <DockPanel DockPanel.Dock="Top" Margin="4,0,8,8">
+        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Click="Exit_Click" Margin="4,0,0,0"
+                ToolTip="結束 AudioSwitch" AutomationProperties.Name="結束 AudioSwitch">
+          <TextBlock Style="{StaticResource IconGlyph}" Text="&#xE7E8;"/>
+        </Button>
         <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Click="Settings_Click" ToolTip="設定" AutomationProperties.Name="設定">
           <TextBlock Style="{StaticResource IconGlyph}" Text="&#xE713;"/>
         </Button>

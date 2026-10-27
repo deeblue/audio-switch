@@ -109,7 +109,7 @@ public sealed class WindowSmokeTests
 
                 var panelModel = new QuickSwitchPanelViewModel(snapshot, PortTable.Empty(), writer, probe);
                 panelModel.Refresh();
-                var panel = new QuickSwitchPanelWindow(panelModel, _ => { })
+                var panel = new QuickSwitchPanelWindow(panelModel, _ => { }, () => { })
                 {
                     ShowActivated = false,
                     WindowStartupLocation = WindowStartupLocation.Manual,
