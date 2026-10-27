@@ -4,5 +4,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
+    <!-- Embedded so the single-file app keeps line numbers in logged stack traces. -->
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 </Project>

@@ -74,11 +74,14 @@ probes/.venv/Scripts/python.exe -m unittest discover -s probes/tests -t .
 
 ## 發佈
 
-建立 Windows x64 Release 自包含版本：
+建立 Windows x64 Release 自包含版本。結果是單一個 `AudioSwitch.App.exe`（約 170 MB），內含 .NET 執行環境，不需安裝，複製到任何 Windows 10／11 x64 電腦即可執行；換新版時直接覆蓋這個檔案，設定檔與記錄在使用者資料夾，不受影響：
 
 ```powershell
+Remove-Item -Recurse -Force dist/AudioSwitch -ErrorAction SilentlyContinue
 dotnet publish src/AudioSwitch.App -c Release -r win-x64 --self-contained -o dist/AudioSwitch
 ```
+
+單一檔案由 `AudioSwitch.App.csproj` 的 `PublishSingleFile` 設定，不壓縮：壓縮後檔案約小一半，但執行時記憶體約多一倍，對常駐系統匣的程式不划算。除錯資訊內嵌在組件中，記錄檔裡的錯誤堆疊仍有行號。發佈前先刪除舊的輸出資料夾，免得留下多檔案版本的舊檔。執行中的程式會鎖住 exe，發佈前要先結束它。
 
 輸出到 `dist/AudioSwitch/`（不納入版本控制），執行 `dist/AudioSwitch/AudioSwitch.App.exe`。`src/AudioSwitch.App/bin/` 下的檔案是建置與測試用的中間產物。
 

@@ -9,6 +9,9 @@
     <Version>0.1.0</Version>
     <!-- The commit and build time are added as assembly metadata below; keep the informational version short. -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <!-- Publishing produces one uncompressed exe: compression halves the file but doubles the memory of this resident app. -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
   <Target Name="AddBuildInformation" BeforeTargets="GetAssemblyAttributes">
     <Exec Command="git rev-parse --short HEAD" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
