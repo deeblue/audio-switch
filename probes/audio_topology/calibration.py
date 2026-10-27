@@ -33,12 +33,25 @@ def display_connector_matches(path, calibrated: dict[str, Any]) -> bool:
                current[field] == calibrated[field] for field in _STABLE_DISPLAY_FIELDS)
 
 
+# DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI
+HDMI_OUTPUT_TECHNOLOGY = 5
+
+
 def display_interface_id(path, port_map: PortMap) -> str | None:
     if port_map.warning:
         return None
-    matches = [port["id"] for port in port_map.data.get("interfaces", [])
+    interfaces = port_map.data.get("interfaces", [])
+    matches = [port["id"] for port in interfaces
                if any(display_connector_matches(path, item) for item in port.get("display_connectors", []))]
-    return matches[0] if len(matches) == 1 else None
+    if matches:
+        return matches[0] if len(matches) == 1 else None
+    # The laptop's own HDMI connector reports HDMI on the computer's GPU. Screens through a dock or a USB-C adapter report
+    # DisplayPort, and USB display devices also report HDMI but sit on a USB adapter, so they are left out.
+    hdmi_ports = [port["id"] for port in interfaces if port.get("type") == "hdmi"]
+    on_host_gpu = (getattr(path, "adapter_instance_id", None) or "").upper().startswith("PCI\\")
+    if len(hdmi_ports) == 1 and getattr(path, "output_technology", None) == HDMI_OUTPUT_TECHNOLOGY and on_host_gpu:
+        return hdmi_ports[0]
+    return None
 
 
 def usb_path_type(location_paths: list[str]) -> str:

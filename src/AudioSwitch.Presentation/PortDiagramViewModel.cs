@@ -120,7 +120,8 @@ public sealed class PortDiagramViewModel
     {
         if (port.Type == "audio-jack") return PortCalibrationState.Automatic;
         if (port.Type is "hdmi" or "displayport")
-            return port.DisplayConnectors.Count > 0 ? PortCalibrationState.Calibrated : PortCalibrationState.Uncalibrated;
+            return port.DisplayConnectors.Count > 0 ? PortCalibrationState.Calibrated
+                : TopologyBuilder.IsAutomaticHdmiPort(_portTable, port) ? PortCalibrationState.Automatic : PortCalibrationState.Uncalibrated;
         // One recorded path is enough: USB audio devices are nearly all USB 2, and a dock's own audio sits behind its USB 2 hub.
         return CalibratedTransports(port).Count > 0 || port.DisplayConnectors.Count > 0
             ? PortCalibrationState.Calibrated
@@ -131,7 +132,8 @@ public sealed class PortDiagramViewModel
     {
         if (port.Type == "audio-jack") return Loc.T("自動對應，不需校準");
         if (port.Type is "hdmi" or "displayport")
-            return Loc.T(port.DisplayConnectors.Count > 0 ? "已校準（顯示輸出）" : "未校準");
+            return Loc.T(port.DisplayConnectors.Count > 0 ? "已校準（顯示輸出）"
+                : TopologyBuilder.IsAutomaticHdmiPort(_portTable, port) ? "自動對應，不需校準" : "未校準");
 
         var transports = CalibratedTransports(port);
         if (transports.Count == 0 && port.DisplayConnectors.Count == 0) return Loc.T("未校準");

@@ -388,8 +388,22 @@ public static class TopologyBuilder
             target.HasValue && connector.TargetId == target &&
             path.ConnectorInstance.HasValue && connector.ConnectorInstance == path.ConnectorInstance &&
             path.OutputTechnology.HasValue && connector.OutputTechnology == path.OutputTechnology)).Select(port => port.Id).Distinct(StringComparer.Ordinal).ToArray();
-        return matches.Length == 1 ? matches[0] : null;
+        if (matches.Length > 0) return matches.Length == 1 ? matches[0] : null;
+
+        // The laptop's own HDMI connector reports HDMI on the computer's GPU. Screens through a dock or a USB-C adapter report
+        // DisplayPort, and USB display devices also report HDMI but sit on a USB adapter, so they are left out.
+        var hdmiPorts = ports.IsEnabled ? ports.Interfaces.Where(port => port.Type == "hdmi").Select(port => port.Id).ToArray() : [];
+        return hdmiPorts.Length == 1 && path.OutputTechnology == HdmiOutputTechnology && IsOnHostGpu(path) ? hdmiPorts[0] : null;
     }
+
+    /// <summary>DISPLAYCONFIG_OUTPUT_TECHNOLOGY_HDMI.</summary>
+    public const long HdmiOutputTechnology = 5;
+
+    private static bool IsOnHostGpu(DisplayPath path) => path.AdapterInstanceId?.StartsWith("PCI\\", StringComparison.OrdinalIgnoreCase) == true;
+
+    /// <summary>True when the only HDMI port on the drawing is matched to screens automatically, without calibration.</summary>
+    public static bool IsAutomaticHdmiPort(PortTable ports, PortDefinition port) =>
+        port.Type == "hdmi" && ports.Interfaces.Count(item => item.Type == "hdmi") == 1;
 
     private static DeviceNode? FindUsbAdapterNode(DisplayPath path, IReadOnlyList<DeviceNode> allNodes,
         IReadOnlyDictionary<string, DeviceNode> nodesById)

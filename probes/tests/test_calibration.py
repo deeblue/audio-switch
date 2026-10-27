@@ -142,6 +142,16 @@ class CalibrationTests(unittest.TestCase):
         self.assertEqual([c["target_id"] for c in connectors], [8261, 12613])
         self.assertEqual(result["display_connectors"], connectors)
 
+    def test_only_hdmi_on_the_computers_gpu_matches_the_single_hdmi_port(self):
+        from probes.audio_topology.calibration import display_interface_id
+        one = PortMap({"interfaces": [{"id": "hdmi", "name": "HDMI", "type": "hdmi"}]})
+        two = PortMap({"interfaces": [{"id": "hdmi", "name": "HDMI", "type": "hdmi"}, {"id": "hdmi-2", "name": "HDMI", "type": "hdmi"}]})
+        gpu = r"PCI\VEN_8086&DEV_7D51\GPU"
+        self.assertEqual(display_interface_id(DisplayPathRecord("a", output_technology=5, adapter_instance_id=gpu), one), "hdmi")
+        self.assertIsNone(display_interface_id(DisplayPathRecord("b", output_technology=10, adapter_instance_id=gpu), one))
+        self.assertIsNone(display_interface_id(DisplayPathRecord("c", output_technology=5, adapter_instance_id=r"USB\VID_34C7&PID_2114\A"), one))
+        self.assertIsNone(display_interface_id(DisplayPathRecord("d", output_technology=5, adapter_instance_id=gpu), two))
+
     def test_several_screens_without_usb_changes_calibrate_usb_c_but_not_hdmi(self):
         after = SnapshotRecord(1, "b", MachineRecord(mtm="21RU"),
                                display_paths=[_gpu_path("first", 8261, 0), _gpu_path("second", 12613, 1)])

@@ -121,6 +121,31 @@ public sealed class DockCalibrationTests
         Assert.Equal("dock-speaker", Assert.Single(device.Children).EndpointId);
     }
 
+    [Theory]
+    [InlineData(@"PCI\VEN_8086&DEV_7D51\GPU", 5, 1, "hdmi")]
+    [InlineData(@"PCI\VEN_8086&DEV_7D51\GPU", 10, 1, null)]
+    [InlineData(@"USB\VID_34C7&PID_2114\ADAPTER", 5, 1, null)]
+    [InlineData(@"PCI\VEN_8086&DEV_7D51\GPU", 5, 2, null)]
+    public void OnlyHdmiOnTheComputersGpuIsMatchedToTheSingleHdmiPortWithoutCalibration(string adapter, long technology, int hdmiPorts, string? expected)
+    {
+        var interfaces = string.Join(",", Enumerable.Range(0, hdmiPorts).Select(index => $$"""{"id":"{{(index == 0 ? "hdmi" : "hdmi-2")}}","name":"HDMI","type":"hdmi"}"""));
+        var ports = PortTable.Read($$"""{"schema_version":1,"interfaces":[{{interfaces}}]}""");
+        var screen = new DisplayPath { PathId = "screen", TargetName = "HDMI", AdapterInstanceId = adapter, OutputTechnology = technology, EdidManufacturerId = 1, EdidProductCodeId = 2 };
+        var audio = new AudioEndpoint { EndpointId = "screen-audio", Flow = "render", State = "active", DevnodeId = @"HDAUDIO\FUNC_01\1" };
+        var snapshot = new Snapshot
+        {
+            Endpoints = [audio],
+            Devnodes = [new DeviceNode { InstanceId = audio.DevnodeId }],
+            Jacks = [new JackRecord { EndpointId = audio.EndpointId, Sink = new() { ["manufacturer_id"] = Json("1"), ["product_id"] = Json("2") } }],
+            DisplayPaths = [screen]
+        };
+
+        var tree = TopologyBuilder.Build(snapshot, ports);
+
+        Assert.Equal(expected, Assert.Single(tree.DisplayGroups).InterfaceId);
+        Assert.Equal(expected, Assert.Single(tree.Endpoints).InterfaceId);
+    }
+
     [Fact]
     public void ScreensAreNumberedFromLeftToRightThenTopToBottom()
     {

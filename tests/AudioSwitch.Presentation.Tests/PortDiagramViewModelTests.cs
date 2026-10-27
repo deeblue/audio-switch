@@ -96,7 +96,7 @@ public sealed class PortDiagramViewModelTests
         Assert.Equal([PortEdge.Left, PortEdge.Left, PortEdge.Right, PortEdge.Rear], items.Select(item => item.Edge));
         Assert.Equal([0, 1], items.Where(item => item.Edge == PortEdge.Left).Select(item => item.Order));
         Assert.Equal(
-            [PortCalibrationState.Calibrated, PortCalibrationState.Calibrated, PortCalibrationState.Automatic, PortCalibrationState.Uncalibrated],
+            [PortCalibrationState.Calibrated, PortCalibrationState.Calibrated, PortCalibrationState.Automatic, PortCalibrationState.Automatic],
             items.Select(item => item.State));
         Assert.Equal("左側 USB-A：已校準（USB 2、USB 3）", items[0].Description);
     }
@@ -127,6 +127,18 @@ public sealed class PortDiagramViewModelTests
         port.CalibrationSources.Add(new PortCalibrationSource { Source = "校準", Transport = "USB 2" });
         Assert.Equal(PortCalibrationState.Calibrated, model.GetCalibrationState(port));
         Assert.Equal("已校準（USB 2）；尚未記錄 USB 3", model.GetCalibrationStatus(port));
+    }
+
+    [Fact]
+    public void SingleHdmiPortIsMatchedAutomaticallyButTwoNeedCalibration()
+    {
+        var model = new PortDiagramViewModel(PortTable.Empty());
+        var first = model.AddInterface(PortConnectorType.Hdmi, PortEdge.Left, 0);
+        Assert.Equal(PortCalibrationState.Automatic, model.GetCalibrationState(first));
+        Assert.Equal("自動對應，不需校準", model.GetCalibrationStatus(first));
+
+        model.AddInterface(PortConnectorType.Hdmi, PortEdge.Right, 0);
+        Assert.Equal(PortCalibrationState.Uncalibrated, model.GetCalibrationState(first));
     }
 
     [Fact]
