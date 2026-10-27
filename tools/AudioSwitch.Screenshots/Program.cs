@@ -98,6 +98,7 @@ static class ProgramEntry
         });
         shot.Settings("settings/devices/multiple-devices", multiple, 0, window => SelectEndpoint(window, "render-dock-speaker"));
         shot.Settings("settings/devices/screen-selected", multiple, 0, window => SelectNode(window, node => node.Kind == DeviceNodeKind.Display));
+        shot.Settings("settings/devices/dock-selected", multiple, 0, window => SelectNode(window, node => node.Kind == DeviceNodeKind.DockHub));
         shot.Settings("settings/devices/unconfigured-usb", unconfigured, 0, window => SelectEndpoint(window, "render-new-speaker"));
         shot.Settings("settings/devices/long-names", longNames, 0, window => SelectEndpoint(window, "render-headset"));
         shot.Settings("settings/devices/empty", empty, 0);
@@ -168,6 +169,9 @@ static class ProgramEntry
             SelectNode(window, node => node.Kind == DeviceNodeKind.Playback), dataDirectory);
         shot.Settings("settings/devices/first-recording", fixture, 0, window =>
             SelectNode(window, node => node.Kind == DeviceNodeKind.Recording), dataDirectory);
+        if (TopologyBuilder.Build(fixture.Capture(), fixture.CreatePorts()).Roots.SelectMany(root => root.Children).Any(node => node.Kind == "dock-hub"))
+            shot.Settings("settings/devices/dock-selected", fixture, 0, window =>
+                SelectNode(window, node => node.Kind == DeviceNodeKind.DockHub), dataDirectory);
         shot.Settings("settings/ports/overview", fixture, 1, dataDirectory: dataDirectory);
         shot.Settings("settings/hotkeys", fixture, 2, dataDirectory: dataDirectory);
         shot.Settings("settings/general", fixture, 3, dataDirectory: dataDirectory);

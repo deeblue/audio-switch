@@ -55,6 +55,10 @@ public partial class DevicesPageView : System.Windows.Controls.UserControl
 
     private void RestoreName_Click(object sender, RoutedEventArgs e) => Model?.RestoreName();
 
+    private void ApplyDockName_Click(object sender, RoutedEventArgs e) => Model?.ApplyDockName();
+
+    private void RestoreDockName_Click(object sender, RoutedEventArgs e) => Model?.RestoreDockName();
+
     private void AssignPort_Click(object sender, RoutedEventArgs e)
     {
         if (PortChoice.SelectedValue is string interfaceId) Model?.AssignToPort(interfaceId);

@@ -58,6 +58,48 @@ public sealed class DevicePageViewModelTests
         Assert.False(model.HasSelection && model.IsEndpointSelected);
     }
 
+    [Fact]
+    public async Task DockNameIsSavedPerModelAndCanBeRestored()
+    {
+        var snapshot = new Snapshot
+        {
+            Endpoints = [new AudioEndpoint { EndpointId = "usb-speaker", Flow = "render", State = "active", FriendlyName = "USB 喇叭", DevnodeId = @"SWD\MMDEVAPI\usb-speaker" }],
+            Devnodes =
+            [
+                new DeviceNode { InstanceId = @"USB\ROOT_HUB30\ROOT" },
+                new DeviceNode { InstanceId = @"USB\VID_03F0&PID_3BAF\DOCK", ParentId = @"USB\ROOT_HUB30\ROOT", LocationPaths = ["PCIROOT(0)#USBROOT(0)#USB(5)"] },
+                new DeviceNode { InstanceId = @"USB\VID_303A&PID_2986\SPK", ParentId = @"USB\VID_03F0&PID_3BAF\DOCK", Name = "speaker", LocationPaths = ["PCIROOT(0)#USBROOT(0)#USB(5)#USB(1)"] },
+                new DeviceNode { InstanceId = @"SWD\MMDEVAPI\usb-speaker", ParentId = @"USB\VID_303A&PID_2986\SPK" }
+            ]
+        };
+        var source = new FakeSnapshotSource(snapshot);
+        var table = PortTable.Empty();
+        var probe = new FakeProbe();
+        var settings = new DeviceSettingsViewModel(probe, new FakeNameWriter(), source, table, new AliasStore(), () => { });
+        var names = new Dictionary<string, string>();
+        var saves = 0;
+        var model = new DevicePageViewModel(source, new FakeWriter(), probe, table, settings, names, () => saves++);
+        model.Refresh();
+        DeviceNodeViewModel Dock() => Assert.Single(Assert.Single(model.Roots).Children);
+
+        await model.SelectAsync(Dock());
+        Assert.True(model.IsDockSelected);
+        Assert.False(model.CanRestoreDockName);
+        Assert.Equal("Dock／Hub", model.DockNameText);
+
+        model.DockNameText = "  桌上 Dock ";
+        model.ApplyDockName();
+        Assert.Equal("桌上 Dock", names["VID_03F0&PID_3BAF"]);
+        Assert.Equal("桌上 Dock", Dock().Name);
+        Assert.Same(Dock(), model.SelectedNode);
+        Assert.True(model.CanRestoreDockName);
+
+        model.RestoreDockName();
+        Assert.Empty(names);
+        Assert.Equal("Dock／Hub", Dock().Name);
+        Assert.Equal(2, saves);
+    }
+
     private static DevicePageViewModel CreateModel(out FakeProbe probe)
     {
         var snapshot = new Snapshot

@@ -19,6 +19,9 @@ public sealed class AudioSwitchSettings
     public string? RecordingHotkey { get; set; }
     public bool AutostartEnabled { get; set; }
     public bool FirstRunNotificationShown { get; set; }
+
+    /// <summary>User-given dock and hub names, keyed by <see cref="TopologyNode.DockKey"/>; docks of the same model share one name.</summary>
+    public Dictionary<string, string> DockNames { get; set => field = value ?? []; } = [];
 }
 
 public sealed class AliasStore

@@ -23,6 +23,7 @@ public sealed class DeviceNodeViewModel
     public string? EndpointId { get; init; }
     public string? ConnectorType { get; init; }
     public string? InterfaceId { get; init; }
+    public string? DockKey { get; init; }
     public string GroupName { get; init; } = string.Empty;
     public bool IsDefault { get; init; }
     public IReadOnlyList<string> PhysicalDeviceLocationRaw { get; init; } = [];
@@ -46,20 +47,26 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     private readonly IDefaultEndpointWriter _endpointWriter;
     private readonly IAudioProbe _probe;
     private readonly PortTable _portTable;
+    private readonly Dictionary<string, string> _dockNames;
+    private readonly Action _saveDockNames;
     private Snapshot? _snapshot;
     private TopologyTree? _tree;
     private DeviceNodeViewModel? _selectedNode;
     private string? _message;
     private bool _isError;
     private bool _isPlayingTone;
+    private string _dockNameText = string.Empty;
 
     public DevicePageViewModel(IAudioTopologySnapshotSource snapshotSource, IDefaultEndpointWriter endpointWriter,
-        IAudioProbe probe, PortTable portTable, DeviceSettingsViewModel settings)
+        IAudioProbe probe, PortTable portTable, DeviceSettingsViewModel settings,
+        Dictionary<string, string>? dockNames = null, Action? saveDockNames = null)
     {
         _snapshotSource = snapshotSource;
         _endpointWriter = endpointWriter;
         _probe = probe;
         _portTable = portTable;
+        _dockNames = dockNames ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        _saveDockNames = saveDockNames ?? (() => { });
         Settings = settings;
         Settings.PropertyChanged += (_, args) =>
         {
@@ -82,6 +89,9 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     public bool HasSelection => SelectedNode is not null;
     public bool HasDevices => Roots.Count > 0;
     public bool IsEndpointSelected => SelectedNode?.Kind is DeviceNodeKind.Playback or DeviceNodeKind.Recording;
+    public bool IsDockSelected => SelectedNode is { Kind: DeviceNodeKind.DockHub, DockKey: not null };
+    public bool CanRestoreDockName => SelectedNode?.DockKey is { } key && _dockNames.ContainsKey(key);
+    public string DockNameText { get => _dockNameText; set => Set(ref _dockNameText, value); }
     public bool CanTestTone => SelectedNode?.Kind == DeviceNodeKind.Playback && IsActive(SelectedEndpoint);
     public bool CanListen => SelectedNode?.Kind == DeviceNodeKind.Recording && IsActive(SelectedEndpoint);
     public bool CanIdentifyScreen => SelectedNode?.Kind == DeviceNodeKind.Display || SelectedTopologyEndpoint?.Category == "B";
@@ -111,11 +121,12 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     public void Refresh()
     {
         var selectedEndpointId = SelectedNode?.EndpointId;
+        var selectedDockKey = SelectedNode?.DockKey;
         var selectedName = SelectedNode?.Name;
         try
         {
             _snapshot = _snapshotSource.Capture();
-            _tree = TopologyBuilder.Build(_snapshot, _portTable);
+            _tree = TopologyBuilder.Build(_snapshot, _portTable, _dockNames);
             var renderDefault = _endpointWriter.GetDefaultEndpointId(AudioEndpointFlow.Render, AudioEndpointRole.Multimedia);
             var captureDefault = _endpointWriter.GetDefaultEndpointId(AudioEndpointFlow.Capture, AudioEndpointRole.Multimedia);
             Roots.Clear();
@@ -143,8 +154,13 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
         }
         var reselected = selectedEndpointId is not null
             ? Flatten(Roots).FirstOrDefault(node => string.Equals(node.EndpointId, selectedEndpointId, StringComparison.OrdinalIgnoreCase))
-            : Flatten(Roots).FirstOrDefault(node => node.EndpointId is null && node.Name == selectedName);
+            : selectedDockKey is not null
+                ? Flatten(Roots).FirstOrDefault(node => string.Equals(node.DockKey, selectedDockKey, StringComparison.OrdinalIgnoreCase))
+                : Flatten(Roots).FirstOrDefault(node => node.EndpointId is null && node.Name == selectedName);
         SelectedNode = reselected;
+        // Keep a name the user is typing when the tree refreshes after a device change.
+        if (reselected?.DockKey is null || !string.Equals(reselected.DockKey, selectedDockKey, StringComparison.OrdinalIgnoreCase))
+            DockNameText = reselected?.DockKey is not null ? reselected.Name : string.Empty;
         OnPropertyChanged(nameof(HasDevices));
         RaiseSelectionProperties();
     }
@@ -153,6 +169,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     {
         if (ReferenceEquals(node, SelectedNode)) return;
         SelectedNode = node;
+        DockNameText = node?.DockKey is not null ? node.Name : string.Empty;
         Message = null;
         IsError = false;
         if (SelectedTopologyEndpoint is { } endpoint)
@@ -207,6 +224,40 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
         Refresh();
     }
 
+    public void ApplyDockName()
+    {
+        if (SelectedNode?.DockKey is not { } key) return;
+        var name = DockNameText.Trim();
+        if (name.Length == 0 || name == TopologyBuilder.DefaultDockName) _dockNames.Remove(key);
+        else _dockNames[key] = name;
+        if (!TrySaveDockNames()) return;
+        Refresh();
+        ShowMessage("名稱已套用；同型號的 Dock／Hub 都會顯示這個名稱。", isError: false);
+    }
+
+    public void RestoreDockName()
+    {
+        if (SelectedNode?.DockKey is not { } key || !_dockNames.Remove(key)) return;
+        if (!TrySaveDockNames()) return;
+        DockNameText = TopologyBuilder.DefaultDockName;
+        Refresh();
+        ShowMessage($"已改回「{TopologyBuilder.DefaultDockName}」。", isError: false);
+    }
+
+    private bool TrySaveDockNames()
+    {
+        try
+        {
+            _saveDockNames();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            ShowMessage($"名稱儲存失敗：{exception.Message}", isError: true);
+            return false;
+        }
+    }
+
     public void AssignToPort(string interfaceId)
     {
         var result = Settings.CalibrateSelectedDevice(interfaceId);
@@ -236,6 +287,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
             Kind = kind,
             EndpointId = node.EndpointId,
             InterfaceId = interfaceId,
+            DockKey = node.DockKey,
             GroupName = groupName,
             IsDefault = node.EndpointId is not null && string.Equals(node.EndpointId, defaultId, StringComparison.OrdinalIgnoreCase),
             PhysicalDeviceLocationRaw = node.PhysicalDeviceLocationRaw
@@ -263,7 +315,7 @@ public sealed class DevicePageViewModel : INotifyPropertyChanged
     {
         foreach (var name in new[]
         {
-            nameof(HasSelection), nameof(IsEndpointSelected), nameof(CanTestTone), nameof(CanListen), nameof(CanIdentifyScreen),
+            nameof(HasSelection), nameof(IsEndpointSelected), nameof(IsDockSelected), nameof(CanRestoreDockName), nameof(CanTestTone), nameof(CanListen), nameof(CanIdentifyScreen),
             nameof(CanRestoreName), nameof(NeedsPortAssignment), nameof(UsbPorts), nameof(Title), nameof(KindText),
             nameof(LocationText), nameof(SelectedInterfaceId), nameof(StateText), nameof(TechnicalDetails), nameof(IsListening)
         })

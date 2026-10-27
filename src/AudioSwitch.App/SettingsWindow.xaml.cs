@@ -23,7 +23,7 @@ internal sealed partial class SettingsWindow : Window
         Icon = AppIconProvider.LoadWindowIcon();
 
         var deviceSettings = new DeviceSettingsViewModel(probe, nameWriter, snapshots, configuration.Ports, configuration.Aliases, Save);
-        Devices = new DevicePageViewModel(snapshots, writer, probe, configuration.Ports, deviceSettings);
+        Devices = new DevicePageViewModel(snapshots, writer, probe, configuration.Ports, deviceSettings, configuration.Settings.DockNames, Save);
         Ports = new PortSettingsViewModel(snapshots, configuration.Ports, machine, deviceSettings, Save);
         Hotkeys = new HotkeySettingsViewModel(hotkeyService, endpoints, writer, configuration.Settings);
         General = new GeneralSettingsViewModel(autostartService, configuration.Settings);

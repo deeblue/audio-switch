@@ -12,22 +12,32 @@ public sealed class TopologyBuilderHubTests
         var root = Assert.Single(tree.Roots);
         Assert.Equal("USB（未設定接口）", root.Id);
         var hub = Assert.Single(root.Children);
-        Assert.Equal("Dock／Hub（未定義）", hub.Name);
+        Assert.Equal("Dock／Hub", hub.Name);
         Assert.Equal("dock-hub", hub.Kind);
+        Assert.Equal("VID_HUB", hub.DockKey);
         Assert.Equal("USB 音訊裝置", Assert.Single(hub.Children).Name);
         Assert.Equal("usb-speaker", Assert.Single(Assert.Single(hub.Children).Children).EndpointId);
     }
 
     [Fact]
-    public void HubsConnectedInSeriesProduceNestedDockHubNodes()
+    public void HubsInsideOneDockCollapseIntoASingleDockNode()
     {
         var tree = TopologyBuilder.Build(CreateUsbAudioTree(["DOCK", "HUB", "SPEAKER"]), PortTable.Empty());
 
-        var firstHub = Assert.Single(Assert.Single(tree.Roots).Children);
-        var secondHub = Assert.Single(firstHub.Children);
-        Assert.Equal("Dock／Hub（未定義）", firstHub.Name);
-        Assert.Equal("Dock／Hub（未定義）", secondHub.Name);
-        Assert.Equal("USB 音訊裝置", Assert.Single(secondHub.Children).Name);
+        var dock = Assert.Single(Assert.Single(tree.Roots).Children);
+        Assert.Equal("dock-hub", dock.Kind);
+        Assert.Equal("VID_DOCK", dock.DockKey);
+        Assert.Equal("USB 音訊裝置", Assert.Single(dock.Children).Name);
+    }
+
+    [Fact]
+    public void UserGivenDockNameIsShownForTheSameModel()
+    {
+        var names = new Dictionary<string, string> { ["VID_DOCK"] = "會議室 Dock" };
+
+        var tree = TopologyBuilder.Build(CreateUsbAudioTree(["DOCK", "HUB", "SPEAKER"]), PortTable.Empty(), names);
+
+        Assert.Equal("會議室 Dock", Assert.Single(Assert.Single(tree.Roots).Children).Name);
     }
 
     [Fact]

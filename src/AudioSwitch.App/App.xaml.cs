@@ -194,8 +194,11 @@ public partial class App : System.Windows.Application
 
     private void IdentifyScreens()
     {
-        foreach (var (screen, index) in Forms.Screen.AllScreens.Select((screen, index) => (screen, index + 1)))
+        var screens = Forms.Screen.AllScreens;
+        var numbers = ScreenNumbering.Number(screens.Select(screen => (screen.DeviceName, screen.Bounds.Left, screen.Bounds.Top)));
+        foreach (var screen in screens)
         {
+            var index = numbers[screen.DeviceName];
             var centerX = screen.Bounds.Left + screen.Bounds.Width / 2;
             var centerY = screen.Bounds.Top + screen.Bounds.Height / 2;
             var dpi = new WindowsMonitorDpiSource().GetDpiForPoint(centerX, centerY);

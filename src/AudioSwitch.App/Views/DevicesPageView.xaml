@@ -134,6 +134,22 @@
           </StackPanel>
         </Border>
 
+        <Border Style="{StaticResource Card}" Visibility="{Binding IsDockSelected, Converter={StaticResource VisibleWhenTrue}}">
+          <StackPanel>
+            <TextBlock Text="名稱" Style="{StaticResource SectionTitle}" Margin="0"/>
+            <TextBlock Text="只在 AudioSwitch 顯示；同型號的 Dock／Hub 共用這個名稱。" Style="{StaticResource CaptionText}" Margin="0,4,0,8"
+                       TextWrapping="Wrap"/>
+            <DockPanel>
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="8,0,0,0">
+                <Button Content="套用" Style="{StaticResource TextButton}" Click="ApplyDockName_Click"/>
+                <Button Content="還原預設" Style="{StaticResource TextButton}" Click="RestoreDockName_Click" Margin="8,0,0,0"
+                        IsEnabled="{Binding CanRestoreDockName}"/>
+              </StackPanel>
+              <TextBox Text="{Binding DockNameText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Dock／Hub 名稱"/>
+            </DockPanel>
+          </StackPanel>
+        </Border>
+
         <Border Style="{StaticResource Card}" Visibility="{Binding NeedsPortAssignment, Converter={StaticResource VisibleWhenTrue}}">
           <StackPanel>
             <TextBlock Text="這個裝置插在…" Style="{StaticResource SectionTitle}" Margin="0"/>

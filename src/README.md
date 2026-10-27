@@ -84,6 +84,6 @@ dotnet publish src/AudioSwitch.App -c Release -r win-x64 --self-contained -o dis
 
 - `ports.json`：本機實體接口示意圖與校準路徑。
 - `aliases.json`：還原端點原始描述所需的資料。
-- `settings.json`：快捷鍵、自動啟動偏好與首次通知狀態。
+- `settings.json`：快捷鍵、自動啟動偏好、首次通知狀態與 Dock／Hub 名稱。
 
 程式記錄存放於 `%LOCALAPPDATA%\AudioSwitch\logs\`。

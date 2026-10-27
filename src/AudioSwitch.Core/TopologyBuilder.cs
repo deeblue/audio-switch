@@ -23,6 +23,8 @@ public sealed class TopologyNode
     public string? EndpointId { get; init; }
     public string? Category { get; init; }
     public IReadOnlyList<string> PhysicalDeviceLocationRaw { get; init; } = [];
+    /// <summary>For a dock or hub, the VID/PID of its topmost hub chips; a user-given name is stored under this key.</summary>
+    public string? DockKey { get; init; }
     public List<TopologyNode> Children { get; } = [];
 }
 
@@ -41,8 +43,9 @@ public static class TopologyBuilder
     private static readonly HashSet<int> PhysicalJackConnectionTypes = [1, 2, 11];
     private static readonly HashSet<int> PhysicalJackPortConnections = [0, 2];
     private static readonly string[] RootCategories = ["內建", "藍牙／無線", "虛擬", "未辨識"];
+    public const string DefaultDockName = "Dock／Hub";
 
-    public static TopologyTree Build(Snapshot snapshot, PortTable portTable)
+    public static TopologyTree Build(Snapshot snapshot, PortTable portTable, IReadOnlyDictionary<string, string>? dockNames = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(portTable);
@@ -58,6 +61,35 @@ public static class TopologyBuilder
         var endpoints = new List<TopologyEndpoint>();
         var endpointRoots = new Dictionary<string, string>(StringComparer.Ordinal);
         var usbGroups = new Dictionary<(string Root, string Device), TopologyNode>();
+
+        // Hubs are not shown on their own: everything behind the hubs on one port forms a single dock node, because one
+        // connector carries one dock (its USB 2 and USB 3 hubs included). Without a port, each top hub is its own node.
+        var usbParentIds = snapshot.Devnodes.Where(IsUsbDeviceNode).Select(node => node.ParentId)
+            .OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase);
+        bool IsHub(DeviceNode node) => IsUsbDeviceNode(node) && usbParentIds.Contains(node.InstanceId);
+        var topHubs = snapshot.Devnodes.Where(node => IsHub(node) &&
+            !(node.ParentId is not null && nodesById.TryGetValue(node.ParentId, out var parent) && IsUsbDeviceNode(parent))).ToArray();
+        var docks = new Dictionary<string, TopologyNode>(StringComparer.OrdinalIgnoreCase);
+        var portIds = portTable.IsEnabled ? portTable.Interfaces.Select(port => port.Id).ToHashSet(StringComparer.Ordinal) : [];
+        TopologyNode DockFor(TopologyRoot root, DeviceNode topHub)
+        {
+            var isPort = portIds.Contains(root.Id);
+            var key = isPort ? root.Id : root.Id + "|" + topHub.InstanceId;
+            if (docks.TryGetValue(key, out var dock)) return dock;
+            var members = isPort ? topHubs.Where(hub => UsbInterfaceId([hub], portTable) == root.Id).Append(topHub) : [topHub];
+            var dockKey = string.Join("+", members.Select(HardwareKey).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
+            var name = dockNames is not null && dockNames.TryGetValue(dockKey, out var stored) && !string.IsNullOrWhiteSpace(stored)
+                ? stored
+                : DefaultDockName;
+            dock = new TopologyNode { Name = name, Kind = "dock-hub", GroupKey = topHub.InstanceId, DockKey = dockKey };
+            root.Children.Add(dock);
+            docks[key] = dock;
+            return dock;
+        }
+        // The chain runs from the device up to the computer, so the last hub in it is the topmost one.
+        List<TopologyNode> ContainerFor(TopologyRoot root, IEnumerable<DeviceNode> chain) =>
+            chain.LastOrDefault(IsHub) is { } topHub ? DockFor(root, topHub).Children : root.Children;
+        var pendingScreenAudio = new Dictionary<string, List<(string Root, TopologyNode Leaf)>>(StringComparer.Ordinal);
 
         foreach (var endpoint in snapshot.Endpoints.Where(IsActive))
         {
@@ -82,20 +114,23 @@ public static class TopologyBuilder
                     .Select(node => $"{node.InstanceId}: {Convert.ToHexString(node.PhysicalDeviceLocationRaw!)}").ToArray()
             };
 
-            TopologyNode? parentGroup = null;
-            foreach (var usb in usbDevices)
+            if (endpointUsbDevice is not null)
             {
-                var key = (rootId, usb.InstanceId.ToUpperInvariant());
+                var key = (rootId, endpointUsbDevice.InstanceId.ToUpperInvariant());
                 if (!usbGroups.TryGetValue(key, out var group))
                 {
-                    group = CreateUsbGroup(usb, snapshot.Devnodes);
-                    if (parentGroup is null) root.Children.Add(group);
-                    else parentGroup.Children.Add(group);
+                    group = CreateUsbGroup(endpointUsbDevice, snapshot.Devnodes);
+                    ContainerFor(root, chain).Add(group);
                     usbGroups[key] = group;
                 }
-                parentGroup = group;
+                group.Children.Add(leaf);
             }
-            if (parentGroup is not null) parentGroup.Children.Add(leaf);
+            else if (classification.SinkPathId is { } sinkPathId)
+            {
+                // Screen audio goes under its screen, which is placed with the display paths below.
+                if (!pendingScreenAudio.TryGetValue(sinkPathId, out var leaves)) pendingScreenAudio[sinkPathId] = leaves = [];
+                leaves.Add((rootId, leaf));
+            }
             else
             {
                 root.Children.Add(leaf);
@@ -106,6 +141,9 @@ public static class TopologyBuilder
         }
 
         var displayGroups = new List<TopologyDisplayGroup>();
+        var screenNumbers = ScreenNumbering.Number(snapshot.DisplayPaths
+            .Where(path => path.SourceName is not null && path.SourcePosition is not null)
+            .Select(path => (path.SourceName!, JsonValue.Integer(path.SourcePosition!, "x") ?? 0, JsonValue.Integer(path.SourcePosition!, "y") ?? 0)));
         foreach (var path in snapshot.DisplayPaths)
         {
             var usb = FindUsbAdapterNode(path, snapshot.Devnodes, nodesById);
@@ -132,17 +170,36 @@ public static class TopologyBuilder
                 continue;
             }
 
-            TopologyNode? device = groupKey is not null && usbGroups.TryGetValue((interfaceId, groupKey.ToUpperInvariant()), out var usbGroup)
-                ? usbGroup
-                : null;
-            if (device is null && groupKey is not null)
-                device = root.Children.FirstOrDefault(child => child.GroupKey?.Equals(groupKey, StringComparison.OrdinalIgnoreCase) == true);
-            if (device is null)
+            var screen = new TopologyNode { Name = ScreenLabel(path, snapshot.DisplayPaths, screenNumbers), Kind = "display", GroupKey = groupKey };
+            if (pendingScreenAudio.Remove(path.PathId, out var screenAudio))
             {
-                device = new TopologyNode { Name = path.TargetName ?? "顯示器", GroupKey = groupKey };
-                root.Children.Add(device);
+                foreach (var (audioRoot, leaf) in screenAudio)
+                {
+                    if (audioRoot == interfaceId) screen.Children.Add(leaf);
+                    else rootsById[audioRoot].Children.Add(leaf);
+                }
             }
-            device.Children.Add(new TopologyNode { Name = path.TargetName ?? "顯示器", Kind = "display" });
+
+            if (groupKey is not null && usbGroups.TryGetValue((interfaceId, groupKey.ToUpperInvariant()), out var usbGroup))
+            {
+                // A USB display device that also has audio keeps its screen and endpoints together.
+                usbGroup.Children.Add(screen);
+            }
+            else if (usb is not null)
+            {
+                ContainerFor(root, BuildChain(usb.InstanceId, nodesById)).Add(screen);
+            }
+            else
+            {
+                // A screen on the host GPU joins the dock on its port, if one is plugged in there.
+                var portHub = topHubs.FirstOrDefault(hub => UsbInterfaceId([hub], portTable) == interfaceId);
+                (portHub is null ? root.Children : DockFor(root, portHub).Children).Add(screen);
+            }
+        }
+
+        foreach (var (audioRoot, leaf) in pendingScreenAudio.Values.SelectMany(leaves => leaves))
+        {
+            rootsById[audioRoot].Children.Add(leaf);
         }
 
         var nonEmptyRoots = roots.Where(root => root.Children.Count > 0).ToArray();
@@ -167,10 +224,38 @@ public static class TopologyBuilder
             !node.Name.StartsWith("36fc", StringComparison.OrdinalIgnoreCase) &&
             !node.Name.StartsWith("4d36", StringComparison.OrdinalIgnoreCase))?.Name;
         var label = isHub
-            ? "Dock／Hub（未定義）"
+            ? DefaultDockName
             : functionName ?? (usb.Name is not null && !usb.Name.StartsWith("36fc", StringComparison.OrdinalIgnoreCase) &&
                 !usb.Name.StartsWith("4d36", StringComparison.OrdinalIgnoreCase) ? usb.Name : "USB 裝置");
         return new TopologyNode { Name = label, Kind = isHub ? "dock-hub" : "device", GroupKey = usb.InstanceId };
+    }
+
+    /// <summary>"VID_xxxx&amp;PID_yyyy" from a USB instance ID; the model of a hub chip, without its serial number.</summary>
+    private static string HardwareKey(DeviceNode node)
+    {
+        var parts = node.InstanceId.Split('\\');
+        return (parts.Length > 1 ? parts[1] : node.InstanceId).ToUpperInvariant();
+    }
+
+    private static string ScreenLabel(DisplayPath path, IReadOnlyList<DisplayPath> allPaths, IReadOnlyDictionary<string, int> numbers)
+    {
+        var details = new List<string>();
+        if (path.SourceName is not null && numbers.TryGetValue(path.SourceName, out var number)) details.Add($"螢幕 {number}");
+        var primary = allPaths.FirstOrDefault(item => item.Primary == true);
+        if (path.Primary == true)
+        {
+            details.Add("主螢幕");
+        }
+        else if (primary?.SourcePosition is not null && path.SourcePosition is not null)
+        {
+            var x = JsonValue.Integer(path.SourcePosition, "x") ?? 0;
+            var y = JsonValue.Integer(path.SourcePosition, "y") ?? 0;
+            var primaryX = JsonValue.Integer(primary.SourcePosition, "x") ?? 0;
+            var primaryY = JsonValue.Integer(primary.SourcePosition, "y") ?? 0;
+            details.Add(x < primaryX ? "左" : x > primaryX ? "右" : y < primaryY ? "上" : "下");
+        }
+        var name = path.TargetName ?? "顯示器";
+        return details.Count == 0 ? name : $"{name}（{string.Join("，", details)}）";
     }
 
     private static List<DeviceNode> BuildChain(string? startId, IReadOnlyDictionary<string, DeviceNode> nodes)
@@ -205,7 +290,7 @@ public static class TopologyBuilder
         var sinkPath = jacks.Select(jack => MatchSink(jack.Sink, displayPaths)).FirstOrDefault(path => path is not null);
         if (sinkPath is not null)
         {
-            return new Classification("B", DisplayInterfaceId(sinkPath, ports));
+            return new Classification("B", DisplayInterfaceId(sinkPath, ports), sinkPath.PathId);
         }
 
         if (jacks.Any(jack => jack.Jack.Count > 0) || upperIds.Any(id => id.StartsWith("INTELAUDIO\\", StringComparison.Ordinal) || id.StartsWith("HDAUDIO\\", StringComparison.Ordinal)))
@@ -328,5 +413,5 @@ public static class TopologyBuilder
         return candidates.Length == 1 ? candidates[0] : null;
     }
 
-    private sealed record Classification(string Category, string? InterfaceId);
+    private sealed record Classification(string Category, string? InterfaceId, string? SinkPathId = null);
 }
