@@ -4,6 +4,7 @@ using NAudio.CoreAudioApi;
 
 namespace AudioSwitch.Platform.Windows;
 
+/// <summary>Sets the default endpoint per role through the undocumented IPolicyConfig COM interface, as SoundSwitch does. Windows has no supported API for this, so an update may break it; every change is read back.</summary>
 public sealed class WindowsDefaultEndpointWriter : IDefaultEndpointWriter
 {
     private readonly MMDeviceEnumerator _enumerator = new();

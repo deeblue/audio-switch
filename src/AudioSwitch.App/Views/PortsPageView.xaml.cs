@@ -8,6 +8,7 @@ using AudioSwitch.Presentation;
 
 namespace AudioSwitch.App.Views;
 
+/// <summary>The Ports page: the laptop drawing with drag and drop, the port list and the calibration card.</summary>
 public partial class PortsPageView : UserControl
 {
     private static readonly (PortConnectorType Type, string Name)[] Connectors =

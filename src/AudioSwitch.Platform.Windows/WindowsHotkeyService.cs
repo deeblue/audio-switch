@@ -3,6 +3,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Platform.Windows;
 
+/// <summary>Registers the two global shortcuts with RegisterHotKey on the app's message window.</summary>
 public sealed class WindowsHotkeyService : IHotkeyService
 {
     private const uint ModNoRepeat = 0x4000;

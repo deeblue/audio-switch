@@ -3,6 +3,7 @@ using System.Windows.Controls;
 
 namespace AudioSwitch.App;
 
+/// <summary>A transparent window over one screen that shows its number for a few seconds.</summary>
 internal sealed class ScreenIdentificationWindow : Window
 {
     public ScreenIdentificationWindow(int number, double left, double top, double width, double height)

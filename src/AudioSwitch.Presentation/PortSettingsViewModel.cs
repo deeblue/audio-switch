@@ -4,6 +4,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Presentation;
 
+/// <summary>Where the Ports page is in a calibration.</summary>
 public enum PortCalibrationPhase
 {
     Idle,
@@ -15,6 +16,7 @@ public enum PortCalibrationPhase
 /// <summary>A USB audio device that is plugged in but not on any port yet; <see cref="EndpointId"/> is one of its endpoints.</summary>
 public sealed record PluggedInDevice(string EndpointId, string Name, string GroupKey);
 
+/// <summary>The Ports page: adding, moving, naming and deleting ports, both calibration orders, naming a detected device, and the current defaults for the drawing.</summary>
 public sealed class PortSettingsViewModel : INotifyPropertyChanged
 {
     private readonly IAudioTopologySnapshotSource _snapshotSource;

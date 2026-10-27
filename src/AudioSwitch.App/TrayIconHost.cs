@@ -3,6 +3,7 @@ using WinForms = System.Windows.Forms;
 
 namespace AudioSwitch.App;
 
+/// <summary>The tray icon: either mouse button opens the panel, and the icon follows the taskbar theme and DPI.</summary>
 public sealed class TrayIconHost : IDisposable
 {
     private readonly WinForms.NotifyIcon _notifyIcon;

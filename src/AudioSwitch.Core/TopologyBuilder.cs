@@ -1,43 +1,6 @@
 namespace AudioSwitch.Core;
 
-public sealed class TopologyTree
-{
-    public required IReadOnlyList<TopologyRoot> Roots { get; init; }
-    public required IReadOnlyList<TopologyEndpoint> Endpoints { get; init; }
-    public required IReadOnlyList<TopologyDisplayGroup> DisplayGroups { get; init; }
-}
-
-public sealed class TopologyRoot
-{
-    public required string Id { get; init; }
-    public required string Name { get; init; }
-    public required string Source { get; init; }
-    public List<TopologyNode> Children { get; } = [];
-}
-
-public sealed class TopologyNode
-{
-    public required string Name { get; init; }
-    public string Kind { get; init; } = "device";
-    public string? GroupKey { get; init; }
-    public string? EndpointId { get; init; }
-    public string? Category { get; init; }
-    public IReadOnlyList<string> PhysicalDeviceLocationRaw { get; init; } = [];
-    /// <summary>For a dock or hub, the VID/PID of its topmost hub chips; a user-given name is stored under this key.</summary>
-    public string? DockKey { get; init; }
-    public List<TopologyNode> Children { get; } = [];
-}
-
-public sealed record TopologyEndpoint(
-    string EndpointId,
-    string? Name,
-    string Flow,
-    string Category,
-    string? InterfaceId,
-    string? GroupKey);
-
-public sealed record TopologyDisplayGroup(string PathId, string? InterfaceId, string? GroupKey);
-
+/// <summary>Builds the device tree from a snapshot and the port table. Each active endpoint is classified by its USB path, screen sink or jack; USB endpoints are grouped by device, everything behind hubs on one port forms one dock node, and screens are placed by their recorded connector, their USB adapter or the single HDMI port.</summary>
 public static class TopologyBuilder
 {
     private static readonly HashSet<int> PhysicalJackConnectionTypes = [1, 2, 11];
@@ -173,7 +136,7 @@ public static class TopologyBuilder
                 continue;
             }
 
-            var screen = new TopologyNode { Name = ScreenLabel(path, snapshot.DisplayPaths, screenNumbers), Kind = "display", GroupKey = groupKey };
+            var screen = new TopologyNode { Name = ScreenNumbering.Label(path, snapshot.DisplayPaths, screenNumbers), Kind = "display", GroupKey = groupKey };
             if (pendingScreenAudio.Remove(path.PathId, out var screenAudio))
             {
                 foreach (var (audioRoot, leaf) in screenAudio)
@@ -238,28 +201,6 @@ public static class TopologyBuilder
     {
         var parts = node.InstanceId.Split('\\');
         return (parts.Length > 1 ? parts[1] : node.InstanceId).ToUpperInvariant();
-    }
-
-    private static string ScreenLabel(DisplayPath path, IReadOnlyList<DisplayPath> allPaths, IReadOnlyDictionary<string, int> numbers)
-    {
-        var details = new List<string>();
-        if (path.SourceName is not null && numbers.TryGetValue(path.SourceName, out var number)) details.Add(Loc.F("螢幕 {0}", number));
-        var primary = allPaths.FirstOrDefault(item => item.Primary == true);
-        if (path.Primary == true)
-        {
-            details.Add(Loc.T("主螢幕"));
-        }
-        else if (primary?.SourcePosition is not null && path.SourcePosition is not null)
-        {
-            var x = JsonValue.Integer(path.SourcePosition, "x") ?? 0;
-            var y = JsonValue.Integer(path.SourcePosition, "y") ?? 0;
-            var primaryX = JsonValue.Integer(primary.SourcePosition, "x") ?? 0;
-            var primaryY = JsonValue.Integer(primary.SourcePosition, "y") ?? 0;
-            // A screen at the primary's own position (for example a duplicate) has no direction.
-            if (x != primaryX || y != primaryY) details.Add(Loc.T(x < primaryX ? "左" : x > primaryX ? "右" : y < primaryY ? "上" : "下"));
-        }
-        var name = path.TargetName ?? Loc.T("顯示器");
-        return details.Count == 0 ? name : Loc.F("{0}（{1}）", name, string.Join(Loc.T("，"), details));
     }
 
     private static List<DeviceNode> BuildChain(string? startId, IReadOnlyDictionary<string, DeviceNode> nodes)

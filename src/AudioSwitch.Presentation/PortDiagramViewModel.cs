@@ -3,6 +3,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Presentation;
 
+/// <summary>The laptop edge a port is on.</summary>
 public enum PortEdge
 {
     Left,
@@ -11,6 +12,7 @@ public enum PortEdge
     Front
 }
 
+/// <summary>The port types the palette offers.</summary>
 public enum PortConnectorType
 {
     UsbA,
@@ -19,6 +21,7 @@ public enum PortConnectorType
     AudioJack
 }
 
+/// <summary>How a port is matched: calibrated, matched automatically (3.5mm, the single HDMI port) or not yet.</summary>
 public enum PortCalibrationState
 {
     Uncalibrated,
@@ -26,6 +29,7 @@ public enum PortCalibrationState
     Automatic
 }
 
+/// <summary>A port as drawn: position, type and status.</summary>
 public sealed record PortDiagramItem(string Id, string Name, string Type, PortEdge Edge, int Order, PortCalibrationState State, string StatusText)
 {
     public string TypeLabel => PortDiagramViewModel.ConnectorLabel(Type);
@@ -40,6 +44,7 @@ public sealed record PortDiagramItem(string Id, string Name, string Type, PortEd
         : Loc.F("{0}（{1}）：{2}", Name, TypeLabel, StatusText);
 }
 
+/// <summary>The model of the laptop drawing: ports with their edge and order, suggested names that follow moves and the language, and the calibration status texts.</summary>
 public sealed class PortDiagramViewModel
 {
     /// <summary>Fixed markers drawn on the laptop for the built-in speakers and microphone.</summary>

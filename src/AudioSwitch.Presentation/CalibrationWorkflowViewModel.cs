@@ -2,6 +2,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Presentation;
 
+/// <summary>The steps of a calibration: unplug, plug in, then (when the port is not chosen yet) place it.</summary>
 public enum CalibrationWorkflowState
 {
     Idle,
@@ -11,6 +12,7 @@ public enum CalibrationWorkflowState
     Completed
 }
 
+/// <summary>Runs one calibration: takes the baseline after the user unplugs, compares it with the snapshot after plugging in, and records the result on the chosen port.</summary>
 public sealed class CalibrationWorkflowViewModel
 {
     private readonly IAudioTopologySnapshotSource _snapshotSource;

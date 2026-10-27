@@ -2,6 +2,7 @@ using System.Threading;
 
 namespace AudioSwitch.App;
 
+/// <summary>Keeps one running instance: a second start signals the first one to open its panel, then exits.</summary>
 public sealed class SingleInstanceGate : IDisposable
 {
     private const string MutexName = "Local\\AudioSwitch.SingleInstance.v1";

@@ -9,6 +9,7 @@ using AudioSwitch.Presentation;
 
 namespace AudioSwitch.App.Views;
 
+/// <summary>A port type dropped on the drawing, or an existing port moved to an edge and position.</summary>
 public sealed class PortDropEventArgs(string? newType, string? portId, PortEdge edge, int order) : EventArgs
 {
     public string? NewType { get; } = newType;

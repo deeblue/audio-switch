@@ -6,6 +6,7 @@ using AudioSwitch.Presentation;
 
 namespace AudioSwitch.App.Views;
 
+/// <summary>The Shortcuts page: records a key combination in each box.</summary>
 public partial class HotkeySettingsPageView : System.Windows.Controls.UserControl
 {
     public event EventHandler? ApplyRequested;

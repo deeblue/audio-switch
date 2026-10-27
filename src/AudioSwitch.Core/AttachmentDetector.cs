@@ -1,5 +1,6 @@
 namespace AudioSwitch.Core;
 
+/// <summary>Finds where a device is connected: the topmost new or moved USB or PCIe node between two snapshots, or the topmost attachment above a current endpoint, and names its transport (USB 2, USB 3, PCIe tunnel) from its location paths.</summary>
 public static class AttachmentDetector
 {
     public static DeviceNode? FindCurrentPathAttachment(Snapshot snapshot, string endpointId)

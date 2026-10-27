@@ -6,6 +6,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Platform.Windows;
 
+/// <summary>Reads the PnP device tree with CfgMgr32: a device's ancestors and their properties, the present devices of a bus, and the instance ID behind a device interface.</summary>
 public sealed class WindowsDeviceTreeSource : IDeviceTreeSource
 {
     private static readonly DevPropKey FriendlyNameKey = new(new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), 14);

@@ -3,6 +3,7 @@ using System.Windows.Controls;
 
 namespace AudioSwitch.App.Views;
 
+/// <summary>The General page.</summary>
 public partial class GeneralSettingsPageView : System.Windows.Controls.UserControl
 {
     public event EventHandler? IdentifyScreensRequested;

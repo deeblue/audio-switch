@@ -7,6 +7,7 @@ using AudioSwitch.Presentation;
 
 namespace AudioSwitch.App;
 
+/// <summary>The quick-switch panel opened from the tray; it closes when it loses focus.</summary>
 public partial class QuickSwitchPanelWindow : Window
 {
     private const double MinimumPanelHeight = 220;

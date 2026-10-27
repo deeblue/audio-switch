@@ -2,6 +2,7 @@ using System.Globalization;
 
 namespace AudioSwitch.Core;
 
+/// <summary>The interface languages.</summary>
 public enum AppLanguage
 {
     TraditionalChinese,

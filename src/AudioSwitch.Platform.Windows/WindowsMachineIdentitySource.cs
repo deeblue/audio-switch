@@ -3,6 +3,7 @@ using Microsoft.Win32;
 
 namespace AudioSwitch.Platform.Windows;
 
+/// <summary>Manufacturer, model and machine type from the BIOS information in the registry.</summary>
 public sealed class WindowsMachineIdentitySource : IMachineIdentitySource
 {
     private const string BiosKey = @"HARDWARE\DESCRIPTION\System\BIOS";

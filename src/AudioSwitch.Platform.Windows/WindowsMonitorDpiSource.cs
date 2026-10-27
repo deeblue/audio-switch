@@ -4,6 +4,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Platform.Windows;
 
+/// <summary>The DPI of the monitor at a point, for placing the panel and the identify windows.</summary>
 public sealed class WindowsMonitorDpiSource : IMonitorDpiSource
 {
     private const uint MonitorDefaultToNearest = 2;

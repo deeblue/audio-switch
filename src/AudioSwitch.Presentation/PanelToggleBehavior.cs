@@ -1,5 +1,6 @@
 namespace AudioSwitch.Presentation;
 
+/// <summary>What a tray click does to the panel.</summary>
 public enum PanelToggleAction
 {
     Ignore,

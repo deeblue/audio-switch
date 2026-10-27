@@ -4,6 +4,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Presentation;
 
+/// <summary>Actions on the selected endpoint that touch Windows: endpoint names written to Windows and restored, the microphone level meter, and recording the port a plugged-in device is on.</summary>
 public sealed class DeviceSettingsViewModel : INotifyPropertyChanged
 {
     private readonly IAudioProbe _probe;

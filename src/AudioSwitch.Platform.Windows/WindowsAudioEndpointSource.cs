@@ -4,6 +4,7 @@ using NAudio.CoreAudioApi;
 
 namespace AudioSwitch.Platform.Windows;
 
+/// <summary>Core Audio endpoints through NAudio: lists active endpoints with their properties and raises change notifications from IMMNotificationClient.</summary>
 public sealed class WindowsAudioEndpointSource : IAudioEndpointSource
 {
     private static readonly PropertyKey ContainerIdKey = new(new Guid("8C7ED206-3F8A-4827-B3AB-AE9E1FAEFC6C"), 2);
@@ -157,6 +158,7 @@ public sealed class WindowsAudioEndpointSource : IAudioEndpointSource
     private static Dictionary<string, string> Error(string property, Exception exception) =>
         new() { ["property"] = property, ["error"] = $"{exception.GetType().Name}: {exception.Message}" };
 
+    // The endpoint's own software devnode (SWD\MMDEVAPI\...), taken from the endpoint ID in either of its two forms.
     private static string? ResolveMmDeviceDevnodeId(string endpointId)
     {
         if (endpointId.StartsWith("{0.0.", StringComparison.OrdinalIgnoreCase) || endpointId.StartsWith("{0.1.", StringComparison.OrdinalIgnoreCase))

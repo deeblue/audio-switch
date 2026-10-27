@@ -5,6 +5,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Platform.Windows;
 
+/// <summary>Active display paths through QueryDisplayConfig and DisplayConfigGetDeviceInfo: target and source names, adapter path, desktop position and EDID IDs.</summary>
 public sealed class WindowsDisplayPathSource : IDisplayPathSource
 {
     private const uint QueryOnlyActivePaths = 0x00000002;
@@ -34,6 +35,7 @@ public sealed class WindowsDisplayPathSource : IDisplayPathSource
         return rows;
     }
 
+    // The buffer sizes can change between the size query and the query when a screen connects, so the query is retried.
     private static List<DisplayPath> QueryPaths()
     {
         var status = NativeMethods.GetDisplayConfigBufferSizes(QueryOnlyActivePaths, out var pathCount, out var modeCount);
@@ -79,6 +81,7 @@ public sealed class WindowsDisplayPathSource : IDisplayPathSource
         throw new InvalidOperationException("QueryDisplayConfig buffers changed repeatedly.");
     }
 
+    // Reads one path's target (screen name, monitor path, EDID IDs), source (GDI name, desktop position) and adapter path.
     private static DisplayPath ReadPath(PathInfo path, ModeInfo[] modes, uint modeCount)
     {
         var errors = new List<string>();

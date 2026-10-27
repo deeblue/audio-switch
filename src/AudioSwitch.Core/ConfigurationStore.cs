@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace AudioSwitch.Core;
 
+/// <summary>Everything loaded from the settings folder, with the errors met while loading.</summary>
 public sealed class AudioSwitchConfiguration
 {
     public required PortTable Ports { get; init; }
@@ -12,82 +13,7 @@ public sealed class AudioSwitchConfiguration
     internal HashSet<string> ProtectedFiles { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
-public sealed class AudioSwitchSettings
-{
-    public int SchemaVersion { get; set; } = 1;
-    public string? PlaybackHotkey { get; set; }
-    public string? RecordingHotkey { get; set; }
-    public bool AutostartEnabled { get; set; }
-    public bool FirstRunNotificationShown { get; set; }
-
-    /// <summary><see cref="Loc.TraditionalChineseSetting"/>, <see cref="Loc.EnglishSetting"/>, or <c>null</c> to follow Windows.</summary>
-    public string? Language { get; set; }
-
-    /// <summary>User-given dock and hub names, keyed by <see cref="TopologyNode.DockKey"/>; docks of the same model share one name.</summary>
-    public Dictionary<string, string> DockNames { get; set => field = value ?? []; } = [];
-}
-
-public sealed class AliasStore
-{
-    private readonly Dictionary<string, string> _originalDescriptions;
-
-    public AliasStore() : this(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)) { }
-
-    internal AliasStore(Dictionary<string, string> originalDescriptions) => _originalDescriptions = originalDescriptions;
-
-    public IReadOnlyDictionary<string, string> OriginalDescriptions => _originalDescriptions;
-
-    public void SetAlias(IEnumerable<string> endpointIds, IReadOnlyDictionary<string, string> currentDeviceDescriptions)
-    {
-        foreach (var endpointId in endpointIds.Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            if (!_originalDescriptions.ContainsKey(endpointId) && currentDeviceDescriptions.TryGetValue(endpointId, out var original))
-            {
-                _originalDescriptions.Add(endpointId, original);
-            }
-        }
-    }
-
-    public IReadOnlyDictionary<string, string> ClearAlias(IEnumerable<string> endpointIds)
-    {
-        var restored = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var endpointId in endpointIds.Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            if (_originalDescriptions.Remove(endpointId, out var original))
-            {
-                restored.Add(endpointId, original);
-            }
-        }
-        return restored;
-    }
-
-    internal AliasStore Clone() => new(new Dictionary<string, string>(_originalDescriptions, StringComparer.OrdinalIgnoreCase));
-}
-
-public static class AliasEndpointGrouping
-{
-    public static IReadOnlyList<string> GetMembers(TopologyEndpoint selected, IEnumerable<TopologyEndpoint> endpoints)
-    {
-        ArgumentNullException.ThrowIfNull(selected);
-        ArgumentNullException.ThrowIfNull(endpoints);
-
-        if (!string.IsNullOrWhiteSpace(selected.GroupKey))
-        {
-            return endpoints.Where(endpoint => string.Equals(endpoint.GroupKey, selected.GroupKey, StringComparison.OrdinalIgnoreCase))
-                .Select(endpoint => endpoint.EndpointId).ToArray();
-        }
-
-        if (selected.Category == "C" && !string.IsNullOrWhiteSpace(selected.InterfaceId))
-        {
-            return endpoints.Where(endpoint => endpoint.Category == "C" &&
-                string.Equals(endpoint.InterfaceId, selected.InterfaceId, StringComparison.Ordinal))
-                .Select(endpoint => endpoint.EndpointId).ToArray();
-        }
-
-        return [selected.EndpointId];
-    }
-}
-
+/// <summary>Loads and saves the settings files in %APPDATA%\AudioSwitch. A file that cannot be read is archived and replaced by defaults; if it cannot be archived, it is not overwritten while the app runs.</summary>
 public static class ConfigurationStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new()

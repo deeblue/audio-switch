@@ -5,6 +5,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Presentation;
 
+/// <summary>What a row of the device tree is.</summary>
 public enum DeviceNodeKind
 {
     Port,
@@ -16,6 +17,7 @@ public enum DeviceNodeKind
     Recording
 }
 
+/// <summary>A row of the settings device tree.</summary>
 public sealed class DeviceNodeViewModel
 {
     public required string Name { get; init; }
@@ -43,6 +45,7 @@ public sealed class DeviceNodeViewModel
     });
 }
 
+/// <summary>The settings Devices page: the full device tree, the selected item's details and actions (set as default, test tone, level meter, endpoint and dock names, port assignment), and the current defaults for the laptop drawing.</summary>
 public sealed class DevicePageViewModel : INotifyPropertyChanged
 {
     private readonly IAudioTopologySnapshotSource _snapshotSource;

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace AudioSwitch.Core;
 
+/// <summary>The user's port table for one computer (ports.json): the ports drawn on the laptop with their calibrated USB location-path prefixes and screen connectors. Calibration compares snapshots taken before and after plugging in; a table written on another computer is read-only.</summary>
 public sealed class PortTable
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -277,53 +278,3 @@ public sealed class PortTable
         if (!IsEnabled) throw new InvalidOperationException(Warning);
     }
 }
-
-internal sealed class PortTableDocument
-{
-    [JsonPropertyName("schema_version")] public int SchemaVersion { get; set; } = 1;
-    [JsonPropertyName("machine")] public MachineIdentity? Machine { get; set; }
-    [JsonPropertyName("interfaces")] public List<PortDefinition> Interfaces { get; set; } = [];
-}
-
-public sealed class PortDefinition
-{
-    [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
-    [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
-    [JsonPropertyName("type")] public string Type { get; set; } = string.Empty;
-    [JsonPropertyName("position")] public string? Position { get; set; }
-    [JsonPropertyName("edge")] public string? Edge { get; set; }
-    [JsonPropertyName("order")] public int? Order { get; set; }
-    [JsonPropertyName("source")] public string? Source { get; set; }
-    [JsonPropertyName("position_source")] public string? PositionSource { get; set; }
-    [JsonPropertyName("usb_location_path_prefixes")] public List<string> UsbLocationPathPrefixes { get; set; } = [];
-    [JsonPropertyName("display_connectors")] public List<DisplayConnector> DisplayConnectors { get; set; } = [];
-    [JsonPropertyName("calibration_sources")] public List<PortCalibrationSource> CalibrationSources { get; set; } = [];
-}
-
-public sealed class DisplayConnector
-{
-    [JsonPropertyName("adapter_device_path")] public string? AdapterDevicePath { get; set; }
-    [JsonPropertyName("target_id")] public int? TargetId { get; set; }
-    [JsonPropertyName("connector_instance")] public int? ConnectorInstance { get; set; }
-    [JsonPropertyName("output_technology")] public long? OutputTechnology { get; set; }
-}
-
-public sealed class PortCalibrationSource
-{
-    [JsonPropertyName("source")] public string Source { get; set; } = string.Empty;
-    [JsonPropertyName("transport")] public string? Transport { get; set; }
-    [JsonPropertyName("instance_id")] public string? InstanceId { get; set; }
-    [JsonPropertyName("location_paths")] public List<string> LocationPaths { get; set; } = [];
-    [JsonPropertyName("display_connector")] public DisplayConnector? DisplayConnector { get; set; }
-}
-
-public sealed record CalibratedAttachment(string Source, string Transport, string InstanceId, IReadOnlyList<string> LocationPaths);
-
-public sealed record CalibrationResult(
-    string Status,
-    string? InterfaceId,
-    IReadOnlyList<string> Transports,
-    IReadOnlyList<string> LocationPaths,
-    IReadOnlyList<CalibratedAttachment> Attachments,
-    IReadOnlyList<string> CandidateIds,
-    IReadOnlyList<DisplayConnector>? DisplayConnectors = null);

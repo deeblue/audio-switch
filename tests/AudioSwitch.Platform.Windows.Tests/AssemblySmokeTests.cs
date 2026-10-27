@@ -5,6 +5,6 @@ public class AssemblySmokeTests
     [Fact]
     public void WindowsPlatformAssemblyCanBeLoaded()
     {
-        Assert.Equal("AudioSwitch.Platform.Windows", typeof(AudioSwitch.Platform.Windows.Class1).Assembly.GetName().Name);
+        Assert.Equal("AudioSwitch.Platform.Windows", typeof(AudioSwitch.Platform.Windows.WindowsAudioEndpointSource).Assembly.GetName().Name);
     }
 }

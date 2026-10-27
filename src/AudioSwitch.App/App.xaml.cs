@@ -11,6 +11,7 @@ using Forms = System.Windows.Forms;
 
 namespace AudioSwitch.App;
 
+/// <summary>The tray app: starts the Windows services and the tray icon, opens the panel and settings, handles shortcuts, device notifications and language changes, and logs errors.</summary>
 public partial class App : System.Windows.Application
 {
     private readonly string _dataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AudioSwitch");
@@ -51,12 +52,14 @@ public partial class App : System.Windows.Application
 
         try
         {
+            // Settings and the interface language come first, so everything created afterwards uses them.
             Directory.CreateDirectory(_dataDirectory);
             _machine = new WindowsMachineIdentitySource().ReadIdentity();
             _configuration = ConfigurationStore.Load(_dataDirectory, _machine);
             Loc.SetLanguage(Loc.Resolve(_configuration.Settings.Language, CultureInfo.CurrentUICulture));
             RelabelPorts();
             Loc.LanguageChanged += OnLanguageChanged;
+            // Windows services shared by the panel, the settings window and the shortcuts.
             _endpointSource = new WindowsAudioEndpointSource();
             _snapshotSource = new WindowsAudioTopologySnapshotSource(endpoints: _endpointSource);
             _defaultWriter = new WindowsDefaultEndpointWriter();
@@ -74,6 +77,7 @@ public partial class App : System.Windows.Application
                 if (args.PropertyName == nameof(QuickSwitchPanelViewModel.ErrorMessage) && _viewModel.ErrorMessage is { Length: > 0 } message)
                     Log(message);
             };
+            // Tray icon, device notifications (debounced) and the wake-up signal from a second start.
             _trayIconHost = new TrayIconHost();
             _trayIconHost.TogglePanelRequested += (_, _) => TogglePanel();
             _endpointSource.EndpointChanged += OnEndpointNotification;

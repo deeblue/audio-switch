@@ -6,6 +6,7 @@ using Microsoft.Win32;
 
 namespace AudioSwitch.App;
 
+/// <summary>Loads the app icon and the tray icon that contrasts with the taskbar theme at the current DPI.</summary>
 internal static class AppIconProvider
 {
     private const string ApplicationIcon = "pack://application:,,,/AudioSwitch.App;component/Assets/AudioSwitch.ico";

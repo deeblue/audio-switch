@@ -2,6 +2,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Presentation;
 
+/// <summary>Turns a key press in the shortcut box into shortcut text such as "Ctrl+Alt+F1".</summary>
 public static class HotkeyGestureFormatter
 {
     private static readonly HashSet<string> ModifierKeys = new(StringComparer.OrdinalIgnoreCase)

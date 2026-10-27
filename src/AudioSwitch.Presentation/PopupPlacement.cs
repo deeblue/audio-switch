@@ -11,6 +11,7 @@ public readonly record struct PhysicalRect(int Left, int Top, int Width, int Hei
 public readonly record struct DpiScale(double X, double Y);
 public readonly record struct DipBounds(double Left, double Top, double Width, double Height);
 
+/// <summary>Placement maths for the panel: converts between physical pixels and DIPs and keeps the panel inside the work area.</summary>
 public static class PopupPlacement
 {
     public static DipBounds PlaceNearCursor(PhysicalRect workArea, PhysicalPoint cursor, DpiScale dpi,

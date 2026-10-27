@@ -7,6 +7,7 @@ using NAudio.CoreAudioApi.Interfaces;
 
 namespace AudioSwitch.Platform.Windows;
 
+/// <summary>Jack information of an endpoint through its DeviceTopology connector: IKsJackDescription (connector type and location), IKsJackDescription2 (capabilities) and IKsJackSinkInformation (the screen behind display audio).</summary>
 public sealed class WindowsJackInfoSource : IJackInfoSource
 {
     private static readonly Guid JackDescriptionIid = new("4509F757-2D46-4637-8E62-CE7DB944F57B");
@@ -29,6 +30,7 @@ public sealed class WindowsJackInfoSource : IJackInfoSource
         Part part;
         try
         {
+            // The endpoint's connector leads to the adapter's part, which implements the KS jack interfaces.
             var endpointConnector = device.DeviceTopology.GetConnector(0);
             part = endpointConnector.ConnectedTo.Part;
         }
@@ -37,6 +39,7 @@ public sealed class WindowsJackInfoSource : IJackInfoSource
             return [new JackRecord { EndpointId = endpointId, Errors = [Error("device_topology", exception)] }];
         }
 
+        // NAudio does not expose the native IPart, which the jack interfaces are activated from.
         var nativePart = NativePartField.GetValue(part);
         if (nativePart is null)
         {
@@ -72,6 +75,7 @@ public sealed class WindowsJackInfoSource : IJackInfoSource
         var jackCount = ReadCount(jackDescription, endpointId, "jack_count", errors);
         var jack2Count = ReadCount(jackDescription2, endpointId, "jack2_count", errors);
         var sink = ReadSink(jackSink, endpointId, errors);
+        // One record per jack; display audio carries its sink on the first record.
         var count = Math.Max(Math.Max(jackCount, jack2Count), sink is null ? 0u : 1u);
         for (uint index = 0; index < count; index++)
         {

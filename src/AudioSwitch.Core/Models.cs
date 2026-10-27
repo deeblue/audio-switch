@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace AudioSwitch.Core;
 
+/// <summary>Everything read from Windows at one moment: endpoints, the device-tree nodes above them and above every present USB device, jack and sink information, and the active display paths. The probe writes the same JSON.</summary>
 public sealed class Snapshot
 {
     [JsonPropertyName("schema_version")] public int SchemaVersion { get; set; }
@@ -15,6 +16,7 @@ public sealed class Snapshot
     [JsonPropertyName("errors")] public List<Dictionary<string, string>> Errors { get; set; } = [];
 }
 
+/// <summary>Manufacturer, model and machine type, which keep a port table to its own computer.</summary>
 public sealed class MachineIdentity
 {
     [JsonPropertyName("manufacturer")] public string? Manufacturer { get; set; }
@@ -22,6 +24,7 @@ public sealed class MachineIdentity
     [JsonPropertyName("mtm")] public string? MtM { get; set; }
 }
 
+/// <summary>A Core Audio endpoint as read: ID, name, flow, state, form factor and its device node.</summary>
 public sealed class AudioEndpoint
 {
     [JsonPropertyName("endpoint_id")] public string EndpointId { get; set; } = string.Empty;
@@ -38,6 +41,7 @@ public sealed class AudioEndpoint
     [JsonPropertyName("errors")] public List<Dictionary<string, string>> Errors { get; set; } = [];
 }
 
+/// <summary>A device-tree node (PnP devnode) with its parent, location paths, container ID and _PLD.</summary>
 public sealed class DeviceNode
 {
     [JsonPropertyName("instance_id")] public string InstanceId { get; set; } = string.Empty;
@@ -50,6 +54,7 @@ public sealed class DeviceNode
     [JsonPropertyName("errors")] public List<Dictionary<string, string>> Errors { get; set; } = [];
 }
 
+/// <summary>KS jack information of an endpoint: the jack description and, for screen audio, the sink (EDID IDs and port).</summary>
 public sealed class JackRecord
 {
     [JsonPropertyName("endpoint_id")] public string EndpointId { get; set; } = string.Empty;
@@ -61,6 +66,7 @@ public sealed class JackRecord
     [JsonPropertyName("errors")] public List<Dictionary<string, string>> Errors { get; set; } = [];
 }
 
+/// <summary>An active DisplayConfig path: the screen, its adapter and connector, its desktop position and EDID IDs.</summary>
 public sealed class DisplayPath
 {
     [JsonPropertyName("path_id")] public string PathId { get; set; } = string.Empty;
@@ -80,6 +86,7 @@ public sealed class DisplayPath
     [JsonPropertyName("errors")] public List<string> Errors { get; set; } = [];
 }
 
+/// <summary>Reads snapshot JSON written by the app or the probe.</summary>
 public static class SnapshotJson
 {
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
@@ -92,6 +99,7 @@ public static class SnapshotJson
     }
 }
 
+/// <summary>Helpers for the JSON values kept in snapshot properties.</summary>
 internal static class JsonValue
 {
     public static string? String(Dictionary<string, JsonElement> values, string key)

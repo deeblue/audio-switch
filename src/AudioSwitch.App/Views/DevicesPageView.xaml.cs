@@ -4,6 +4,7 @@ using AudioSwitch.Presentation;
 
 namespace AudioSwitch.App.Views;
 
+/// <summary>The Devices page: the device tree and the selected item's card.</summary>
 public partial class DevicesPageView : System.Windows.Controls.UserControl
 {
     private readonly DispatcherTimer _peakTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };

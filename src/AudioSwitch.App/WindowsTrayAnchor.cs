@@ -5,6 +5,7 @@ using AudioSwitch.Presentation;
 
 namespace AudioSwitch.App;
 
+/// <summary>Places the panel next to the notification area, inside the work area of that monitor.</summary>
 public sealed class WindowsTrayAnchor : ITrayAnchor
 {
     private readonly IMonitorDpiSource _dpiSource;

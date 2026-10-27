@@ -1,5 +1,6 @@
 namespace AudioSwitch.Core;
 
+/// <summary>Modifier flags as RegisterHotKey expects them.</summary>
 [Flags]
 public enum HotkeyModifiers : uint
 {
@@ -10,8 +11,10 @@ public enum HotkeyModifiers : uint
     Windows = 8
 }
 
+/// <summary>A parsed shortcut: its modifiers and a virtual-key code.</summary>
 public sealed record HotkeyBinding(HotkeyModifiers Modifiers, uint VirtualKey);
 
+/// <summary>Parses shortcut text such as "Ctrl+Alt+F1" into a binding for RegisterHotKey.</summary>
 public static class HotkeyBindingParser
 {
     private const HotkeyModifiers AllModifiers = HotkeyModifiers.Alt | HotkeyModifiers.Control | HotkeyModifiers.Shift | HotkeyModifiers.Windows;

@@ -2,6 +2,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Platform.Windows;
 
+/// <summary>Takes a snapshot: endpoints, the device-tree nodes above them, above display adapters and above every present USB device, jack information and display paths. Read errors are recorded in the snapshot instead of thrown.</summary>
 public sealed class WindowsAudioTopologySnapshotSource : IAudioTopologySnapshotSource
 {
     private const int CrNoSuchDevnode = 0x0D;

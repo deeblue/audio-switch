@@ -3,6 +3,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Platform.Windows;
 
+/// <summary>Starting with Windows through the current user's Run key; nothing is written outside HKCU.</summary>
 public sealed class WindowsAutostartService : IAutostartService
 {
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";

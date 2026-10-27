@@ -6,6 +6,7 @@ using AudioSwitch.Presentation;
 
 namespace AudioSwitch.App;
 
+/// <summary>The settings window with the Devices, Ports, Shortcuts and General pages.</summary>
 internal sealed partial class SettingsWindow : Window
 {
     private readonly AudioSwitchConfiguration _configuration;

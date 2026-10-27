@@ -5,6 +5,7 @@ using AudioSwitch.Core;
 
 namespace AudioSwitch.Presentation;
 
+/// <summary>The tray panel: the endpoints of one flow grouped under their port or category, switching the default and playing a test tone.</summary>
 public sealed class QuickSwitchPanelViewModel : INotifyPropertyChanged
 {
     private readonly IDefaultEndpointWriter _writer;
@@ -137,12 +138,14 @@ public sealed class QuickSwitchPanelViewModel : INotifyPropertyChanged
     }
 }
 
+/// <summary>A port or category heading with its endpoints.</summary>
 public sealed class EndpointGroupViewModel(string name, IEnumerable<EndpointViewModel> endpoints)
 {
     public string Name { get; } = name;
     public IReadOnlyList<EndpointViewModel> Endpoints { get; } = endpoints.ToArray();
 }
 
+/// <summary>One endpoint in the panel.</summary>
 public sealed class EndpointViewModel(string endpointId, string name, AudioEndpointFlow flow, bool isDefault) : INotifyPropertyChanged
 {
     private bool _isDefault = isDefault;
