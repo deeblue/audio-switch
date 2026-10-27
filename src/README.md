@@ -76,6 +76,8 @@ dotnet publish src/AudioSwitch.App -c Release -r win-x64 --self-contained -o dis
 
 輸出到 `dist/AudioSwitch/`（不納入版本控制），執行 `dist/AudioSwitch/AudioSwitch.App.exe`。`src/AudioSwitch.App/bin/` 下的檔案是建置與測試用的中間產物。
 
+版號設定在 `src/AudioSwitch.App/AudioSwitch.App.csproj` 的 `<Version>`。建置時另外寫入 commit、工作目錄是否有未提交修改，以及建置時間；設定視窗「一般」頁顯示完整版本資訊，系統匣圖示的提示文字顯示版號。
+
 ## 使用者資料
 
 設定檔存放於 `%APPDATA%\AudioSwitch\`：

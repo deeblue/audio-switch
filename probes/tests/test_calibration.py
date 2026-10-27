@@ -122,3 +122,38 @@ class CalibrationTests(unittest.TestCase):
         result = calibrate_port_map("c1", self.before, after, self.pm)
 
         self.assertEqual(result["transports"], ["USB 2"])
+
+    def test_dock_calibration_records_usb_path_and_screens_on_the_host_gpu(self):
+        dock = DeviceNodeRecord("USB\VID_03F0&PID_3BAF\DOCK", parent_id="USB\ROOT_HUB30\1",
+                                location_paths=["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)"])
+        adapter = DeviceNodeRecord("USB\VID_34C7&PID_2114\ADAPTER", parent_id=dock.instance_id,
+                                   location_paths=["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)#USB(4)"])
+        after = SnapshotRecord(1, "b", MachineRecord(mtm="21RU"), devnodes=[dock, adapter],
+                               display_paths=[_gpu_path("hdmi-screen", 8261, 0), _gpu_path("dp-screen", 12613, 1),
+                                              DisplayPathRecord("usb-screen", output_technology=5, connector_instance=0,
+                                                                adapter_name=r"\?\USB#VID_34C7&PID_2114#ADAPTER",
+                                                                adapter_instance_id=adapter.instance_id, properties={"target_id": 256})])
+
+        result = calibrate_port_map("c1", self.before, after, self.pm)
+
+        self.assertEqual(result["status"], "calibrated")
+        self.assertEqual(result["location_paths"], ["PCIROOT(0)#PCI(1400)#USBROOT(0)#USB(5)"])
+        connectors = self.pm.data["interfaces"][0]["display_connectors"]
+        self.assertEqual([c["target_id"] for c in connectors], [8261, 12613])
+        self.assertEqual(result["display_connectors"], connectors)
+
+    def test_several_screens_without_usb_changes_calibrate_usb_c_but_not_hdmi(self):
+        after = SnapshotRecord(1, "b", MachineRecord(mtm="21RU"),
+                               display_paths=[_gpu_path("first", 8261, 0), _gpu_path("second", 12613, 1)])
+        pm = PortMap({"interfaces": [{"id": "c1", "type": "usb-c-tbt"}, {"id": "hdmi", "type": "hdmi"}]})
+
+        self.assertEqual(calibrate_port_map("c1", self.before, after, pm)["status"], "calibrated")
+        self.assertEqual(len(pm.data["interfaces"][0]["display_connectors"]), 2)
+        self.assertEqual(calibrate_port_map("hdmi", self.before, after, pm)["status"], "ambiguous")
+        self.assertNotIn("display_connectors", pm.data["interfaces"][1])
+
+
+def _gpu_path(path_id: str, target_id: int, connector_instance: int) -> DisplayPathRecord:
+    return DisplayPathRecord(path_id, output_technology=10, connector_instance=connector_instance,
+                             adapter_name=r"\?\PCI#VEN_8086&DEV_7D51#GPU", adapter_instance_id="PCI\VEN_8086&DEV_7D51\GPU",
+                             properties={"target_id": target_id})

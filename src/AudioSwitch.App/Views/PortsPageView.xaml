@@ -87,8 +87,10 @@
               </ItemsControl.ItemTemplate>
             </ItemsControl>
             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+              <Button Content="下一步" Style="{StaticResource PrimaryButton}" Click="ConfirmUnplugged_Click"
+                      Visibility="{Binding IsWaitingForUnplug, Converter={StaticResource VisibleWhenTrue}}"/>
               <Button Content="完成偵測" Style="{StaticResource PrimaryButton}" Click="CompleteDetection_Click"
-                      Visibility="{Binding IsWaitingForDevice, Converter={StaticResource VisibleWhenTrue}}"/>
+                      Visibility="{Binding CanCompleteDetection, Converter={StaticResource VisibleWhenTrue}}"/>
               <Button Content="套用到這個接口" Style="{StaticResource PrimaryButton}" Click="ApplyDetected_Click"
                       Visibility="{Binding IsWaitingForPlacement, Converter={StaticResource VisibleWhenTrue}}"
                       IsEnabled="{Binding CanApplyDetectedToSelected}"/>

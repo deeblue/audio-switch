@@ -5,6 +5,7 @@
       "before": "final-after",
       "interface_id": "usb-a-left",
       "result": {
+        "display_connectors": [],
         "interface_id": "usb-a-left",
         "location_paths": [
           "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS06)",
@@ -21,6 +22,7 @@
       "before": "port-left-usba",
       "interface_id": "usb-a-right",
       "result": {
+        "display_connectors": [],
         "interface_id": "usb-a-right",
         "location_paths": [
           "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS07)",
@@ -37,6 +39,7 @@
       "before": "port-right-usba",
       "interface_id": "usb-c-left-front",
       "result": {
+        "display_connectors": [],
         "interface_id": "usb-c-left-front",
         "location_paths": [
           "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS01)",
@@ -53,6 +56,7 @@
       "before": "port-left-usbc-front",
       "interface_id": "usb-c-left-rear",
       "result": {
+        "display_connectors": [],
         "interface_id": "usb-c-left-rear",
         "location_paths": [
           "ACPI(_SB_)#ACPI(PC00)#ACPI(XHCI)#ACPI(RHUB)#ACPI(HS05)",

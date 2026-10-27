@@ -101,6 +101,13 @@ def calibrate_port_map(interface_id: str, before: SnapshotRecord, after: Snapsho
     # same transport mean two connections changed; ContainerId and names are not evidence.
     transports = [attachment_transport(n) for n in candidates]
     if candidates and len(set(transports)) == len(transports):
+        # Screens on a dock arrive with its USB devices. Screens on a USB display adapter are placed through
+        # the USB tree; the others run on the host GPU and are recorded as display connectors of this port.
+        dock_connectors = [connector for connector in (stable_display_connector(row) for row in diff.added_display_paths
+                                                       if not str(row.get("adapter_instance_id") or "").upper().startswith("USB\\"))
+                           if all(connector.get(field) is not None for field in _STABLE_DISPLAY_FIELDS)]
+        for connector in dock_connectors:
+            _add_display_connector(ports[interface_id], connector)
         current = ports[interface_id].setdefault("usb_location_path_prefixes", [])
         attachments = []
         for node, route_type in zip(candidates, transports):
@@ -111,18 +118,26 @@ def calibrate_port_map(interface_id: str, before: SnapshotRecord, after: Snapsho
             ports[interface_id].setdefault("calibration_sources", []).append(attachment)
             attachments.append(attachment)
         return {"status": "calibrated", "interface_id": interface_id, "transports": transports,
-                "location_paths": sorted({p for a in attachments for p in a["location_paths"]}), "attachments": attachments}
-    if not candidates and len(diff.added_display_paths) == 1:
-        row = diff.added_display_paths[0]
-        connector = stable_display_connector(row)
-        if any(connector.get(field) is None for field in _STABLE_DISPLAY_FIELDS):
-            return {"status": "no_candidate", "reason": "顯示路徑缺少穩定校準欄位", "display_connector": connector}
-        current = ports[interface_id].setdefault("display_connectors", [])
-        if connector not in current: current.append(connector)
-        ports[interface_id].setdefault("calibration_sources", []).append({"source": "校準", "display_connector": connector})
-        return {"status": "calibrated", "interface_id": interface_id, "display_connector": connector}
+                "location_paths": sorted({p for a in attachments for p in a["location_paths"]}), "attachments": attachments,
+                "display_connectors": dock_connectors}
+    added = diff.added_display_paths
+    # An HDMI connector carries one screen; USB-C and DisplayPort can carry several through a dock or MST hub.
+    if not candidates and (len(added) == 1 or (len(added) > 1 and ports[interface_id].get("type") != "hdmi")):
+        connectors = [stable_display_connector(row) for row in added]
+        if any(connector.get(field) is None for connector in connectors for field in _STABLE_DISPLAY_FIELDS):
+            return {"status": "no_candidate", "reason": "顯示路徑缺少穩定校準欄位", "display_connectors": connectors}
+        for connector in connectors:
+            _add_display_connector(ports[interface_id], connector)
+        return {"status": "calibrated", "interface_id": interface_id, "display_connectors": connectors}
     return {"status": "ambiguous" if candidates or diff.added_display_paths else "no_candidate",
             "candidate_ids": [x["instance_id"] for x in candidates] + [x["path_id"] for x in diff.added_display_paths]}
+
+def _add_display_connector(port: dict[str, Any], connector: dict[str, Any]) -> None:
+    current = port.setdefault("display_connectors", [])
+    if connector in current:
+        return
+    current.append(connector)
+    port.setdefault("calibration_sources", []).append({"source": "校準", "display_connector": connector})
 
 def save_port_map(path: Path, port_map: PortMap) -> None:
     fd, temp_name = tempfile.mkstemp(prefix=".ports-", suffix=".tmp", dir=path.parent)

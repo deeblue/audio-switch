@@ -109,11 +109,23 @@ static class ProgramEntry
             window.Ports.Select("right-usb-a");
             window.Ports.BeginCalibration();
         });
+        shot.Settings("settings/ports/calibrating-usb-c", standard, 1, window =>
+        {
+            window.Ports.Select("rear-usb-c");
+            window.Ports.BeginCalibration();
+        });
+        shot.Settings("settings/ports/calibrating-usb-c-plug", standard, 1, window =>
+        {
+            window.Ports.Select("rear-usb-c");
+            window.Ports.BeginCalibration();
+            window.Ports.ConfirmUnplugged();
+        });
         shot.Settings("settings/ports/detect-new-device", standard, 1, window => window.Ports.BeginDetectNewDevice());
         var detecting = Fixtures.Standard();
         shot.Settings("settings/ports/device-detected", detecting, 1, window =>
         {
             window.Ports.BeginDetectNewDevice();
+            window.Ports.ConfirmUnplugged();
             detecting.AttachUsbSpeaker();
             window.Ports.CompleteDetection();
             window.Ports.Select("rear-usb-c");
@@ -123,6 +135,7 @@ static class ProgramEntry
         {
             window.Ports.Select("rear-usb-c");
             window.Ports.BeginCalibration();
+            window.Ports.ConfirmUnplugged();
             calibrating.AttachUsbSpeaker();
             window.Ports.CompleteDetection();
         });

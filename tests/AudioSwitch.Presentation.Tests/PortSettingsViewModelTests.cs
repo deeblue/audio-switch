@@ -33,9 +33,15 @@ public sealed class PortSettingsViewModelTests
         model.BeginCalibration();
 
         Assert.Equal(PortCalibrationPhase.WaitingForDeviceAtPort, model.Phase);
-        Assert.True(model.IsWaitingForDevice);
-        Assert.Contains(model.CalibrationSteps, step => step.Contains("左側 USB-A", StringComparison.Ordinal));
+        Assert.True(model.IsWaitingForUnplug);
+        Assert.False(model.CanCompleteDetection);
+        Assert.Contains(model.CalibrationSteps, step => step.Contains("拔掉", StringComparison.Ordinal));
         Assert.False(model.CanMoveSelected);
+
+        model.ConfirmUnplugged();
+
+        Assert.True(model.CanCompleteDetection);
+        Assert.Contains(model.CalibrationSteps, step => step.Contains("左側 USB-A", StringComparison.Ordinal));
 
         model.CompleteDetection();
 
@@ -53,6 +59,7 @@ public sealed class PortSettingsViewModelTests
         var model = CreateModel(new FakeSnapshotSource(new Snapshot(), SpeakerSnapshot()), table);
 
         model.BeginDetectNewDevice();
+        model.ConfirmUnplugged();
         model.CompleteDetection();
 
         Assert.True(model.IsWaitingForPlacement);
@@ -68,11 +75,13 @@ public sealed class PortSettingsViewModelTests
         var model = CreateModel(new FakeSnapshotSource(new Snapshot()), PortTable.Empty());
         model.Add(PortConnectorType.UsbA, PortEdge.Left, 0);
         model.BeginCalibration();
+        model.ConfirmUnplugged();
 
         model.CompleteDetection();
 
         Assert.True(model.IsError);
         Assert.Equal(PortCalibrationPhase.WaitingForDeviceAtPort, model.Phase);
+        Assert.True(model.IsWaitingForUnplug);
 
         model.CancelCalibration();
 

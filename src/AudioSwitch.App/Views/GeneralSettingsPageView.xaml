@@ -1,6 +1,7 @@
 <UserControl x:Class="AudioSwitch.App.Views.GeneralSettingsPageView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="clr-namespace:AudioSwitch.App">
   <UserControl.Resources>
     <ResourceDictionary Source="/AudioSwitch.App;component/Views/AppStyles.xaml"/>
   </UserControl.Resources>
@@ -24,6 +25,12 @@
             <TextBlock Text="在每個螢幕上顯示編號，方便對照裝置頁的螢幕。" Style="{StaticResource CaptionText}" Margin="0,4,0,0"/>
           </StackPanel>
         </DockPanel>
+      </Border>
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Text="AudioSwitch"/>
+          <TextBlock x:Name="VersionText" Text="{x:Static app:AppVersion.DisplayText}" Style="{StaticResource CaptionText}" Margin="0,4,0,0"/>
+        </StackPanel>
       </Border>
     </StackPanel>
   </ScrollViewer>

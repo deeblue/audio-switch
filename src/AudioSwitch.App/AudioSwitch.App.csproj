@@ -6,7 +6,25 @@
     <UseWindowsForms>true</UseWindowsForms>
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
     <ApplicationIcon>Assets\AudioSwitch.ico</ApplicationIcon>
+    <Version>0.1.0</Version>
+    <!-- The commit and build time are added as assembly metadata below; keep the informational version short. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
+  <Target Name="AddBuildInformation" BeforeTargets="GetAssemblyAttributes">
+    <Exec Command="git rev-parse --short HEAD" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
+          IgnoreExitCode="true" StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="BuildCommit" />
+    </Exec>
+    <Exec Command="git status --porcelain" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
+          IgnoreExitCode="true" StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="BuildWorkingTreeChanges" />
+    </Exec>
+    <ItemGroup>
+      <AssemblyMetadata Include="BuildCommit" Value="$(BuildCommit)" />
+      <AssemblyMetadata Include="BuildHasLocalChanges" Value="true" Condition="'$(BuildWorkingTreeChanges)' != ''" />
+      <AssemblyMetadata Include="BuildTime" Value="$([System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm'))" />
+    </ItemGroup>
+  </Target>
   <ItemGroup>
     <!-- WPF and WinForms share many type names; WinForms is only used through explicit aliases. -->
     <Using Remove="System.Windows.Forms" />

@@ -56,6 +56,8 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
     public bool CanStartDetection => IsEnabled && !IsCalibrating;
     public bool ShowIdleHint => IsEnabled && !IsCalibrating && SelectedInterface is null;
     public bool IsWaitingForDevice => Phase is PortCalibrationPhase.WaitingForDeviceAtPort or PortCalibrationPhase.WaitingForNewDevice;
+    public bool IsWaitingForUnplug => IsWaitingForDevice && Calibration.State == CalibrationWorkflowState.AwaitingUnplug;
+    public bool CanCompleteDetection => IsWaitingForDevice && Calibration.State == CalibrationWorkflowState.AwaitingDevice;
     public bool IsWaitingForPlacement => Phase == PortCalibrationPhase.WaitingForPlacement;
     public bool CanApplyDetectedToSelected => IsWaitingForPlacement && SelectedInterface is { Type: not "audio-jack" };
     public IReadOnlyList<string> CalibrationSteps => BuildSteps();
@@ -208,9 +210,24 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
         RaiseState();
     }
 
+    public void ConfirmUnplugged()
+    {
+        if (!IsWaitingForUnplug) return;
+        try
+        {
+            Calibration.ConfirmUnplugged();
+            ShowMessage(null);
+        }
+        catch (Exception exception)
+        {
+            ShowMessage(exception.Message, isError: true);
+        }
+        RaiseState();
+    }
+
     public void CompleteDetection()
     {
-        if (!IsWaitingForDevice) return;
+        if (!CanCompleteDetection) return;
         try
         {
             var result = Calibration.CompleteDeviceStep();
@@ -299,7 +316,9 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
             var name = result.InterfaceId is { } id ? _portTable.FindInterface(id)?.Name ?? id : "接口";
             Persist();
             if (result.InterfaceId is not null) Select(result.InterfaceId);
-            ShowMessage(result.Transports.Count > 0 ? $"已校準「{name}」：{string.Join("、", result.Transports)}。" : $"已校準「{name}」。");
+            var displays = result.DisplayConnectors?.Count ?? 0;
+            var details = result.Transports.Concat(displays > 0 ? [$"{displays} 個螢幕輸出"] : Array.Empty<string>()).ToArray();
+            ShowMessage(details.Length > 0 ? $"已校準「{name}」：{string.Join("、", details)}。" : $"已校準「{name}」。");
             DiagramChanged?.Invoke(this, EventArgs.Empty);
             return;
         }
@@ -307,43 +326,41 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
         if (result?.Status == "ambiguous")
             ShowMessage("偵測到不只一個裝置。請只插入一個裝置，再按「完成偵測」。", isError: true);
         else
-            ShowMessage(Calibration.ErrorMessage ?? "沒有偵測到新插入的裝置。請確認是在開始校準之後才插入，再按「完成偵測」。", isError: true);
+            ShowMessage(Calibration.ErrorMessage ?? "沒有偵測到新插入的裝置。", isError: true);
         if (Calibration.State == CalibrationWorkflowState.Idle) Phase = PortCalibrationPhase.Idle;
+        else if (Calibration.State == CalibrationWorkflowState.AwaitingUnplug && Phase == PortCalibrationPhase.WaitingForPlacement)
+            Phase = PortCalibrationPhase.WaitingForNewDevice;
     }
 
     private IReadOnlyList<string> BuildSteps()
     {
-        var target = SelectedInterface;
+        var target = Phase == PortCalibrationPhase.WaitingForDeviceAtPort ? SelectedInterface : null;
         var isDisplay = target?.Type is "hdmi" or "displayport";
-        return Phase switch
+        var isUsbC = target?.Type == "usb-c";
+        if (IsWaitingForUnplug)
         {
-            PortCalibrationPhase.WaitingForDeviceAtPort => isDisplay
-                ?
-                [
-                    "1. 先拔掉要用來校準的螢幕線。",
-                    $"2. 把螢幕接上「{target?.Name}」。",
-                    "3. 畫面出現後按「完成偵測」。"
-                ]
-                :
-                [
-                    "1. 先拔掉要用來校準的 USB 裝置。",
-                    $"2. 把它插入「{target?.Name}」。",
-                    "3. 插好後按「完成偵測」。"
-                ],
-            PortCalibrationPhase.WaitingForNewDevice =>
+            return
             [
-                "1. 先拔掉要用來校準的裝置。",
-                "2. 把它插入要定義的接口。",
-                "3. 插好後按「完成偵測」。"
-            ],
-            PortCalibrationPhase.WaitingForPlacement =>
+                isDisplay ? "1. 拔掉要校準的螢幕線。" : isUsbC ? "1. 拔掉要校準的 USB 裝置或 Dock。" : target is not null ? "1. 拔掉要校準的 USB 裝置。" : "1. 拔掉要校準的裝置。",
+                "2. 拔掉後（或本來就沒接）按「下一步」。"
+            ];
+        }
+        if (CanCompleteDetection)
+        {
+            return
+            [
+                isDisplay ? $"1. 把螢幕接上「{target!.Name}」。" : target is not null ? $"1. 把它插入「{target.Name}」。" : "1. 把它插入要定義的接口。",
+                isDisplay ? "2. 畫面出現後按「完成偵測」。" : isUsbC ? "2. 接著螢幕的話，等畫面出現後再按「完成偵測」。" : "2. 插好後按「完成偵測」。"
+            ];
+        }
+        return IsWaitingForPlacement
+            ?
             [
                 "已偵測到裝置。",
                 "在示意圖上點選它插著的接口，再按「套用到這個接口」；",
                 "或從上方把接口類型拖到示意圖上的對應位置。"
-            ],
-            _ => []
-        };
+            ]
+            : [];
     }
 
     private bool Guard()
@@ -377,6 +394,7 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
         {
             nameof(SelectedInterface), nameof(HasSelection), nameof(SelectedTypeText), nameof(SelectedStatusText), nameof(SelectedState),
             nameof(CanCalibrateSelected), nameof(CanMoveSelected), nameof(IsCalibrating), nameof(IsWaitingForDevice),
+            nameof(IsWaitingForUnplug), nameof(CanCompleteDetection),
             nameof(IsWaitingForPlacement), nameof(CanApplyDetectedToSelected), nameof(CalibrationSteps), nameof(CanEnterAlias),
             nameof(DetectedEndpointNames), nameof(ShowIdleHint), nameof(CanStartDetection)
         })

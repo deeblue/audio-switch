@@ -94,12 +94,14 @@ ThinkPad T14p
 
 **筆電示意圖**：一台看得出是筆電的俯視圖：機身畫出鍵盤與觸控板，轉軸側畫出螢幕的邊緣；四邊為左、右、後（轉軸）、前（觸控板側），方向由圖本身看出，不另加文字標示。接口以各自形狀的圖示畫在機身邊緣上，像實際的孔一樣。使用者從工具列把 USB-A、USB-C、HDMI、3.5mm 圖示拖到邊上，擺放位置即決定側別與同側順序，可沿邊拖動調整或移到別的邊。圖示以顏色標記校準狀態：已校準、缺部分路徑（例如缺 USB 3）、未校準；名稱與狀態放在滑鼠停留時的浮動說明。點圖示可改名、重新校準、刪除。另提供可用鍵盤操作的清單，功能相同。
 
-校準有兩種順序：
+校準有兩種順序，都先請使用者拔掉要用的裝置並按「下一步」，此時才記錄插入前的狀態，因此開始校準時裝置是否接著都不影響結果：
 
-- **先擺再插**：點圖示 →「校準」→ 插入任一裝置。
-- **先插再擺**：插入裝置後提示把它拖到圖上的位置（既有圖示或從工具列拖新的）。
+- **先擺再插**：點圖示 →「校準」→ 拔掉裝置 →「下一步」→ 插入任一裝置。
+- **先插再擺**：「偵測新裝置」→ 拔掉裝置 →「下一步」→ 插入後提示把它拖到圖上的位置（既有圖示或從工具列拖新的）。
 
-偵測方式同探針的 `calibrate`：取這次新出現或移動的最上層接點，一個接口最多記 USB 2、USB 3、PCIe 隧道各一組；同類接點出現兩個時請使用者只插一個裝置重試。顯示輸出以接上螢幕的方式校準。3.5mm 擺在圖上決定位置，對應關係由 KS jack 資訊自動取得，不需插入校準。內建喇叭與麥克風不出現在圖上。
+插入後沒有偵測到變化時，回到拔除那一步重來。
+
+偵測方式同探針的 `calibrate`：取這次新出現或移動的最上層接點，一個接口最多記 USB 2、USB 3、PCIe 隧道各一組；同類接點出現兩個時請使用者只插一個裝置重試。顯示輸出以接上螢幕的方式校準；USB-C 插入接著螢幕的 Dock 時，USB 路徑與螢幕輸出一次記錄。3.5mm 擺在圖上決定位置，對應關係由 KS jack 資訊自動取得，不需插入校準。內建喇叭與麥克風不出現在圖上。
 
 **名稱**：擺好圖示後名稱欄立即可編輯，預填依位置產生的名稱（例如「左側 USB-C（前）」）並全選，直接輸入即取代，按 Enter 沿用。接口名稱只存在程式設定檔。若校準時插入的裝置有音訊端點，可選填裝置別名（寫回 Windows 端點，見「可行性與限制」）。接口名稱與裝置別名分開保存，因為裝置會換孔；面板上組合顯示。
 
@@ -170,7 +172,7 @@ PnP 的 parent／instance ID 提供裝置樹資訊；`PKEY_Device_ContainerId` �
 
 1. 使用者在示意圖上建立接口並決定位置與名稱。程式不依機型、OEM 手冊或 `_PLD` 建立接口；接口表綁定這台主機的 SMBIOS 廠牌與機型，換一台筆電需重新定義。
 2. USB-A／USB-C：逐孔插入任意 USB 裝置，記錄 LocationPaths 前綴，建立「前綴 ↔ 機身孔位」校準表；校準表是孔位的唯一依據。`DEVPKEY_Device_PhysicalDeviceLocation`（ACPI `_PLD`）只在詳細資訊顯示，不用於判斷孔位或類型：韌體填寫的面板值不一定正確（本機兩個 USB-C 孔在左側，`_PLD` 卻回報面板「上」）。兩孔無法區分時標為未辨識。[LocationPaths 屬性](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/devpkey-device-locationpaths)
-3. HDMI／USB-C 顯示輸出：每個接口各直接接一次螢幕，記錄 DisplayConfig connector 與新出現音訊端點的對應。
+3. HDMI／USB-C 顯示輸出：每個接口各直接接一次螢幕，記錄 DisplayConfig connector 與新出現音訊端點的對應。HDMI 一次只能新增一個顯示路徑；USB-C 經 Dock 或 MST 可同時出現多個，全部記到該接口。校準 USB-C 時插入接著螢幕的 Dock，USB 路徑與由主機顯示卡輸出的新顯示路徑一起記錄；USB 顯示 adapter 上的螢幕已由 USB 路徑歸位，不另記錄。
 4. 3.5mm：讀 jack 描述；沒有描述或插入偵測時，以實際插拔／試音確認，仍不能判定就標為未知。[IKsJackDescription](https://learn.microsoft.com/en-us/windows/win32/api/devicetopology/nn-devicetopology-iksjackdescription)、[插孔欄位定義](https://learn.microsoft.com/en-us/windows-hardware/drivers/audio/ksjack-description)
 
 Windows PnP 裝置樹會隨裝置加入／移除更新；USB4 拓樸也可呈現 host router 與下游 device router。[Windows 裝置樹](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/device-tree)、[Windows USB4 連線管理員](https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/usb4-intro-to-connection-manager)

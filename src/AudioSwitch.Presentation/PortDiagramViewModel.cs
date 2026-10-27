@@ -120,7 +120,8 @@ public sealed class PortDiagramViewModel
         if (port.Type is "hdmi" or "displayport")
             return port.DisplayConnectors.Count > 0 ? PortCalibrationState.Calibrated : PortCalibrationState.Uncalibrated;
         var transports = CalibratedTransports(port);
-        if (transports.Count == 0) return PortCalibrationState.Uncalibrated;
+        if (transports.Count == 0)
+            return port.DisplayConnectors.Count > 0 ? PortCalibrationState.Partial : PortCalibrationState.Uncalibrated;
         return ExpectedTransports(port).All(transports.Contains) ? PortCalibrationState.Calibrated : PortCalibrationState.Partial;
     }
 
@@ -131,11 +132,11 @@ public sealed class PortDiagramViewModel
             return port.DisplayConnectors.Count > 0 ? "已校準（顯示輸出）" : "未校準";
 
         var transports = CalibratedTransports(port);
-        if (transports.Count == 0) return "未校準";
+        if (transports.Count == 0) return port.DisplayConnectors.Count > 0 ? "只校準了顯示輸出，缺 USB 路徑" : "未校準";
         var expected = ExpectedTransports(port);
         var present = expected.Where(transports.Contains).ToArray();
         var unknown = transports.Where(transport => !expected.Contains(transport, StringComparer.OrdinalIgnoreCase)).Order(StringComparer.Ordinal).ToArray();
-        var details = present.Concat(unknown).ToArray();
+        var details = present.Concat(unknown).Concat(port.DisplayConnectors.Count > 0 ? ["顯示輸出"] : Array.Empty<string>()).ToArray();
         var missing = expected.Where(transport => !transports.Contains(transport)).ToArray();
         return missing.Length == 0
             ? $"已校準（{string.Join("、", details)}）"

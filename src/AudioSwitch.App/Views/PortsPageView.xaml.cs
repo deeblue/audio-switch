@@ -206,6 +206,8 @@ public partial class PortsPageView : UserControl
 
     private void DetectNewDevice_Click(object sender, RoutedEventArgs e) => Model?.BeginDetectNewDevice();
 
+    private void ConfirmUnplugged_Click(object sender, RoutedEventArgs e) => Model?.ConfirmUnplugged();
+
     private void CompleteDetection_Click(object sender, RoutedEventArgs e) => Model?.CompleteDetection();
 
     private void ApplyDetected_Click(object sender, RoutedEventArgs e) => Model?.ApplyDetectedToSelected();

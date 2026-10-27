@@ -27,7 +27,7 @@ public sealed class TrayIconHost : IDisposable
         _notifyIcon = new WinForms.NotifyIcon
         {
             ContextMenuStrip = Menu,
-            Text = "AudioSwitch",
+            Text = $"AudioSwitch {AppVersion.Version}",
             Visible = true
         };
         UpdateIcon();

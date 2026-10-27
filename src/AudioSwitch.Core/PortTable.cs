@@ -139,8 +139,19 @@ public sealed class PortTable
         var port = FindInterface(interfaceId) ?? throw new ArgumentException($"找不到接口 ID：{interfaceId}", nameof(interfaceId));
         var diff = AttachmentDetector.Detect(before, after);
         var transports = diff.Select(AttachmentDetector.Transport).ToArray();
+        var beforePathIds = before.DisplayPaths.Select(path => path.PathId).ToHashSet(StringComparer.Ordinal);
+        var addedPaths = after.DisplayPaths.Where(path => !beforePathIds.Contains(path.PathId)).ToArray();
         if (diff.Count > 0 && transports.Distinct(StringComparer.Ordinal).Count() == transports.Length)
         {
+            // Screens on a dock arrive with its USB devices. Screens on a USB display adapter are placed through
+            // the USB tree; the others run on the host GPU and are recorded as display connectors of this port.
+            var dockConnectors = addedPaths
+                .Where(path => path.AdapterInstanceId?.StartsWith("USB\\", StringComparison.OrdinalIgnoreCase) != true)
+                .Select(StableDisplayConnector)
+                .OfType<DisplayConnector>()
+                .ToArray();
+            foreach (var connector in dockConnectors)
+                AddDisplayConnector(port, connector);
             var rows = new List<CalibratedAttachment>();
             for (var index = 0; index < diff.Count; index++)
             {
@@ -157,45 +168,57 @@ public sealed class PortTable
                 port.CalibrationSources.Add(new PortCalibrationSource { Source = "校準", Transport = transports[index], InstanceId = node.InstanceId, LocationPaths = paths.ToList() });
             }
 
-            return new CalibrationResult("calibrated", interfaceId, transports, rows.SelectMany(row => row.LocationPaths).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(), rows, []);
+            return new CalibrationResult("calibrated", interfaceId, transports, rows.SelectMany(row => row.LocationPaths).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(), rows, [], dockConnectors);
         }
 
-        if (diff.Count == 0)
+        // An HDMI connector carries one screen; USB-C and DisplayPort can carry several through a dock or MST hub.
+        if (diff.Count == 0 && (addedPaths.Length == 1 || (addedPaths.Length > 1 && port.Type != "hdmi")))
         {
-            var beforePathIds = before.DisplayPaths.Select(path => path.PathId).ToHashSet(StringComparer.Ordinal);
-            var addedPaths = after.DisplayPaths.Where(path => !beforePathIds.Contains(path.PathId)).ToArray();
-            if (addedPaths.Length == 1)
+            var connectors = addedPaths.Select(StableDisplayConnector).ToArray();
+            if (connectors.Any(connector => connector is null))
             {
-                var path = addedPaths[0];
-                var connector = new DisplayConnector
-                {
-                    AdapterDevicePath = path.AdapterName,
-                    TargetId = JsonValue.Integer(path.Properties, "target_id"),
-                    ConnectorInstance = path.ConnectorInstance,
-                    OutputTechnology = path.OutputTechnology
-                };
-                if (string.IsNullOrWhiteSpace(connector.AdapterDevicePath) || !connector.TargetId.HasValue ||
-                    !connector.ConnectorInstance.HasValue || !connector.OutputTechnology.HasValue)
-                {
-                    return new CalibrationResult("no_candidate", null, [], [], [], [path.PathId]);
-                }
+                return new CalibrationResult("no_candidate", null, [], [], [], addedPaths.Select(path => path.PathId).ToArray());
+            }
 
-                if (!port.DisplayConnectors.Any(existing => existing.AdapterDevicePath == connector.AdapterDevicePath &&
-                    existing.TargetId == connector.TargetId && existing.ConnectorInstance == connector.ConnectorInstance &&
-                    existing.OutputTechnology == connector.OutputTechnology))
-                {
-                    port.DisplayConnectors.Add(connector);
-                    port.CalibrationSources.Add(new PortCalibrationSource { Source = "校準", DisplayConnector = connector });
-                }
-                return new CalibrationResult("calibrated", interfaceId, [], [], [], [path.PathId], connector);
-            }
-            if (addedPaths.Length > 0)
-            {
-                return new CalibrationResult("ambiguous", null, [], [], [], addedPaths.Select(path => path.PathId).ToArray());
-            }
+            foreach (var connector in connectors)
+                AddDisplayConnector(port, connector!);
+            return new CalibrationResult("calibrated", interfaceId, [], [], [], addedPaths.Select(path => path.PathId).ToArray(), connectors!);
+        }
+
+        if (diff.Count == 0 && addedPaths.Length > 0)
+        {
+            return new CalibrationResult("ambiguous", null, [], [], [], addedPaths.Select(path => path.PathId).ToArray());
         }
 
         return new CalibrationResult(diff.Count > 0 ? "ambiguous" : "no_candidate", null, [], [], [], diff.Select(node => node.InstanceId).ToArray());
+    }
+
+    private static DisplayConnector? StableDisplayConnector(DisplayPath path)
+    {
+        var connector = new DisplayConnector
+        {
+            AdapterDevicePath = path.AdapterName,
+            TargetId = JsonValue.Integer(path.Properties, "target_id"),
+            ConnectorInstance = path.ConnectorInstance,
+            OutputTechnology = path.OutputTechnology
+        };
+        return string.IsNullOrWhiteSpace(connector.AdapterDevicePath) || !connector.TargetId.HasValue ||
+            !connector.ConnectorInstance.HasValue || !connector.OutputTechnology.HasValue
+            ? null
+            : connector;
+    }
+
+    private static void AddDisplayConnector(PortDefinition port, DisplayConnector connector)
+    {
+        if (port.DisplayConnectors.Any(existing => existing.AdapterDevicePath == connector.AdapterDevicePath &&
+            existing.TargetId == connector.TargetId && existing.ConnectorInstance == connector.ConnectorInstance &&
+            existing.OutputTechnology == connector.OutputTechnology))
+        {
+            return;
+        }
+
+        port.DisplayConnectors.Add(connector);
+        port.CalibrationSources.Add(new PortCalibrationSource { Source = "校準", DisplayConnector = connector });
     }
 
     public CalibrationResult CalibrateExistingEndpoint(string interfaceId, Snapshot snapshot, string endpointId)
@@ -298,4 +321,4 @@ public sealed record CalibrationResult(
     IReadOnlyList<string> LocationPaths,
     IReadOnlyList<CalibratedAttachment> Attachments,
     IReadOnlyList<string> CandidateIds,
-    DisplayConnector? DisplayConnector = null);
+    IReadOnlyList<DisplayConnector>? DisplayConnectors = null);

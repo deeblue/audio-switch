@@ -12,6 +12,7 @@ public sealed class CalibrationWorkflowViewModelTests
         var source = new FakeSnapshotSource(new Snapshot(), UsbSnapshot("USB\\VID_1234&PID_5678\\A"));
         var model = new CalibrationWorkflowViewModel(source, table);
         model.BeginAtPort(port.Id);
+        model.ConfirmUnplugged();
 
         var result = model.CompleteDeviceStep();
 
@@ -27,6 +28,7 @@ public sealed class CalibrationWorkflowViewModelTests
         var source = new FakeSnapshotSource(new Snapshot(), UsbSnapshot("USB\\VID_1234&PID_5678\\A"));
         var model = new CalibrationWorkflowViewModel(source, table);
         model.BeginBeforePortPlacement();
+        model.ConfirmUnplugged();
 
         model.CompleteDeviceStep();
         Assert.Equal(CalibrationWorkflowState.AwaitingPortPlacement, model.State);
@@ -43,11 +45,49 @@ public sealed class CalibrationWorkflowViewModelTests
         var after = UsbSnapshot("USB\\VID_1234&PID_5678\\A", "USB\\VID_1234&PID_5678\\B");
         var model = new CalibrationWorkflowViewModel(new FakeSnapshotSource(new Snapshot(), after), table);
         model.BeginAtPort(port.Id);
+        model.ConfirmUnplugged();
 
         var result = model.CompleteDeviceStep();
 
         Assert.Equal("ambiguous", result?.Status);
         Assert.Contains("請只插入一個裝置後重試", model.ErrorMessage);
+        Assert.Empty(port.UsbLocationPathPrefixes);
+    }
+
+    [Fact]
+    public void BaselineIsCapturedOnlyAfterTheUserConfirmsTheDeviceIsUnplugged()
+    {
+        var table = CreateTableWithPort(out var port);
+        var dock = UsbSnapshot(@"USB\VID_03F0&PID_3BAF\DOCK");
+        var source = new FakeSnapshotSource(new Snapshot(), dock);
+        var model = new CalibrationWorkflowViewModel(source, table);
+
+        model.BeginAtPort(port.Id);
+        Assert.Equal(CalibrationWorkflowState.AwaitingUnplug, model.State);
+        Assert.Equal(0, source.CaptureCount);
+        Assert.Throws<InvalidOperationException>(() => model.CompleteDeviceStep());
+
+        model.ConfirmUnplugged();
+        var result = model.CompleteDeviceStep();
+
+        Assert.Equal("calibrated", result?.Status);
+        Assert.NotEmpty(port.UsbLocationPathPrefixes);
+    }
+
+    [Fact]
+    public void NoChangeAfterPluggingReturnsToTheUnplugStep()
+    {
+        var table = CreateTableWithPort(out var port);
+        var dock = UsbSnapshot(@"USB\VID_03F0&PID_3BAF\DOCK");
+        var model = new CalibrationWorkflowViewModel(new FakeSnapshotSource(dock, dock), table);
+        model.BeginAtPort(port.Id);
+        model.ConfirmUnplugged();
+
+        var result = model.CompleteDeviceStep();
+
+        Assert.Equal("no_candidate", result?.Status);
+        Assert.Equal(CalibrationWorkflowState.AwaitingUnplug, model.State);
+        Assert.Contains("下一步", model.ErrorMessage);
         Assert.Empty(port.UsbLocationPathPrefixes);
     }
 
@@ -86,6 +126,7 @@ public sealed class CalibrationWorkflowViewModelTests
     private sealed class FakeSnapshotSource(params Snapshot[] snapshots) : IAudioTopologySnapshotSource
     {
         private int _next;
+        public int CaptureCount => _next;
         public Snapshot Capture() => snapshots[Math.Min(_next++, snapshots.Length - 1)];
     }
 }

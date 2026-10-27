@@ -5,6 +5,7 @@ namespace AudioSwitch.Presentation;
 public enum CalibrationWorkflowState
 {
     Idle,
+    AwaitingUnplug,
     AwaitingDevice,
     AwaitingPortPlacement,
     Completed
@@ -34,15 +35,23 @@ public sealed class CalibrationWorkflowViewModel
         ArgumentException.ThrowIfNullOrWhiteSpace(interfaceId);
         if (_portTable.FindInterface(interfaceId) is null) throw new ArgumentException($"找不到接口 ID：{interfaceId}", nameof(interfaceId));
         Reset();
-        _before = _snapshotSource.Capture();
         _interfaceId = interfaceId;
-        State = CalibrationWorkflowState.AwaitingDevice;
+        State = CalibrationWorkflowState.AwaitingUnplug;
     }
 
     public void BeginBeforePortPlacement()
     {
         Reset();
+        State = CalibrationWorkflowState.AwaitingUnplug;
+    }
+
+    /// <summary>Captures the baseline once the user has unplugged the device, so plugging it back in shows up as a change.</summary>
+    public void ConfirmUnplugged()
+    {
+        if (State != CalibrationWorkflowState.AwaitingUnplug)
+            throw new InvalidOperationException("目前沒有等待拔除裝置的校準流程。");
         _before = _snapshotSource.Capture();
+        ErrorMessage = null;
         State = CalibrationWorkflowState.AwaitingDevice;
     }
 
@@ -96,7 +105,11 @@ public sealed class CalibrationWorkflowViewModel
             }
             else
             {
-                ErrorMessage = "沒有找到可校準的接點，請確認裝置已接入後重試。";
+                // Retrying against the same baseline cannot succeed once the device is plugged in; start over from unplugging.
+                _before = null;
+                _after = null;
+                State = CalibrationWorkflowState.AwaitingUnplug;
+                ErrorMessage = "沒有偵測到新插入的裝置。請再拔掉一次，按「下一步」後再插入。";
             }
             return Result;
         }
