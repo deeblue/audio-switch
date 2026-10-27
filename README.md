@@ -246,3 +246,7 @@ SoundSwitch 能以系統匣與快捷鍵切換端點，裝置選單是 Windows �
 Windows 桌面版主要功能與 Release 自包含發佈已完成。發佈結果是單一個自包含的 `dist/AudioSwitch/AudioSwitch.App.exe`（約 167 MB），不需安裝。自動測試及實機 live 測試已通過；本計畫「階段 6」的使用者驗收清單除快捷鍵在拔除裝置後的清單更新與開機自動啟動外，已在本機通過。
 
 **macOS（後續範圍）**：切換預設輸出／輸入有公開 API，但沒有通訊預設；USB 孔位可能以 IOKit `locationID` 校準；別名寫回系統與個別程式指定沒有已知的系統層級做法；內建喇叭與 3.5mm 是否為獨立裝置依機種而定。以上皆待 macOS 探針實測。
+
+## 授權
+
+MIT License，見 [`LICENSE`](LICENSE)。發佈的執行檔內含 .NET 與 NAudio，`IPolicyConfig` 介面宣告參考 AudioDeviceCmdlets，三者皆為 MIT；版權聲明見 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)。
