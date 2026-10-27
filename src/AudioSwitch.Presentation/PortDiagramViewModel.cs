@@ -22,7 +22,6 @@ public enum PortConnectorType
 public enum PortCalibrationState
 {
     Uncalibrated,
-    Partial,
     Calibrated,
     Automatic
 }
@@ -33,7 +32,6 @@ public sealed record PortDiagramItem(string Id, string Name, string Type, PortEd
     public string ShortStatus => Loc.T(State switch
     {
         PortCalibrationState.Calibrated => "已校準",
-        PortCalibrationState.Partial => "缺部分路徑",
         PortCalibrationState.Automatic => "自動對應",
         _ => "未校準"
     });
@@ -123,10 +121,10 @@ public sealed class PortDiagramViewModel
         if (port.Type == "audio-jack") return PortCalibrationState.Automatic;
         if (port.Type is "hdmi" or "displayport")
             return port.DisplayConnectors.Count > 0 ? PortCalibrationState.Calibrated : PortCalibrationState.Uncalibrated;
-        var transports = CalibratedTransports(port);
-        if (transports.Count == 0)
-            return port.DisplayConnectors.Count > 0 ? PortCalibrationState.Partial : PortCalibrationState.Uncalibrated;
-        return ExpectedTransports.All(transports.Contains) ? PortCalibrationState.Calibrated : PortCalibrationState.Partial;
+        // One recorded path is enough: USB audio devices are nearly all USB 2, and a dock's own audio sits behind its USB 2 hub.
+        return CalibratedTransports(port).Count > 0 || port.DisplayConnectors.Count > 0
+            ? PortCalibrationState.Calibrated
+            : PortCalibrationState.Uncalibrated;
     }
 
     public string GetCalibrationStatus(PortDefinition port)
@@ -136,15 +134,16 @@ public sealed class PortDiagramViewModel
             return Loc.T(port.DisplayConnectors.Count > 0 ? "已校準（顯示輸出）" : "未校準");
 
         var transports = CalibratedTransports(port);
-        if (transports.Count == 0) return Loc.T(port.DisplayConnectors.Count > 0 ? "只校準了顯示輸出，缺 USB 路徑" : "未校準");
+        if (transports.Count == 0 && port.DisplayConnectors.Count == 0) return Loc.T("未校準");
         var expected = ExpectedTransports;
         var present = expected.Where(transports.Contains).ToArray();
         var unknown = transports.Where(transport => !expected.Contains(transport, StringComparer.OrdinalIgnoreCase)).Order(StringComparer.Ordinal).ToArray();
         var details = present.Concat(unknown).Concat(port.DisplayConnectors.Count > 0 ? ["顯示輸出"] : Array.Empty<string>()).ToArray();
         var missing = expected.Where(transport => !transports.Contains(transport)).ToArray();
+        // A path that was not recorded only matters for a device that uses it, so it is mentioned, not flagged.
         return missing.Length == 0
             ? Loc.F("已校準（{0}）", Loc.Join(details.Select(Loc.T)))
-            : Loc.F("缺部分路徑（{0}）", Loc.Join(missing.Select(item => Loc.F("缺 {0}", item))));
+            : Loc.F("已校準（{0}）；尚未記錄 {1}", Loc.Join(details.Select(Loc.T)), Loc.Join(missing));
     }
 
     public static PortEdge ParseEdge(string? edge) => edge switch
@@ -259,7 +258,7 @@ public sealed class PortDiagramViewModel
         .Where(source => !string.IsNullOrWhiteSpace(source.Transport))
         .Select(source => source.Transport!).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-    // A PCIe tunnel only appears with Thunderbolt/USB4 devices, so it is shown when recorded but never required.
+    // The paths a USB port can have; a PCIe tunnel only appears with Thunderbolt/USB4 devices and is shown only when recorded.
     private static readonly string[] ExpectedTransports = ["USB 2", "USB 3"];
 
     private static string TypeName(PortConnectorType type) => type switch

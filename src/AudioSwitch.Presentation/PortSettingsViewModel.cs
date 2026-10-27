@@ -374,7 +374,7 @@ public sealed class PortSettingsViewModel : INotifyPropertyChanged
             return
             [
                 isDisplay ? Loc.F("1. 把螢幕接上「{0}」。", target!.Name) : target is not null ? Loc.F("1. 把它插入「{0}」。", target.Name) : Loc.T("1. 把它插入要定義的接口。"),
-                Loc.T(isDisplay ? "2. 畫面出現後按「完成偵測」。" : isUsbC ? "2. 接著螢幕的話，等畫面出現後再按「完成偵測」。" : "2. 插好後按「完成偵測」。")
+                Loc.T(isDisplay ? "2. 畫面出現後按「完成偵測」。" : isUsbC ? "2. 插好後按「完成偵測」（如果是接著螢幕的 Dock，等畫面出現再按）。" : "2. 插好後按「完成偵測」。")
             ];
         }
         return IsWaitingForPlacement

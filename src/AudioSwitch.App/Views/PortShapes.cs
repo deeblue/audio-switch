@@ -25,7 +25,6 @@ public static class PortShapes
     public static string BrushKeyFor(PortCalibrationState state) => state switch
     {
         PortCalibrationState.Calibrated or PortCalibrationState.Automatic => "SystemFillColorSuccessBrush",
-        PortCalibrationState.Partial => "SystemFillColorCautionBrush",
         _ => "ControlStrongFillColorDefaultBrush"
     };
 

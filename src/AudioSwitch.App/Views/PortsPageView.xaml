@@ -41,7 +41,6 @@
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
           <views:LegendItem BrushKey="SystemFillColorSuccessBrush" Text="{app:Loc '已校準'}"/>
-          <views:LegendItem BrushKey="SystemFillColorCautionBrush" Text="{app:Loc '缺部分路徑'}" Margin="16,0,0,0"/>
           <views:LegendItem BrushKey="ControlStrongFillColorDefaultBrush" Text="{app:Loc '未校準'}" Margin="16,0,0,0"/>
           <views:LegendItem Glyph="&#xE767;" Text="{app:Loc '目前播放'}" Margin="16,0,0,0"/>
           <views:LegendItem Glyph="&#xE720;" Text="{app:Loc '目前錄音'}" Margin="16,0,0,0"/>

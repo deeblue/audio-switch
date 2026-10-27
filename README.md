@@ -94,7 +94,7 @@ ThinkPad T14p
 
 接口的位置與名稱全部由使用者決定；程式不依機型、規格資料或 `_PLD` 推測孔位與類型。程式只透過插入裝置取得「這個孔對應哪些 LocationPaths」的證據。接口表每台電腦各自一份，主機型號不符時不套用。
 
-**筆電示意圖**：一台看得出是筆電的俯視圖：機身畫出鍵盤與觸控板，轉軸側畫出螢幕的邊緣；四邊為左、右、後（轉軸）、前（觸控板側），方向由圖本身看出，不另加文字標示。接口以各自形狀的圖示畫在機身邊緣上，像實際的孔一樣。使用者從工具列把 USB-A、USB-C、HDMI、3.5mm 圖示拖到邊上，擺放位置即決定側別與同側順序，可沿邊拖動調整或移到別的邊。圖示以顏色標記校準狀態：已校準、缺部分路徑（例如缺 USB 3）、未校準；目前的預設播放與錄音裝置所在的孔旁邊另有強調色的喇叭／麥克風徽章（預設是內建裝置時，內建標記本身填滿強調色），切換預設或插拔後即時更新，裝置頁的小圖也一樣；USB 孔要有 USB 2 與 USB 3 才算已校準，PCIe 隧道只在 Thunderbolt／USB4 裝置出現，有就記錄，不列為缺少；名稱與狀態放在滑鼠停留時的浮動說明。點圖示可改名、重新校準、刪除。另提供可用鍵盤操作的清單，功能相同。
+**筆電示意圖**：一台看得出是筆電的俯視圖：機身畫出鍵盤與觸控板，轉軸側畫出螢幕的邊緣；四邊為左、右、後（轉軸）、前（觸控板側），方向由圖本身看出，不另加文字標示。接口以各自形狀的圖示畫在機身邊緣上，像實際的孔一樣。使用者從工具列把 USB-A、USB-C、HDMI、3.5mm 圖示拖到邊上，擺放位置即決定側別與同側順序，可沿邊拖動調整或移到別的邊。圖示以顏色標記校準狀態：已校準、未校準；目前的預設播放與錄音裝置所在的孔旁邊另有強調色的喇叭／麥克風徽章（預設是內建裝置時，內建標記本身填滿強調色），切換預設或插拔後即時更新，裝置頁的小圖也一樣；USB 孔記到任一條路徑（USB 2、USB 3、PCIe 隧道或顯示輸出）就算已校準，因為 USB 音訊裝置幾乎都走 USB 2，Dock 本身的音訊也在它的 USB 2 hub 後面；還沒記到的 USB 2／USB 3 路徑寫在浮動說明裡，例如「已校準（USB 2）；尚未記錄 USB 3」，之後插入走該路徑的裝置時，可在裝置頁用「這個裝置插在…」補記；名稱與狀態放在滑鼠停留時的浮動說明。點圖示可改名、重新校準、刪除。另提供可用鍵盤操作的清單，功能相同。
 
 校準有兩種順序，都先請使用者拔掉要用的裝置並按「下一步」，此時才記錄插入前的狀態，因此開始校準時裝置是否接著都不影響結果：
 
@@ -151,7 +151,7 @@ PnP 的 parent／instance ID 提供裝置樹資訊；`PKEY_Device_ContainerId` �
 
 裝置清單以 Windows 當下列出的端點為準，不依賴硬編碼型號或預先建立的實體設備清冊。優先使用 Windows 11 24H2（組建 26100）起可能提供的 `PKEY_AudioEndpoint_StableId`；若沒有，退回端點 ID 作為端點識別。StableId 可能缺失或改變，端點 ID 則可能在系統或驅動更新後改變。別名寫入端點的 `PKEY_Device_DeviceDesc`，由 Windows 依端點保存；Windows 顯示名稱為「別名 (介面卡名稱)」，Windows 設定、Teams、Zoom 都讀這個名稱。同一實體設備的播放與錄音端點寫入同一別名。程式另存「端點 ID → 原始名稱」，供清除別名時還原。Windows 列出新端點時（例如沒有序號的 USB 裝置換孔）顯示該端點自己的名稱，程式不推測沿用其他端點的別名；別名不得阻擋切換。寫入端點屬性不需系統管理員權限，但 Microsoft 文件註明用戶端不應設定這些屬性，沒有相容性保證。程式只能切換 Windows 實際列出的端點，不能把驅動合併的喇叭與耳機拆開。
 
-切換系統預設端點的實作需要未公開的 Windows COM 介面，可能受系統更新影響。已在播放的應用程式是否立刻跟著切換，取決於該程式的音訊路由方式，須以目標程式實測。Teams 跟隨系統預設，通話中切換 Windows 預設播放與錄音端點時立即跟著換；Zoom 的「與系統相同」選項跟隨系統預設。兩者跟隨的是一般預設或通訊預設尚未驗證。
+切換系統預設端點的實作需要未公開的 Windows COM 介面，可能受系統更新影響。已在播放的應用程式是否立刻跟著切換，取決於該程式的音訊路由方式，須以目標程式實測。本機以 AudioSwitch 切換時，正在播放的 YouTube 網頁立即改走新端點；Teams 跟隨系統預設，通話中切換 Windows 預設播放與錄音端點時立即跟著換；Zoom 的「與系統相同」選項跟隨系統預設。兩者跟隨的是一般預設或通訊預設尚未驗證。
 
 參考：[端點屬性](https://learn.microsoft.com/en-us/windows/win32/coreaudio/device-properties)、[插孔資訊](https://learn.microsoft.com/en-us/windows-hardware/drivers/audio/jack-description-property)、[端點狀態](https://learn.microsoft.com/en-us/windows/win32/coreaudio/device-state-xxx-constants)、[端點 ID](https://learn.microsoft.com/en-us/windows/desktop/CoreAudio/endpoint-id-strings)、[StableId](https://learn.microsoft.com/en-us/windows/win32/coreaudio/pkey-audioendpoint-stableid)、[指定端點音訊串流](https://learn.microsoft.com/en-us/windows/win32/coreaudio/stream-management)、[錄音峰值](https://learn.microsoft.com/en-us/windows/win32/api/endpointvolume/nn-endpointvolume-iaudiometerinformation)。
 

@@ -47,7 +47,7 @@ public sealed class PortSettingsViewModelTests
 
         Assert.Equal(PortCalibrationPhase.Idle, model.Phase);
         Assert.False(model.IsError);
-        Assert.Equal(PortCalibrationState.Partial, model.Diagram.GetCalibrationState(port));
+        Assert.Equal(PortCalibrationState.Calibrated, model.Diagram.GetCalibrationState(port));
         Assert.True(model.CanEnterAlias);
         Assert.Equal("USB Speaker", model.DetectedEndpointNames);
     }

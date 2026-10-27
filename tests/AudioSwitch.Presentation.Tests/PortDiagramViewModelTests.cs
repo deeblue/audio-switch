@@ -96,7 +96,7 @@ public sealed class PortDiagramViewModelTests
         Assert.Equal([PortEdge.Left, PortEdge.Left, PortEdge.Right, PortEdge.Rear], items.Select(item => item.Edge));
         Assert.Equal([0, 1], items.Where(item => item.Edge == PortEdge.Left).Select(item => item.Order));
         Assert.Equal(
-            [PortCalibrationState.Calibrated, PortCalibrationState.Partial, PortCalibrationState.Automatic, PortCalibrationState.Uncalibrated],
+            [PortCalibrationState.Calibrated, PortCalibrationState.Calibrated, PortCalibrationState.Automatic, PortCalibrationState.Uncalibrated],
             items.Select(item => item.State));
         Assert.Equal("左側 USB-A：已校準（USB 2、USB 3）", items[0].Description);
     }
@@ -125,7 +125,8 @@ public sealed class PortDiagramViewModelTests
         Assert.Equal("未校準", model.GetCalibrationStatus(port));
 
         port.CalibrationSources.Add(new PortCalibrationSource { Source = "校準", Transport = "USB 2" });
-        Assert.Equal("缺部分路徑（缺 USB 3）", model.GetCalibrationStatus(port));
+        Assert.Equal(PortCalibrationState.Calibrated, model.GetCalibrationState(port));
+        Assert.Equal("已校準（USB 2）；尚未記錄 USB 3", model.GetCalibrationStatus(port));
     }
 
     [Fact]
@@ -134,8 +135,8 @@ public sealed class PortDiagramViewModelTests
         var model = new PortDiagramViewModel(PortTable.Empty());
         var port = model.AddInterface(PortConnectorType.UsbC, PortEdge.Left, 0);
         port.DisplayConnectors.Add(new DisplayConnector { AdapterDevicePath = "gpu", TargetId = 1, ConnectorInstance = 0, OutputTechnology = 10 });
-        Assert.Equal(PortCalibrationState.Partial, model.GetCalibrationState(port));
-        Assert.Equal("只校準了顯示輸出，缺 USB 路徑", model.GetCalibrationStatus(port));
+        Assert.Equal(PortCalibrationState.Calibrated, model.GetCalibrationState(port));
+        Assert.Equal("已校準（顯示輸出）；尚未記錄 USB 2、USB 3", model.GetCalibrationStatus(port));
 
         foreach (var transport in new[] { "USB 2", "USB 3" })
             port.CalibrationSources.Add(new PortCalibrationSource { Source = "校準", Transport = transport });
